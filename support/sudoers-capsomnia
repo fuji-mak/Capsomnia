@@ -1,0 +1,2 @@
+# Allow Capsomnia to toggle only its fixed pmset helper.
+__USER__ ALL=(root) NOPASSWD: /usr/local/sbin/capsomnia-pmset on, /usr/local/sbin/capsomnia-pmset off

@@ -1,0 +1,15 @@
+#!/bin/zsh
+set -euo pipefail
+
+case "${1:-}" in
+  on)
+    /usr/bin/pmset -a disablesleep 1
+    ;;
+  off)
+    /usr/bin/pmset -a disablesleep 0
+    ;;
+  *)
+    printf 'usage: %s on|off\n' "$0" >&2
+    exit 64
+    ;;
+esac

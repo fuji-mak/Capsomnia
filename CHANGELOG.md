@@ -2,6 +2,12 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 0.1.2 - 2026-06-28
+
+Documentation cleanup.
+
+- Reworded safety notes to match Capsomnia's intended closed-lid background-work use case.
+
 ## 0.1.1 - 2026-06-28
 
 Documentation cleanup.

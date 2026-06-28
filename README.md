@@ -2,7 +2,7 @@
 
 [日本語 README](README.ja.md)
 
-Current version: `0.1.1`
+Current version: `0.1.2`
 
 Capsomnia is a tiny macOS menu bar app that uses Caps Lock as a physical keep-awake switch.
 
@@ -26,10 +26,10 @@ Capsomnia uses `pmset -a disablesleep 1`, which disables system sleep itself. Th
 
 ## Safety Notes
 
-- Turn Caps Lock off before putting your MacBook in a bag.
-- Expect more battery drain while sleep is disabled.
-- Watch temperature during long closed-lid runs.
-- Capsomnia is designed as a manual switch, not as a background policy manager.
+- Closed-lid background work is the intended use case: SSH, mobile agent control, builds, downloads, and other long-running jobs.
+- Sleep-disabled closed-lid use can increase heat and battery drain.
+- Use good judgment for airflow, power, and runtime when leaving your Mac unattended.
+- Capsomnia is a manual switch: Caps Lock on means "keep running", Caps Lock off means "normal sleep behavior".
 
 ## Requirements
 

@@ -2,7 +2,7 @@ import AppKit
 import CoreGraphics
 import Foundation
 
-private let helperPath = "/usr/local/sbin/capsomnia-pmset"
+private let helperPath = "/Library/PrivilegedHelperTools/capsomnia-pmset"
 private let logPath = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent("Library/Logs/Capsomnia/capsomnia.log")
     .path

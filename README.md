@@ -36,7 +36,7 @@ The installer:
 
 1. Builds the Swift executable in release mode.
 2. Installs the app binary into `~/Library/Application Support/Capsomnia/`.
-3. Installs a fixed root-owned helper at `/usr/local/sbin/capsomnia-pmset`.
+3. Installs a fixed root-owned helper at `/Library/PrivilegedHelperTools/capsomnia-pmset`.
 4. Adds a narrow sudoers rule for the current user.
 5. Installs and starts a LaunchAgent.
 
@@ -57,8 +57,8 @@ Capsomnia's menu bar app does not run as root. System sleep settings require ele
 The app can only invoke:
 
 ```sh
-sudo -n /usr/local/sbin/capsomnia-pmset on
-sudo -n /usr/local/sbin/capsomnia-pmset off
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
 ```
 
 The sudoers rule is limited to those two exact commands. The helper only accepts `on` and `off`, and only calls:
@@ -84,7 +84,7 @@ If installation fails with an error like this:
 install: /usr/local/sbin/INS...: No such file or directory
 ```
 
-Update to the latest `main` branch and run `./scripts/install.sh` again. Older installer versions did not create `/usr/local/sbin` on Macs where that directory was missing.
+Update to the latest `main` branch and run `./scripts/install.sh` again. Older installer versions installed the helper under `/usr/local/sbin`, which may not exist on some Macs.
 
 Check whether sleep is disabled:
 

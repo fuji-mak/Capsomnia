@@ -7,8 +7,15 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 INSTALL_DIR="$HOME/Library/Application Support/$APP_NAME"
 LOG_DIR="$HOME/Library/Logs/$APP_NAME"
 LAUNCH_AGENT="$HOME/Library/LaunchAgents/$LABEL.plist"
-HELPER_PATH="/usr/local/sbin/capsomnia-pmset"
+HELPER_PATH="/Library/PrivilegedHelperTools/capsomnia-pmset"
+LEGACY_HELPER_PATH="/usr/local/sbin/capsomnia-pmset"
 SUDOERS_PATH="/etc/sudoers.d/capsomnia"
+CURRENT_USER="$(id -un)"
+
+if [[ "$CURRENT_USER" == *[!A-Za-z0-9._-]* ]]; then
+  echo "Unsupported macOS short user name for sudoers: $CURRENT_USER" >&2
+  exit 64
+fi
 
 mkdir -p "$INSTALL_DIR" "$LOG_DIR" "$HOME/Library/LaunchAgents"
 
@@ -17,17 +24,20 @@ cd "$ROOT_DIR"
 /usr/bin/install -m 0755 ".build/release/$APP_NAME" "$INSTALL_DIR/$APP_NAME"
 
 sudo /bin/mkdir -p "$(dirname "$HELPER_PATH")" "$(dirname "$SUDOERS_PATH")"
+sudo /usr/sbin/chown root:wheel "$(dirname "$HELPER_PATH")" "$(dirname "$SUDOERS_PATH")"
+sudo /bin/chmod 0755 "$(dirname "$HELPER_PATH")" "$(dirname "$SUDOERS_PATH")"
 sudo /usr/bin/install -o root -g wheel -m 0755 "support/capsomnia-pmset" "$HELPER_PATH"
+sudo /bin/rm -f "$LEGACY_HELPER_PATH"
 
 sudoers_tmp="$(mktemp)"
+trap 'rm -f "$sudoers_tmp"' EXIT
 cat > "$sudoers_tmp" <<EOF
 # Allow Capsomnia to toggle only its fixed pmset helper.
-$USER ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off
+$CURRENT_USER ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off
 EOF
 
 /usr/sbin/visudo -cf "$sudoers_tmp"
 sudo /usr/bin/install -o root -g wheel -m 0440 "$sudoers_tmp" "$SUDOERS_PATH"
-rm -f "$sudoers_tmp"
 
 cat > "$LAUNCH_AGENT" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>

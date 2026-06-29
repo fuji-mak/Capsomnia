@@ -146,8 +146,24 @@
     }
   };
 
+  function readStoredLanguage() {
+    try {
+      return window.localStorage.getItem("capsomnia-lang");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function storeLanguage(lang) {
+    try {
+      window.localStorage.setItem("capsomnia-lang", lang);
+    } catch (e) {
+      /* Ignore storage failures. The in-page switch should still work. */
+    }
+  }
+
   var currentLang =
-    window.localStorage.getItem("capsomnia-lang") ||
+    readStoredLanguage() ||
     (window.navigator.language && window.navigator.language.indexOf("ja") === 0 ? "ja" : "en");
 
   function applyLanguage(lang) {
@@ -177,7 +193,7 @@
       btn.setAttribute("aria-pressed", String(btn.getAttribute("data-lang-option") === lang));
     });
 
-    window.localStorage.setItem("capsomnia-lang", lang);
+    storeLanguage(lang);
   }
 
   document.addEventListener("click", function (event) {

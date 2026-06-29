@@ -151,7 +151,43 @@
     }
   }
 
-  var currentLang = readStoredValue("capsomnia-lang") || "ja";
+  function normalizeLanguage(lang) {
+    return lang === "ja" || lang === "en" ? lang : null;
+  }
+
+  function detectInitialLanguage() {
+    var stored = normalizeLanguage(readStoredValue("capsomnia-lang"));
+    if (stored) return stored;
+
+    var timeZone = "";
+    try {
+      timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    } catch (e) {
+      /* Fall back to browser languages below. */
+    }
+
+    if (timeZone === "Asia/Tokyo") return "ja";
+    if (timeZone) return "en";
+
+    var languages = [];
+    try {
+      if (window.navigator.languages && window.navigator.languages.length) {
+        languages = Array.prototype.slice.call(window.navigator.languages);
+      } else if (window.navigator.language) {
+        languages = [window.navigator.language];
+      }
+    } catch (e) {
+      /* Default to English below. */
+    }
+
+    var hasJapaneseLanguage = languages.some(function (lang) {
+      return String(lang).toLowerCase().indexOf("ja") === 0;
+    });
+
+    return hasJapaneseLanguage ? "ja" : "en";
+  }
+
+  var currentLang = detectInitialLanguage();
 
   function applyLanguage(lang) {
     var dict = translations[lang] || translations.en;

@@ -14,7 +14,7 @@
       heroTitle: 'Give Caps Lock<br><span class="catch-accent">a real job</span>',
       heroSub:
         "<strong>Caps Lock becomes a physical keep-awake switch.</strong> Flip it on, close the lid, and let your background work keep running.",
-      installCta: "Install from source",
+      installCta: "Install",
       stripLabel: "How it works",
       stripOnTitle: "Caps Lock on",
       stripOnSub: "Runs <code>pmset -a disablesleep 1</code> — sleep is disabled.",
@@ -80,7 +80,7 @@
         'Macの<span class="catch-accent">最も無駄なキー</span>に<br><span class="catch-accent">最高の仕事</span>を与える',
       heroSub:
         "<strong>Caps Lockを物理的なスリープ防止スイッチに。</strong> オンにして蓋を閉じるだけで、バックグラウンド作業を走らせ続けます。",
-      installCta: "ソースからインストール",
+      installCta: "インストール",
       stripLabel: "仕組み",
       stripOnTitle: "Caps Lock オン",
       stripOnSub: "<code>pmset -a disablesleep 1</code> を実行し、スリープを無効化します。",

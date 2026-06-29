@@ -11,8 +11,7 @@
       navWhy: "Why",
       navInstall: "Install",
       navSecurity: "Security",
-      eyebrow: "macOS menu bar utility",
-      heroTitle: "Give the Mac's most wasted key<br>its best job",
+      heroTitle: 'Give the Mac\'s <span class="catch-accent">most wasted key</span><br>its <span class="catch-accent">best job</span>',
       heroSub:
         "<strong>Caps Lock becomes a physical keep-awake switch.</strong> Flip it on, close the lid, and let your background work keep running.",
       installCta: "Install from source",
@@ -82,8 +81,7 @@
       navWhy: "理由",
       navInstall: "インストール",
       navSecurity: "安全性",
-      eyebrow: "macOSメニューバーアプリ",
-      heroTitle: "Macの最も無駄なキーに<br>最高の仕事を与える",
+      heroTitle: 'Macの<span class="catch-accent">最も無駄なキー</span>に<br><span class="catch-accent">最高の仕事</span>を与える',
       heroSub:
         "<strong>Caps Lockを物理的なスリープ防止スイッチに。</strong> オンにして蓋を閉じるだけで、バックグラウンド作業を走らせ続けます。",
       installCta: "ソースからインストール",

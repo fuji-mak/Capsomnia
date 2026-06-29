@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capsomnia — Caps Lock as a physical keep-awake switch for macOS</title>
+  <meta name="description" content="Capsomnia turns Caps Lock into a physical keep-awake switch for closed-lid MacBook background work. Run Codex, Claude Code, SSH sessions, builds, and unattended scripts without sleep.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Capsomnia — Macの最も無駄なキーに最高の仕事を与える">
+  <meta property="og:description" content="Caps Lock becomes a physical keep-awake switch for closed-lid MacBook background work. Codex, Claude Code, SSH, builds, downloads, unattended scripts.">
+  <meta property="og:image" content="https://fuji-mak.github.io/Capsomnia/icon.svg">
+  <meta property="og:url" content="https://fuji-mak.github.io/Capsomnia/">
+  <meta property="og:site_name" content="Capsomnia">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Capsomnia — Macの最も無駄なキーに最高の仕事を与える">
+  <meta name="twitter:description" content="Caps Lock becomes a physical keep-awake switch for closed-lid MacBook background work.">
+  <meta name="twitter:image" content="https://fuji-mak.github.io/Capsomnia/icon.svg">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="#top">
+      <img class="brand-led" src="icon.svg" alt="" width="28" height="28">
+      <span>Capsomnia</span>
+    </a>
+    <nav class="site-nav">
+      <a href="#uses">Use cases</a>
+      <a href="#why">Why</a>
+      <a href="#install">Install</a>
+      <a href="#security">Security</a>
+      <a class="nav-cta" href="https://github.com/fuji-mak/Capsomnia">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- HERO -->
+    <section class="hero" id="top">
+      <div class="hero-led">
+        <img src="icon.svg" alt="Capsomnia LED icon" width="220" height="220">
+      </div>
+      <p class="eyebrow">macOS menu bar utility</p>
+      <h1 class="catch" lang="ja">Macの最も無駄なキーに<br>最高の仕事を与える</h1>
+      <p class="subcatch">
+        <strong>Caps Lock becomes a physical keep-awake switch.</strong>
+        Flip it on, close the lid, and let your background work keep running.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/fuji-mak/Capsomnia">GitHub</a>
+        <a class="btn btn-ghost" href="#install">Install from source</a>
+      </div>
+      <p class="hero-meta">macOS 14+ · Swift 6 · MIT · v0.2.0</p>
+    </section>
+
+    <!-- HOW IT WORKS STRIP -->
+    <section class="strip" aria-label="How it works">
+      <div class="strip-item">
+        <span class="dot dot-on"></span>
+        <div>
+          <p class="strip-title">Caps Lock on</p>
+          <p class="strip-sub">Runs <code>pmset -a disablesleep 1</code> — sleep is disabled.</p>
+        </div>
+      </div>
+      <div class="strip-item">
+        <span class="dot dot-off"></span>
+        <div>
+          <p class="strip-title">Caps Lock off</p>
+          <p class="strip-sub">Runs <code>pmset -a disablesleep 0</code> — normal sleep behavior.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROBLEM / USE CASES -->
+    <section class="section" id="uses">
+      <div class="section-head">
+        <h2>One switch for closed-lid work</h2>
+        <p class="section-lede">
+          When a long-running local job should keep going while you step away,
+          flip Caps Lock on. Close the lid. Capsomnia keeps the machine awake until you flip it back.
+        </p>
+        <p class="section-lede ja" lang="ja">
+          ローカルで長時間動くジョブを止めたくないとき、Caps Lock をオンにして蓋を閉じるだけ。
+        </p>
+      </div>
+      <ul class="cards">
+        <li class="card">
+          <h3>AI coding agents</h3>
+          <p>Let Codex or Claude Code keep working on long tasks while the lid is shut.</p>
+        </li>
+        <li class="card">
+          <h3>SSH sessions</h3>
+          <p>Drive your Mac remotely without it dropping into sleep mid-session.</p>
+        </li>
+        <li class="card">
+          <h3>Builds &amp; downloads</h3>
+          <p>Long compiles and large downloads finish on their own time.</p>
+        </li>
+        <li class="card">
+          <h3>Unattended scripts</h3>
+          <p>Batch jobs and overnight scripts run to completion, untouched.</p>
+        </li>
+      </ul>
+    </section>
+
+    <!-- WHY NOT CAFFEINATE -->
+    <section class="section section-split" id="why">
+      <div class="split-col">
+        <h2>Why not <code>caffeinate</code>?</h2>
+        <p>
+          <code>caffeinate</code> is great at preventing <em>idle</em> sleep while your Mac is open.
+          Closing the lid is a different problem: ordinary <code>caffeinate</code> assertions
+          do not reliably keep local jobs running in closed-lid use.
+        </p>
+        <p>
+          Capsomnia uses <code>pmset -a disablesleep 1</code>, which disables system sleep itself —
+          the right tool when you explicitly want local work to continue with the lid closed.
+        </p>
+      </div>
+      <div class="split-col compare">
+        <div class="compare-row">
+          <span class="tag tag-muted">caffeinate</span>
+          <span>Blocks idle sleep · lid open</span>
+        </div>
+        <div class="compare-row compare-hi">
+          <span class="tag tag-led">Capsomnia</span>
+          <span>Disables system sleep · lid closed</span>
+        </div>
+        <p class="compare-note">A manual switch: on means "keep running", off means "normal sleep".</p>
+      </div>
+    </section>
+
+    <!-- INSTALL -->
+    <section class="section" id="install">
+      <div class="section-head">
+        <h2>Install from source</h2>
+        <p class="section-lede">
+          Capsomnia is distributed as source for now. The install script builds
+          <code>Capsomnia.app</code> locally and sets everything up.
+        </p>
+      </div>
+      <div class="code-block">
+        <button class="copy-btn" type="button" data-copy="git clone https://github.com/fuji-mak/Capsomnia.git&#10;cd Capsomnia&#10;./scripts/install.sh">Copy</button>
+<pre><code>git clone https://github.com/fuji-mak/Capsomnia.git
+cd Capsomnia
+./scripts/install.sh</code></pre>
+      </div>
+      <ol class="steps">
+        <li>Builds the Swift executable in release mode.</li>
+        <li>Builds and installs <code>Capsomnia.app</code> into <code>~/Applications/</code>.</li>
+        <li>Installs a root-owned helper at <code>/Library/PrivilegedHelperTools/capsomnia-pmset</code>.</li>
+        <li>Adds a narrow sudoers rule for the current user.</li>
+        <li>Installs and starts a LaunchAgent — the app launches at login.</li>
+      </ol>
+      <p class="req">Requires macOS 14 or later, a Swift 6 toolchain, and administrator access during installation.</p>
+    </section>
+
+    <!-- SECURITY -->
+    <section class="section section-security" id="security">
+      <div class="section-head">
+        <h2>Security model</h2>
+        <p class="section-lede">
+          The menu bar app runs as the current user — never as root.
+          Changing system sleep settings needs elevated privileges, so Capsomnia
+          uses one small, fixed, root-owned helper through passwordless <code>sudo</code>.
+        </p>
+      </div>
+      <div class="security-grid">
+        <div class="sec-card">
+          <h3>The app can only invoke</h3>
+          <pre><code>sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off</code></pre>
+          <p>The sudoers rule is limited to these two exact commands.</p>
+        </div>
+        <div class="sec-card">
+          <h3>The helper only ever runs</h3>
+          <pre><code>/usr/bin/pmset -a disablesleep 1
+/usr/bin/pmset -a disablesleep 0</code></pre>
+          <p>It accepts <code>on</code> and <code>off</code> and nothing else.</p>
+        </div>
+      </div>
+      <p class="req">
+        Quitting the app, or running <code>./scripts/uninstall.sh</code>, restores normal sleep behavior.
+        Sleep-disabled closed-lid use can increase heat and battery drain — mind airflow, power, and runtime.
+      </p>
+    </section>
+
+    <!-- LINKS -->
+    <section class="section section-links">
+      <h2>Links</h2>
+      <div class="link-grid">
+        <a class="link-card" href="https://github.com/fuji-mak/Capsomnia">
+          <span class="link-title">GitHub repository</span>
+          <span class="link-sub">Source, issues, releases</span>
+        </a>
+        <a class="link-card" href="https://github.com/fuji-mak/Capsomnia/blob/main/README.md">
+          <span class="link-title">README</span>
+          <span class="link-sub">Full documentation</span>
+        </a>
+        <a class="link-card" href="https://github.com/fuji-mak/Capsomnia/blob/main/README.ja.md">
+          <span class="link-title">README（日本語）</span>
+          <span class="link-sub">日本語ドキュメント</span>
+        </a>
+        <a class="link-card" href="https://github.com/fuji-mak/Capsomnia/blob/main/SECURITY.md">
+          <span class="link-title">Security policy</span>
+          <span class="link-sub">Reporting &amp; model</span>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p><span class="footer-led"></span> Capsomnia · MIT License</p>
+    <p class="footer-catch" lang="ja">Macの最も無駄なキーに最高の仕事を与える</p>
+  </footer>
+
+  <script src="capsomnia.js"></script>
+</body>
+</html>

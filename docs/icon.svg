@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Capsomnia icon</title>
+  <desc id="desc">A lime-green Caps Lock LED on a pure black background.</desc>
+  <defs>
+    <radialGradient id="ledGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#D8FF63" stop-opacity="1"/>
+      <stop offset="0.18" stop-color="#BFFF28" stop-opacity="0.92"/>
+      <stop offset="0.44" stop-color="#92F21D" stop-opacity="0.48"/>
+      <stop offset="0.70" stop-color="#70E000" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#8DEB1F" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softBloom" x="0" y="0" width="1024" height="1024" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="52"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" rx="224" fill="#000000"/>
+  <circle cx="512" cy="512" r="310" fill="url(#ledGlow)" filter="url(#softBloom)"/>
+  <circle cx="512" cy="512" r="118" fill="#B8FF1F"/>
+</svg>

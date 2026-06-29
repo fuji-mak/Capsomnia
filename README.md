@@ -16,9 +16,10 @@ When Caps Lock is on, Capsomnia disables system sleep with `pmset`. When Caps Lo
 
 - Caps Lock on: runs `pmset -a disablesleep 1`
 - Caps Lock off: runs `pmset -a disablesleep 0`
-- Green menu bar dot: sleep is disabled
+- Yellow-green menu bar dot: sleep is disabled
 - Gray menu bar dot: normal sleep behavior
-- First launch setting: choose whether to show the menu bar dot
+- First launch settings: choose whether to show the menu bar dot and choose English or Japanese
+- Settings window: change the menu bar dot, language, and opening at login
 - Quitting the app restores normal sleep behavior
 
 Capsomnia is useful when long-running local jobs, AI coding agents, builds, downloads, or scripts should keep running while you step away.
@@ -61,7 +62,7 @@ The installer:
 5. Installs and starts a LaunchAgent.
 
 The app starts automatically at login after installation.
-On first launch, Capsomnia opens a small settings window where you can choose whether to show the menu bar dot. Open Capsomnia again to change this later.
+On first launch, Capsomnia opens a small initial settings window where you can choose whether to show the menu bar dot and choose English or Japanese. Open Capsomnia again to change menu bar visibility, language, or whether Capsomnia opens at login.
 
 ## Uninstall
 

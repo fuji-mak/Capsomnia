@@ -95,6 +95,22 @@ sudoers rule はこの 2 コマンドに限定されています。helper も `o
 ~/Library/Logs/Capsomnia/
 ```
 
+## Web サイトの編集
+
+GitHub Pages のサイトは `docs/` にあります。HTML は Tailwind CSS のユーティリティクラスで書かれています。
+
+```sh
+npm install
+npm run build:site
+```
+
+主に触るファイル:
+
+- `docs/index.html`: ページ構造と Tailwind クラス
+- `docs/styles.input.css`: テーマ変数、補助 CSS、Tailwind の入力
+- `docs/styles.css`: 生成された CSS
+- `docs/capsomnia.js`: 言語切替、テーマ切替、コピー処理
+
 ## トラブルシュート
 
 スリープ抑止状態を確認する:

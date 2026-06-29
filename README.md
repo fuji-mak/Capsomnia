@@ -95,6 +95,22 @@ Logs are written to:
 ~/Library/Logs/Capsomnia/
 ```
 
+## Website Development
+
+The GitHub Pages site lives in `docs/`. The HTML is written with Tailwind CSS utility classes.
+
+```sh
+npm install
+npm run build:site
+```
+
+Main files:
+
+- `docs/index.html`: page structure and Tailwind classes
+- `docs/styles.input.css`: theme variables, small custom CSS, and Tailwind input
+- `docs/styles.css`: generated CSS
+- `docs/capsomnia.js`: language switcher, theme switcher, and copy behavior
+
 ## Troubleshooting
 
 Check whether sleep is disabled:

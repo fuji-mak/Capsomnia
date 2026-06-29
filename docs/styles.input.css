@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+@source "./*.html";
+@source "./*.js";
+
+:root {
+  color-scheme: dark;
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #111111;
+  --border: #1f1f1f;
+  --border-strong: #2a2a2a;
+  --text: #f2f4ec;
+  --text-dim: #a7ad9c;
+  --text-faint: #6f7466;
+  --led: #b8ff1f;
+  --led-bright: #d8ff63;
+  --led-deep: #92f21d;
+  --led-glow: rgba(184, 255, 31, 0.55);
+  --header-bg: rgba(0, 0, 0, 0.72);
+  --muted-tag-bg: #1a1a1a;
+  --code-text: #e6f0d8;
+  --off-dot: #2c2c2c;
+  --off-dot-border: #3a3a3a;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+    Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f7f8f4;
+  --border: #e5e7df;
+  --border-strong: #d2d7c9;
+  --text: #11140f;
+  --text-dim: #50584a;
+  --text-faint: #747b6c;
+  --led: #9bea15;
+  --led-bright: #73cf00;
+  --led-deep: #5fae00;
+  --led-glow: rgba(124, 211, 0, 0.28);
+  --header-bg: rgba(255, 255, 255, 0.82);
+  --muted-tag-bg: #f3f5ef;
+  --code-text: #26351c;
+  --off-dot: #dde1d8;
+  --off-dot-border: #bdc5b6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font);
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+code {
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
+
+:focus-visible {
+  outline: 2px solid var(--led);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.catch-accent {
+  color: var(--led-deep);
+}
+
+.theme-btn[aria-pressed="true"],
+.lang-btn[aria-pressed="true"] {
+  background: var(--led);
+  color: #000;
+}
+
+.copy-btn.is-copied {
+  background: var(--led);
+  color: #000;
+  border-color: var(--led);
+}
+
+.led-pulse {
+  animation: led-pulse 4.5s ease-in-out infinite;
+}
+
+@keyframes led-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 44px rgba(184, 255, 31, 0.4));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 76px rgba(184, 255, 31, 0.65));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .led-pulse {
+    animation: none;
+  }
+}
+
+@media (max-width: 620px) {
+  pre {
+    white-space: pre-wrap;
+  }
+}

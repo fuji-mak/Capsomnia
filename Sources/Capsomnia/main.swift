@@ -72,7 +72,6 @@ private struct AppStrings {
     let settingsTitle: String
     let initialSettingsTitle: String
     let initialSettingsNote: String
-    let tagline: String
     let welcomeTitle: String
     let explainerOnTitle: String
     let explainerOnDesc: String
@@ -98,7 +97,6 @@ private struct AppStrings {
                 settingsTitle: "Settings",
                 initialSettingsTitle: "Welcome to Capsomnia",
                 initialSettingsNote: "Open Capsomnia again any time to change these.",
-                tagline: "Caps Lock becomes a physical keep-awake switch.",
                 welcomeTitle: "Welcome to Capsomnia",
                 explainerOnTitle: "Caps Lock on",
                 explainerOnDesc: "System sleep is disabled — work keeps running, lid open or closed.",
@@ -122,7 +120,6 @@ private struct AppStrings {
                 settingsTitle: "設定",
                 initialSettingsTitle: "Capsomniaへようこそ",
                 initialSettingsNote: "あとからCapsomniaを開けばいつでも変更できます。",
-                tagline: "Caps Lockが、スリープを止める物理スイッチになる。",
                 welcomeTitle: "Capsomniaへようこそ",
                 explainerOnTitle: "Caps Lock ON",
                 explainerOnDesc: "システムスリープを無効化。蓋を閉じても作業が走り続けます。",
@@ -545,7 +542,6 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
 
     private let headerIcon = NSImageView()
     private let titleLabel = brandLabel(size: 21, weight: .bold, color: Brand.text)
-    private let taglineLabel = brandLabel(size: 13, color: Brand.textDim, wraps: true)
 
     private let explainerCard = brandCard()
     private let explainerOnTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
@@ -623,7 +619,6 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
 
         window?.title = isInitialSetup ? strings.welcomeTitle : strings.settingsTitle
         titleLabel.stringValue = isInitialSetup ? strings.welcomeTitle : "Capsomnia"
-        taglineLabel.stringValue = strings.tagline
 
         explainerOnTitle.stringValue = strings.explainerOnTitle
         explainerOnDesc.stringValue = strings.explainerOnDesc
@@ -679,15 +674,12 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
         headerIcon.setContentHuggingPriority(.required, for: .horizontal)
 
         titleLabel.alignment = .center
-        taglineLabel.alignment = .center
-        taglineLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let header = NSStackView(views: [headerIcon, titleLabel, taglineLabel])
+        let header = NSStackView(views: [headerIcon, titleLabel])
         header.orientation = .vertical
         header.alignment = .centerX
         header.spacing = 10
         header.setCustomSpacing(14, after: headerIcon)
-        header.setCustomSpacing(6, after: titleLabel)
 
         buildExplainerCard()
 

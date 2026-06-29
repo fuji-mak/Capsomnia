@@ -164,10 +164,6 @@
     readStoredValue("capsomnia-lang") ||
     (window.navigator.language && window.navigator.language.indexOf("ja") === 0 ? "ja" : "en");
 
-  var currentTheme =
-    readStoredValue("capsomnia-theme") ||
-    (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
-
   function applyLanguage(lang) {
     var dict = translations[lang] || translations.en;
     currentLang = lang;
@@ -198,32 +194,10 @@
     storeValue("capsomnia-lang", lang);
   }
 
-  function applyTheme(theme) {
-    currentTheme = theme === "light" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", currentTheme);
-
-    var themeColor = document.querySelector('meta[name="theme-color"]');
-    if (themeColor) {
-      themeColor.setAttribute("content", currentTheme === "light" ? "#ffffff" : "#000000");
-    }
-
-    document.querySelectorAll("[data-theme-option]").forEach(function (btn) {
-      btn.setAttribute("aria-pressed", String(btn.getAttribute("data-theme-option") === currentTheme));
-    });
-
-    storeValue("capsomnia-theme", currentTheme);
-  }
-
   document.addEventListener("click", function (event) {
     var langBtn = event.target.closest("[data-lang-option]");
     if (!langBtn) return;
     applyLanguage(langBtn.getAttribute("data-lang-option"));
-  });
-
-  document.addEventListener("click", function (event) {
-    var themeBtn = event.target.closest("[data-theme-option]");
-    if (!themeBtn) return;
-    applyTheme(themeBtn.getAttribute("data-theme-option"));
   });
 
   document.addEventListener("click", function (event) {

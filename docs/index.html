@@ -20,17 +20,6 @@
   <meta name="twitter:description" content="Caps Lock becomes a physical keep-awake switch for closed-lid MacBook background work.">
   <meta name="twitter:image" content="https://fuji-mak.github.io/Capsomnia/icon.svg">
 
-  <script>
-    (function () {
-      try {
-        var saved = localStorage.getItem("capsomnia-theme");
-        var theme = saved || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
-        document.documentElement.setAttribute("data-theme", theme);
-      } catch (e) {
-        document.documentElement.setAttribute("data-theme", "dark");
-      }
-    })();
-  </script>
   <link rel="stylesheet" href="styles.css?v=20260629-tailwind1">
 </head>
 <body class="bg-[var(--bg)] text-[var(--text)] antialiased [text-rendering:optimizeLegibility]">
@@ -50,11 +39,6 @@
         <a class="hidden text-sm font-medium text-[var(--text-dim)] no-underline hover:text-[var(--text)] sm:inline" href="#security" data-i18n="navSecurity">Security</a>
         <a class="rounded-full bg-[var(--led)] px-3.5 py-2 text-sm font-semibold text-black no-underline hover:bg-[var(--led-bright)] sm:px-4" href="https://github.com/fuji-mak/Capsomnia">GitHub</a>
       </nav>
-
-      <div class="theme-switch inline-flex shrink-0 gap-0.5 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] p-1" aria-label="Theme">
-        <button class="theme-btn min-w-11 rounded-full px-2 py-1 text-xs font-bold text-[var(--text-dim)] hover:text-[var(--text)] sm:min-w-[52px] sm:px-2.5" type="button" data-theme-option="light" aria-pressed="false">Light</button>
-        <button class="theme-btn min-w-11 rounded-full px-2 py-1 text-xs font-bold text-[var(--text-dim)] hover:text-[var(--text)] sm:min-w-[52px] sm:px-2.5" type="button" data-theme-option="dark" aria-pressed="true">Dark</button>
-      </div>
 
       <div class="lang-switch inline-flex shrink-0 gap-0.5 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] p-1" aria-label="Language">
         <button class="lang-btn min-w-8 rounded-full px-2 py-1 text-xs font-bold text-[var(--text-dim)] hover:text-[var(--text)] sm:min-w-[38px] sm:px-2.5" type="button" data-lang-option="en" aria-pressed="true">EN</button>

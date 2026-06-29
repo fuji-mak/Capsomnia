@@ -107,9 +107,9 @@ npm run build:site
 Main files:
 
 - `docs/index.html`: page structure and Tailwind classes
-- `docs/styles.input.css`: theme variables, small custom CSS, and Tailwind input
+- `docs/styles.input.css`: site variables, small custom CSS, and Tailwind input
 - `docs/styles.css`: generated CSS
-- `docs/capsomnia.js`: language switcher, theme switcher, and copy behavior
+- `docs/capsomnia.js`: language switcher and copy behavior
 
 ## Troubleshooting
 

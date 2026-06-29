@@ -28,27 +28,6 @@
     "Liberation Mono", monospace;
 }
 
-[data-theme="light"] {
-  color-scheme: light;
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --surface-2: #f7f8f4;
-  --border: #e5e7df;
-  --border-strong: #d2d7c9;
-  --text: #11140f;
-  --text-dim: #50584a;
-  --text-faint: #747b6c;
-  --led: #9bea15;
-  --led-bright: #73cf00;
-  --led-deep: #5fae00;
-  --led-glow: rgba(124, 211, 0, 0.28);
-  --header-bg: rgba(255, 255, 255, 0.82);
-  --muted-tag-bg: #f3f5ef;
-  --code-text: #26351c;
-  --off-dot: #dde1d8;
-  --off-dot-border: #bdc5b6;
-}
-
 html {
   scroll-behavior: smooth;
 }
@@ -73,7 +52,6 @@ code {
   color: var(--led-deep);
 }
 
-.theme-btn[aria-pressed="true"],
 .lang-btn[aria-pressed="true"] {
   background: var(--led);
   color: #000;

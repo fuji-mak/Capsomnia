@@ -107,9 +107,9 @@ npm run build:site
 主に触るファイル:
 
 - `docs/index.html`: ページ構造と Tailwind クラス
-- `docs/styles.input.css`: テーマ変数、補助 CSS、Tailwind の入力
+- `docs/styles.input.css`: サイト変数、補助 CSS、Tailwind の入力
 - `docs/styles.css`: 生成された CSS
-- `docs/capsomnia.js`: 言語切替、テーマ切替、コピー処理
+- `docs/capsomnia.js`: 言語切替、コピー処理
 
 ## トラブルシュート
 

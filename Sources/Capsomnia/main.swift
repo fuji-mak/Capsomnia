@@ -1,10 +1,12 @@
 import AppKit
 import CoreGraphics
 import Foundation
+import IOKit
 
 private let appName = "Capsomnia"
 private let appLabel = "com.github.fuji-mak.capsomnia"
 private let helperPath = "/Library/PrivilegedHelperTools/capsomnia-pmset"
+private let displaySleepHelperMode = "display-sleep"
 private let logDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent("Library/Logs/Capsomnia")
 private let logPath = logDirectoryURL
@@ -67,6 +69,8 @@ private struct AppStrings {
     let language: String
     let openAtLogin: String
     let openAtLoginDesc: String
+    let displaySleepOnLidClose: String
+    let displaySleepOnLidCloseDesc: String
     let openCapsomnia: String
     let quit: String
     let settingsTitle: String
@@ -92,6 +96,8 @@ private struct AppStrings {
                 language: "Language",
                 openAtLogin: "Open at login",
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
+                displaySleepOnLidClose: "Turn display off when lid closes",
+                displaySleepOnLidCloseDesc: "When Caps Lock is on, keep work running but let the display sleep after closing the lid.",
                 openCapsomnia: "Open Capsomnia",
                 quit: "Quit",
                 settingsTitle: "Settings",
@@ -115,6 +121,8 @@ private struct AppStrings {
                 language: "言語",
                 openAtLogin: "ログイン時に起動",
                 openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
+                displaySleepOnLidClose: "蓋を閉じたら画面をオフ",
+                displaySleepOnLidCloseDesc: "Caps Lock ON中は作業を走らせたまま、蓋を閉じたら画面だけ暗くします。",
                 openCapsomnia: "Capsomniaを開く",
                 quit: "終了",
                 settingsTitle: "設定",
@@ -139,6 +147,7 @@ private enum PreferenceKey {
     static let showMenuBarIcon = "ShowMenuBarIcon"
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
+    static let displaySleepOnLidClose = "DisplaySleepOnLidClose"
     static let didCompleteInitialSetup = "DidCompleteInitialSetup"
 }
 
@@ -150,6 +159,7 @@ private enum Preferences {
             PreferenceKey.showMenuBarIcon: true,
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
+            PreferenceKey.displaySleepOnLidClose: true,
             PreferenceKey.didCompleteInitialSetup: false
         ])
     }
@@ -170,6 +180,11 @@ private enum Preferences {
     static var launchAtLogin: Bool {
         get { defaults.bool(forKey: PreferenceKey.launchAtLogin) }
         set { defaults.set(newValue, forKey: PreferenceKey.launchAtLogin) }
+    }
+
+    static var displaySleepOnLidClose: Bool {
+        get { defaults.bool(forKey: PreferenceKey.displaySleepOnLidClose) }
+        set { defaults.set(newValue, forKey: PreferenceKey.displaySleepOnLidClose) }
     }
 
     static var didCompleteInitialSetup: Bool {
@@ -223,8 +238,33 @@ private enum LaunchAgentManager {
     }
 }
 
+private enum ClamshellStateReader {
+    static func isClosed() -> Bool? {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPMrootDomain"))
+        guard service != 0 else { return nil }
+        defer { IOObjectRelease(service) }
+
+        guard let value = IORegistryEntryCreateCFProperty(
+            service,
+            "AppleClamshellState" as CFString,
+            kCFAllocatorDefault,
+            0
+        )?.takeRetainedValue() else {
+            return nil
+        }
+
+        if let boolValue = value as? Bool {
+            return boolValue
+        }
+
+        return (value as? NSNumber)?.boolValue
+    }
+}
+
 final class Capsomnia: NSObject, NSApplicationDelegate {
     private var lastAppliedState: Bool?
+    private var didRequestDisplaySleepForClosedLid = false
+    private var hasLoggedMissingClamshellState = false
     private var eventTap: CFMachPort?
     private var pollingTimer: Timer?
     private var signalSources: [DispatchSourceSignal] = []
@@ -362,6 +402,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 onLaunchAtLoginChange: { [weak self] enabled in
                     self?.setLaunchAtLogin(enabled)
                 },
+                onDisplaySleepOnLidCloseChange: { [weak self] enabled in
+                    self?.setDisplaySleepOnLidClose(enabled)
+                },
                 onFinishInitialSetup: {
                     Preferences.didCompleteInitialSetup = true
                 }
@@ -400,6 +443,18 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             rebuildStatusMenu()
             log("preference launch_at_login_error=\(error.localizedDescription)")
         }
+    }
+
+    private func setDisplaySleepOnLidClose(_ enabled: Bool) {
+        Preferences.displaySleepOnLidClose = enabled
+        if enabled {
+            let capsLockOn = lastAppliedState
+                ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+            evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: "preference")
+        } else {
+            didRequestDisplaySleepForClosedLid = false
+        }
+        log("preference display_sleep_on_lid_close=\(enabled ? "on" : "off")")
     }
 
     private func installEventTapOrFallback() {
@@ -454,13 +509,50 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func apply(capsLockOn: Bool, reason: String) {
-        guard lastAppliedState != capsLockOn else { return }
-        lastAppliedState = capsLockOn
+        guard lastAppliedState != capsLockOn else {
+            evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
+            return
+        }
 
+        lastAppliedState = capsLockOn
         let mode = capsLockOn ? "on" : "off"
         let result = runHelper(mode)
         updateStatus(capsLockOn: capsLockOn)
         log("\(reason) capslock=\(mode) helper_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)")
+        evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
+    }
+
+    private func evaluateDisplaySleepForClosedLid(capsLockOn: Bool, reason: String) {
+        guard Preferences.displaySleepOnLidClose else {
+            didRequestDisplaySleepForClosedLid = false
+            return
+        }
+
+        guard capsLockOn else {
+            didRequestDisplaySleepForClosedLid = false
+            return
+        }
+
+        guard let clamshellClosed = ClamshellStateReader.isClosed() else {
+            didRequestDisplaySleepForClosedLid = false
+            if !hasLoggedMissingClamshellState {
+                log("\(reason) clamshell_state_unavailable")
+                hasLoggedMissingClamshellState = true
+            }
+            return
+        }
+        hasLoggedMissingClamshellState = false
+
+        guard clamshellClosed else {
+            didRequestDisplaySleepForClosedLid = false
+            return
+        }
+
+        guard !didRequestDisplaySleepForClosedLid else { return }
+        didRequestDisplaySleepForClosedLid = true
+
+        let result = runHelper(displaySleepHelperMode)
+        log("\(reason) clamshell=closed display_sleep_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)")
     }
 
     private func updateStatus(capsLockOn: Bool) {
@@ -561,6 +653,12 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
     private var openAtLoginRow = NSView()
     private var openAtLoginDivider = brandDivider()
 
+    private let displaySleepOnLidCloseTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
+    private let displaySleepOnLidCloseDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let displaySleepOnLidCloseToggle = LEDToggle(isOn: Preferences.displaySleepOnLidClose)
+    private var displaySleepOnLidCloseRow = NSView()
+    private var displaySleepOnLidCloseDivider = brandDivider()
+
     private let languageTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
     private let languageSegment = SegmentedPill(
         items: AppLanguage.allCases.map { (title: $0.displayName, value: $0.rawValue) },
@@ -573,6 +671,7 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
     private let onShowMenuBarIconChange: (Bool) -> Void
     private let onLanguageChange: (AppLanguage) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
+    private let onDisplaySleepOnLidCloseChange: (Bool) -> Void
     private let onFinishInitialSetup: () -> Void
     private var isInitialSetup = false
 
@@ -580,11 +679,13 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
         onShowMenuBarIconChange: @escaping (Bool) -> Void,
         onLanguageChange: @escaping (AppLanguage) -> Void,
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
+        onDisplaySleepOnLidCloseChange: @escaping (Bool) -> Void,
         onFinishInitialSetup: @escaping () -> Void
     ) {
         self.onShowMenuBarIconChange = onShowMenuBarIconChange
         self.onLanguageChange = onLanguageChange
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
+        self.onDisplaySleepOnLidCloseChange = onDisplaySleepOnLidCloseChange
         self.onFinishInitialSetup = onFinishInitialSetup
 
         let window = NSWindow(
@@ -629,6 +730,8 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
 
         menuBarTitle.stringValue = strings.showMenuBarIcon
         menuBarDesc.stringValue = strings.showMenuBarIconDesc
+        displaySleepOnLidCloseTitle.stringValue = strings.displaySleepOnLidClose
+        displaySleepOnLidCloseDesc.stringValue = strings.displaySleepOnLidCloseDesc
         openAtLoginTitle.stringValue = strings.openAtLogin
         openAtLoginDesc.stringValue = strings.openAtLoginDesc
         languageTitle.stringValue = strings.language
@@ -637,6 +740,8 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
 
         explainerCard.isHidden = !isInitialSetup
+        displaySleepOnLidCloseRow.isHidden = isInitialSetup
+        displaySleepOnLidCloseDivider.isHidden = isInitialSetup
         openAtLoginRow.isHidden = isInitialSetup
         openAtLoginDivider.isHidden = isInitialSetup
         noteLabel.isHidden = !isInitialSetup
@@ -749,19 +854,37 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
             self?.onLaunchAtLoginChange(enabled)
             self?.updateValues()
         }
+        displaySleepOnLidCloseToggle.onToggle = { [weak self] enabled in
+            self?.onDisplaySleepOnLidCloseChange(enabled)
+            self?.updateValues()
+        }
         languageSegment.onSelect = { [weak self] rawValue in
             guard let language = AppLanguage(rawValue: rawValue) else { return }
             self?.onLanguageChange(language)
         }
 
         let menuBarRow = settingRow(title: menuBarTitle, desc: menuBarDesc, accessory: menuBarToggle)
+        displaySleepOnLidCloseRow = settingRow(
+            title: displaySleepOnLidCloseTitle,
+            desc: displaySleepOnLidCloseDesc,
+            accessory: displaySleepOnLidCloseToggle
+        )
         openAtLoginRow = settingRow(title: openAtLoginTitle, desc: openAtLoginDesc, accessory: openAtLoginToggle)
         let languageRow = settingRow(title: languageTitle, desc: nil, accessory: languageSegment)
 
-        let divider1 = openAtLoginDivider
-        let divider2 = brandDivider()
+        let divider1 = displaySleepOnLidCloseDivider
+        let divider2 = openAtLoginDivider
+        let divider3 = brandDivider()
 
-        let inner = NSStackView(views: [menuBarRow, divider1, openAtLoginRow, divider2, languageRow])
+        let inner = NSStackView(views: [
+            menuBarRow,
+            divider1,
+            displaySleepOnLidCloseRow,
+            divider2,
+            openAtLoginRow,
+            divider3,
+            languageRow
+        ])
         inner.orientation = .vertical
         inner.alignment = .leading
         inner.spacing = 14
@@ -775,7 +898,7 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
             inner.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
             inner.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
         ])
-        for row in [menuBarRow, divider1, openAtLoginRow, divider2, languageRow] {
+        for row in [menuBarRow, divider1, displaySleepOnLidCloseRow, divider2, openAtLoginRow, divider3, languageRow] {
             row.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
         }
         return card
@@ -835,6 +958,7 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
 
     private func updateValues() {
         menuBarToggle.setOn(Preferences.showMenuBarIcon)
+        displaySleepOnLidCloseToggle.setOn(Preferences.displaySleepOnLidClose)
         openAtLoginToggle.setOn(Preferences.launchAtLogin)
         languageSegment.setSelected(Preferences.language.rawValue)
     }

@@ -40,6 +40,7 @@ The sudoers rule only permits the current user to run:
 ```text
 /Library/PrivilegedHelperTools/capsomnia-pmset on
 /Library/PrivilegedHelperTools/capsomnia-pmset off
+/Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
 ```
 
-The helper only accepts `on` and `off`, and only calls `/usr/bin/pmset -a disablesleep`.
+The helper only accepts `on`, `off`, and `display-sleep`. It only calls `/usr/bin/pmset -a disablesleep` or `/usr/bin/pmset displaysleepnow`.

@@ -6,7 +6,7 @@
 
 [日本語 README](README.ja.md)
 
-Current version: `0.2.0`
+Current version: `0.3.0`
 
 Capsomnia is a tiny macOS menu bar app that uses Caps Lock as a physical keep-awake switch.
 
@@ -16,10 +16,11 @@ When Caps Lock is on, Capsomnia disables system sleep with `pmset`. When Caps Lo
 
 - Caps Lock on: runs `pmset -a disablesleep 1`
 - Caps Lock off: runs `pmset -a disablesleep 0`
+- Lid closed while Caps Lock is on: runs `pmset displaysleepnow` so the display can sleep while work continues
 - Yellow-green menu bar dot: sleep is disabled
 - Gray menu bar dot: normal sleep behavior
 - First launch settings: choose whether to show the menu bar dot and choose English or Japanese
-- Settings window: change the menu bar dot, language, and opening at login
+- Settings window: change the menu bar dot, display sleep on lid close, language, and opening at login
 - Quitting the app restores normal sleep behavior
 
 Capsomnia is useful when long-running local jobs, AI coding agents, builds, downloads, or scripts should keep running while you step away.
@@ -62,7 +63,7 @@ The installer:
 5. Installs and starts a LaunchAgent.
 
 The app starts automatically at login after installation.
-On first launch, Capsomnia opens a small initial settings window where you can choose whether to show the menu bar dot and choose English or Japanese. Open Capsomnia again to change menu bar visibility, language, or whether Capsomnia opens at login.
+On first launch, Capsomnia opens a small initial settings window where you can choose whether to show the menu bar dot and choose English or Japanese. Open Capsomnia again to change menu bar visibility, display sleep on lid close, language, or whether Capsomnia opens at login.
 
 ## Uninstall
 
@@ -81,13 +82,15 @@ The app can only invoke:
 ```sh
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
 ```
 
-The sudoers rule is limited to those two exact commands. The helper only accepts `on` and `off`, and only calls:
+The sudoers rule is limited to those three exact commands. The helper only accepts `on`, `off`, and `display-sleep`, and only calls:
 
 ```sh
 /usr/bin/pmset -a disablesleep 1
 /usr/bin/pmset -a disablesleep 0
+/usr/bin/pmset displaysleepnow
 ```
 
 ## Logs

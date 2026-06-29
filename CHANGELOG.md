@@ -2,6 +2,15 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 0.3.0 - 2026-06-30
+
+Closed-lid display sleep setting.
+
+- Added optional display sleep when the MacBook lid closes while Caps Lock is on.
+- Added a settings toggle for closed-lid display sleep, enabled by default.
+- Expanded the privileged helper and sudoers rule to allow only the new `display-sleep` helper command in addition to `on` and `off`.
+- Updated English and Japanese documentation.
+
 ## 0.2.0 - 2026-06-29
 
 App bundle release.

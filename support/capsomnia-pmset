@@ -8,8 +8,11 @@ case "${1:-}" in
   off)
     /usr/bin/pmset -a disablesleep 0
     ;;
+  display-sleep)
+    /usr/bin/pmset displaysleepnow
+    ;;
   *)
-    printf 'usage: %s on|off\n' "$0" >&2
+    printf 'usage: %s on|off|display-sleep\n' "$0" >&2
     exit 64
     ;;
 esac

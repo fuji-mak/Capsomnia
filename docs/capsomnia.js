@@ -206,7 +206,7 @@
 
     var themeColor = document.querySelector('meta[name="theme-color"]');
     if (themeColor) {
-      themeColor.setAttribute("content", currentTheme === "light" ? "#fbfcf6" : "#000000");
+      themeColor.setAttribute("content", currentTheme === "light" ? "#ffffff" : "#000000");
     }
 
     document.querySelectorAll("[data-theme-option]").forEach(function (btn) {

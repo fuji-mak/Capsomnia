@@ -4,6 +4,7 @@
    ============================================================ */
 
 :root {
+  color-scheme: dark;
   --bg: #000000;
   --surface: #0a0a0a;
   --surface-2: #111111;
@@ -16,6 +17,11 @@
   --led-bright: #d8ff63;
   --led-deep: #92f21d;
   --led-glow: rgba(184, 255, 31, 0.55);
+  --header-bg: rgba(0, 0, 0, 0.72);
+  --muted-tag-bg: #1a1a1a;
+  --code-text: #e6f0d8;
+  --off-dot: #2c2c2c;
+  --off-dot-border: #3a3a3a;
   --radius: 14px;
   --radius-lg: 20px;
   --maxw: 1080px;
@@ -23,6 +29,27 @@
     Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #fbfcf6;
+  --surface: #ffffff;
+  --surface-2: #f1f5e8;
+  --border: #dfe7d2;
+  --border-strong: #c9d7b7;
+  --text: #12170e;
+  --text-dim: #4d5b41;
+  --text-faint: #748064;
+  --led: #9bea15;
+  --led-bright: #73cf00;
+  --led-deep: #5fae00;
+  --led-glow: rgba(124, 211, 0, 0.28);
+  --header-bg: rgba(251, 252, 246, 0.78);
+  --muted-tag-bg: #eef3e5;
+  --code-text: #26351c;
+  --off-dot: #d7dfcf;
+  --off-dot-border: #b7c4ad;
 }
 
 * {
@@ -42,6 +69,7 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  transition: background 0.18s ease, color 0.18s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -106,7 +134,7 @@ h3 {
   justify-content: space-between;
   gap: 16px;
   padding: 14px clamp(16px, 5vw, 40px);
-  background: rgba(0, 0, 0, 0.72);
+  background: var(--header-bg);
   backdrop-filter: saturate(140%) blur(12px);
   -webkit-backdrop-filter: saturate(140%) blur(12px);
   border-bottom: 1px solid var(--border);
@@ -131,6 +159,13 @@ h3 {
   border-radius: 7px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 .site-nav {
   display: flex;
   align-items: center;
@@ -148,7 +183,8 @@ h3 {
   text-decoration: none;
 }
 
-.lang-switch {
+.lang-switch,
+.theme-switch {
   display: inline-flex;
   flex: none;
   gap: 2px;
@@ -158,7 +194,8 @@ h3 {
   border-radius: 999px;
 }
 
-.lang-btn {
+.lang-btn,
+.theme-btn {
   min-width: 38px;
   border: 0;
   border-radius: 999px;
@@ -169,11 +206,17 @@ h3 {
   cursor: pointer;
 }
 
-.lang-btn:hover {
+.theme-btn {
+  min-width: 52px;
+}
+
+.lang-btn:hover,
+.theme-btn:hover {
   color: var(--text);
 }
 
-.lang-btn[aria-pressed="true"] {
+.lang-btn[aria-pressed="true"],
+.theme-btn[aria-pressed="true"] {
   background: var(--led);
   color: #000;
 }
@@ -373,8 +416,8 @@ h3 {
 }
 
 .dot-off {
-  background: #2c2c2c;
-  border: 1px solid #3a3a3a;
+  background: var(--off-dot);
+  border: 1px solid var(--off-dot-border);
 }
 
 .strip-title {
@@ -485,7 +528,7 @@ h3 {
 }
 
 .tag-muted {
-  background: #1a1a1a;
+  background: var(--muted-tag-bg);
   color: var(--text-dim);
   border: 1px solid var(--border-strong);
 }
@@ -520,7 +563,7 @@ h3 {
   font-family: var(--mono);
   font-size: 0.92rem;
   line-height: 1.7;
-  color: #e6f0d8;
+  color: var(--code-text);
 }
 
 .copy-btn {
@@ -737,7 +780,13 @@ h3 {
   }
 
   .site-header {
+    flex-wrap: wrap;
     gap: 10px;
+  }
+
+  .header-actions {
+    flex: 1 1 auto;
+    gap: 8px;
   }
 
   .site-nav {
@@ -761,9 +810,14 @@ h3 {
     padding: 7px 13px;
   }
 
-  .lang-btn {
+  .lang-btn,
+  .theme-btn {
     min-width: 34px;
     padding: 5px 8px;
+  }
+
+  .theme-btn {
+    min-width: 44px;
   }
 
   .strip {

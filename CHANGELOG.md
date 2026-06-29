@@ -2,6 +2,13 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 0.1.3 - 2026-06-29
+
+Documentation and asset update.
+
+- Added the initial Capsomnia LED icon asset.
+- Displayed the icon in the English and Japanese README files.
+
 ## 0.1.2 - 2026-06-28
 
 Documentation cleanup.

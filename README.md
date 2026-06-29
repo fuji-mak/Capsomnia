@@ -1,8 +1,12 @@
 # Capsomnia
 
+<p align="center">
+  <img src="resources/CapsomniaIcon.svg" alt="Capsomnia icon" width="128" height="128">
+</p>
+
 [日本語 README](README.ja.md)
 
-Current version: `0.1.2`
+Current version: `0.1.3`
 
 Capsomnia is a tiny macOS menu bar app that uses Caps Lock as a physical keep-awake switch.
 

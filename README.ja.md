@@ -1,8 +1,12 @@
 # Capsomnia
 
+<p align="center">
+  <img src="resources/CapsomniaIcon.svg" alt="Capsomnia icon" width="128" height="128">
+</p>
+
 [English README](README.md)
 
-現在のバージョン: `0.1.2`
+現在のバージョン: `0.1.3`
 
 Capsomnia は、Caps Lock を「スリープ抑止スイッチ」として使うための小さな macOS メニューバーアプリです。
 

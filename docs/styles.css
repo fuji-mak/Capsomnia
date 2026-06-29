@@ -148,6 +148,36 @@ h3 {
   text-decoration: none;
 }
 
+.lang-switch {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+}
+
+.lang-btn {
+  min-width: 38px;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--text-dim);
+  font: 700 0.8rem var(--font);
+  cursor: pointer;
+}
+
+.lang-btn:hover {
+  color: var(--text);
+}
+
+.lang-btn[aria-pressed="true"] {
+  background: var(--led);
+  color: #000;
+}
+
 .nav-cta {
   color: #000 !important;
   background: var(--led);
@@ -706,12 +736,34 @@ h3 {
     font-size: 16px;
   }
 
+  .site-header {
+    gap: 10px;
+  }
+
   .site-nav {
-    gap: 14px;
+    gap: 10px;
   }
 
   .site-nav a:not(.nav-cta) {
     display: none;
+  }
+
+  .brand {
+    font-size: 1rem;
+  }
+
+  .brand-led {
+    width: 22px;
+    height: 22px;
+  }
+
+  .nav-cta {
+    padding: 7px 13px;
+  }
+
+  .lang-btn {
+    min-width: 34px;
+    padding: 5px 8px;
   }
 
   .strip {

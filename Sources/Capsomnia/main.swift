@@ -17,6 +17,32 @@ private let brandLEDColor = NSColor(
     alpha: 1.0
 )
 
+/// Colors lifted straight from the landing page (docs/styles.css :root).
+private enum Brand {
+    static func srgb(_ hex: UInt32, alpha: CGFloat = 1.0) -> NSColor {
+        NSColor(
+            srgbRed: CGFloat((hex >> 16) & 0xFF) / 255.0,
+            green: CGFloat((hex >> 8) & 0xFF) / 255.0,
+            blue: CGFloat(hex & 0xFF) / 255.0,
+            alpha: alpha
+        )
+    }
+
+    static let bg = srgb(0x000000)
+    static let surface = srgb(0x0A0A0A)
+    static let surface2 = srgb(0x111111)
+    static let border = srgb(0x1F1F1F)
+    static let borderStrong = srgb(0x2A2A2A)
+    static let text = srgb(0xF2F4EC)
+    static let textDim = srgb(0xA7AD9C)
+    static let textFaint = srgb(0x6F7466)
+    static let led = brandLEDColor
+    static let ledBright = srgb(0xD8FF63)
+    static let ledDeep = srgb(0x92F21D)
+    static let offDot = srgb(0x2C2C2C)
+    static let offDotBorder = srgb(0x3A3A3A)
+}
+
 private enum AppLanguage: String, CaseIterable {
     case english = "en"
     case japanese = "ja"
@@ -37,14 +63,24 @@ private enum AppLanguage: String, CaseIterable {
 
 private struct AppStrings {
     let showMenuBarIcon: String
+    let showMenuBarIconDesc: String
     let language: String
     let openAtLogin: String
+    let openAtLoginDesc: String
     let openCapsomnia: String
     let quit: String
     let settingsTitle: String
     let initialSettingsTitle: String
     let initialSettingsNote: String
+    let tagline: String
+    let welcomeTitle: String
+    let explainerOnTitle: String
+    let explainerOnDesc: String
+    let explainerOffTitle: String
+    let explainerOffDesc: String
+    let preferencesHeading: String
     let done: String
+    let getStarted: String
     let tooltipOn: String
     let tooltipOff: String
 
@@ -53,28 +89,48 @@ private struct AppStrings {
         case .english:
             AppStrings(
                 showMenuBarIcon: "Show menu bar icon",
+                showMenuBarIconDesc: "Display the LED status dot in the menu bar.",
                 language: "Language",
                 openAtLogin: "Open at login",
+                openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
                 openCapsomnia: "Open Capsomnia",
                 quit: "Quit",
-                settingsTitle: "Capsomnia Settings",
-                initialSettingsTitle: "Initial Settings",
-                initialSettingsNote: "Open Capsomnia again to change this later.",
+                settingsTitle: "Settings",
+                initialSettingsTitle: "Welcome to Capsomnia",
+                initialSettingsNote: "Open Capsomnia again any time to change these.",
+                tagline: "Caps Lock becomes a physical keep-awake switch.",
+                welcomeTitle: "Welcome to Capsomnia",
+                explainerOnTitle: "Caps Lock on",
+                explainerOnDesc: "System sleep is disabled — work keeps running, lid open or closed.",
+                explainerOffTitle: "Caps Lock off",
+                explainerOffDesc: "Normal sleep behavior resumes.",
+                preferencesHeading: "Preferences",
                 done: "Done",
+                getStarted: "Get started",
                 tooltipOn: "Caps Lock ON: processes stay awake",
                 tooltipOff: "Caps Lock OFF: normal sleep"
             )
         case .japanese:
             AppStrings(
                 showMenuBarIcon: "メニューバーに表示",
+                showMenuBarIconDesc: "メニューバーにLEDステータスを表示します。",
                 language: "言語",
                 openAtLogin: "ログイン時に起動",
+                openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
                 openCapsomnia: "Capsomniaを開く",
                 quit: "終了",
-                settingsTitle: "Capsomnia設定",
-                initialSettingsTitle: "初期設定",
-                initialSettingsNote: "あとから変更する場合は Capsomnia をもう一度開きます。",
+                settingsTitle: "設定",
+                initialSettingsTitle: "Capsomniaへようこそ",
+                initialSettingsNote: "あとからCapsomniaを開けばいつでも変更できます。",
+                tagline: "Caps Lockが、スリープを止める物理スイッチになる。",
+                welcomeTitle: "Capsomniaへようこそ",
+                explainerOnTitle: "Caps Lock ON",
+                explainerOnDesc: "システムスリープを無効化。蓋を閉じても作業が走り続けます。",
+                explainerOffTitle: "Caps Lock OFF",
+                explainerOffDesc: "通常のスリープ動作に戻ります。",
+                preferencesHeading: "環境設定",
                 done: "完了",
+                getStarted: "はじめる",
                 tooltipOn: "Caps Lock ON: スリープ抑止中",
                 tooltipOff: "Caps Lock OFF: 通常のスリープ動作"
             )
@@ -485,13 +541,39 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 }
 
 private final class SettingsWindowController: NSWindowController, NSWindowDelegate {
-    private let showMenuBarIconButton: NSButton
-    private let languageLabel: NSTextField
-    private let languagePopup: NSPopUpButton
-    private let openAtLoginButton: NSButton
-    private let titleLabel: NSTextField
-    private let noteLabel: NSTextField
-    private let doneButton: NSButton
+    private static let contentWidth: CGFloat = 400
+
+    private let headerIcon = NSImageView()
+    private let titleLabel = brandLabel(size: 21, weight: .bold, color: Brand.text)
+    private let taglineLabel = brandLabel(size: 13, color: Brand.textDim, wraps: true)
+
+    private let explainerCard = brandCard()
+    private let explainerOnTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
+    private let explainerOnDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let explainerOffTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
+    private let explainerOffDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+
+    private let preferencesHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
+
+    private let menuBarTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
+    private let menuBarDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let menuBarToggle = LEDToggle(isOn: Preferences.showMenuBarIcon)
+
+    private let openAtLoginTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
+    private let openAtLoginDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let openAtLoginToggle = LEDToggle(isOn: Preferences.launchAtLogin)
+    private var openAtLoginRow = NSView()
+    private var openAtLoginDivider = brandDivider()
+
+    private let languageTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
+    private let languageSegment = SegmentedPill(
+        items: AppLanguage.allCases.map { (title: $0.displayName, value: $0.rawValue) },
+        selected: Preferences.language.rawValue
+    )
+
+    private let noteLabel = brandLabel(size: 12, color: Brand.textFaint, wraps: true)
+    private let doneButton = LEDButton()
+
     private let onShowMenuBarIconChange: (Bool) -> Void
     private let onLanguageChange: (AppLanguage) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
@@ -504,25 +586,25 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
         onFinishInitialSetup: @escaping () -> Void
     ) {
-        self.showMenuBarIconButton = NSButton(checkboxWithTitle: "", target: nil, action: nil)
-        self.languageLabel = NSTextField(labelWithString: "")
-        self.languagePopup = NSPopUpButton(frame: .zero, pullsDown: false)
-        self.openAtLoginButton = NSButton(checkboxWithTitle: "", target: nil, action: nil)
-        self.titleLabel = NSTextField(labelWithString: "")
-        self.noteLabel = NSTextField(labelWithString: "")
-        self.doneButton = NSButton(title: "", target: nil, action: nil)
         self.onShowMenuBarIconChange = onShowMenuBarIconChange
         self.onLanguageChange = onLanguageChange
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
         self.onFinishInitialSetup = onFinishInitialSetup
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 220),
-            styleMask: [.titled, .closable],
+            contentRect: NSRect(x: 0, y: 0, width: Self.contentWidth, height: 480),
+            styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.isReleasedWhenClosed = false
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isMovableByWindowBackground = true
+        window.backgroundColor = Brand.bg
+        window.appearance = NSAppearance(named: .darkAqua)
+        window.standardWindowButton(.zoomButton)?.isHidden = true
+        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
         window.center()
 
         super.init(window: window)
@@ -538,24 +620,39 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
 
     func reloadText() {
         let strings = AppStrings.current()
-        let title = isInitialSetup ? strings.initialSettingsTitle : strings.settingsTitle
 
-        window?.title = title
-        titleLabel.stringValue = title
+        window?.title = isInitialSetup ? strings.welcomeTitle : strings.settingsTitle
+        titleLabel.stringValue = isInitialSetup ? strings.welcomeTitle : "Capsomnia"
+        taglineLabel.stringValue = strings.tagline
+
+        explainerOnTitle.stringValue = strings.explainerOnTitle
+        explainerOnDesc.stringValue = strings.explainerOnDesc
+        explainerOffTitle.stringValue = strings.explainerOffTitle
+        explainerOffDesc.stringValue = strings.explainerOffDesc
+
+        preferencesHeading.stringValue = strings.preferencesHeading.uppercased()
+
+        menuBarTitle.stringValue = strings.showMenuBarIcon
+        menuBarDesc.stringValue = strings.showMenuBarIconDesc
+        openAtLoginTitle.stringValue = strings.openAtLogin
+        openAtLoginDesc.stringValue = strings.openAtLoginDesc
+        languageTitle.stringValue = strings.language
+
         noteLabel.stringValue = strings.initialSettingsNote
+        doneButton.title = isInitialSetup ? strings.getStarted : strings.done
+
+        explainerCard.isHidden = !isInitialSetup
+        openAtLoginRow.isHidden = isInitialSetup
+        openAtLoginDivider.isHidden = isInitialSetup
         noteLabel.isHidden = !isInitialSetup
-        showMenuBarIconButton.title = strings.showMenuBarIcon
-        languageLabel.stringValue = strings.language
-        openAtLoginButton.title = strings.openAtLogin
-        openAtLoginButton.isHidden = isInitialSetup
-        doneButton.title = strings.done
+
         updateValues()
     }
 
     func show(initialSetup: Bool) {
         isInitialSetup = initialSetup
         reloadText()
-        window?.setContentSize(NSSize(width: 360, height: initialSetup ? 190 : 220))
+        resizeToFit()
         window?.center()
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -565,108 +662,510 @@ private final class SettingsWindowController: NSWindowController, NSWindowDelega
         finishInitialSetupIfNeeded()
     }
 
+    private func resizeToFit() {
+        guard let contentView = window?.contentView else { return }
+        contentView.layoutSubtreeIfNeeded()
+        let height = contentView.fittingSize.height
+        window?.setContentSize(NSSize(width: Self.contentWidth, height: height))
+    }
+
     private func buildContent() {
         let contentView = NSView()
-        contentView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.wantsLayer = true
+        contentView.layer?.backgroundColor = Brand.bg.cgColor
 
-        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        headerIcon.image = BrandIcon.make(diameter: 60)
+        headerIcon.translatesAutoresizingMaskIntoConstraints = false
+        headerIcon.setContentHuggingPriority(.required, for: .horizontal)
 
-        noteLabel.textColor = .secondaryLabelColor
-        noteLabel.font = .systemFont(ofSize: 12)
+        titleLabel.alignment = .center
+        taglineLabel.alignment = .center
+        taglineLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        showMenuBarIconButton.target = self
-        showMenuBarIconButton.action = #selector(showMenuBarIconChanged)
+        let header = NSStackView(views: [headerIcon, titleLabel, taglineLabel])
+        header.orientation = .vertical
+        header.alignment = .centerX
+        header.spacing = 10
+        header.setCustomSpacing(14, after: headerIcon)
+        header.setCustomSpacing(6, after: titleLabel)
 
-        openAtLoginButton.target = self
-        openAtLoginButton.action = #selector(openAtLoginChanged)
+        buildExplainerCard()
 
-        languagePopup.target = self
-        languagePopup.action = #selector(languageChanged)
-        for language in AppLanguage.allCases {
-            languagePopup.addItem(withTitle: language.displayName)
-            languagePopup.lastItem?.representedObject = language.rawValue
-        }
+        let preferencesCard = buildPreferencesCard()
 
-        let languageRow = NSStackView(views: [languageLabel, languagePopup])
-        languageRow.orientation = .horizontal
-        languageRow.alignment = .centerY
-        languageRow.spacing = 12
-
-        doneButton.target = self
-        doneButton.action = #selector(done)
-        doneButton.bezelStyle = .rounded
-
-        let buttonRow = NSStackView(views: [NSView(), doneButton])
-        buttonRow.orientation = .horizontal
-        buttonRow.alignment = .centerY
-        buttonRow.distribution = .fill
+        doneButton.onClick = { [weak self] in self?.done() }
 
         let stack = NSStackView(views: [
-            titleLabel,
+            header,
+            explainerCard,
+            preferencesHeading,
+            preferencesCard,
             noteLabel,
-            showMenuBarIconButton,
-            languageRow,
-            openAtLoginButton,
-            buttonRow
+            doneButton
         ])
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 12
+        stack.spacing = 16
+        stack.setCustomSpacing(20, after: header)
+        stack.setCustomSpacing(8, after: preferencesHeading)
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         contentView.addSubview(stack)
         window?.contentView = contentView
 
+        // Full-width children inside the leading-aligned stack.
+        for child in [header, explainerCard, preferencesCard, noteLabel, doneButton] {
+            child.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        }
+
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 18),
-            stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -18),
-            languageRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            languagePopup.widthAnchor.constraint(equalToConstant: 150),
-            buttonRow.widthAnchor.constraint(equalTo: stack.widthAnchor)
+            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 28),
+            stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -28),
+            stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 28),
+            stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
         ])
+
         reloadText()
     }
 
+    private func buildExplainerCard() {
+        let onRow = explainerRow(dot: brandStatusDot(on: true), title: explainerOnTitle, desc: explainerOnDesc)
+        let offRow = explainerRow(dot: brandStatusDot(on: false), title: explainerOffTitle, desc: explainerOffDesc)
+
+        let inner = NSStackView(views: [onRow, offRow])
+        inner.orientation = .vertical
+        inner.alignment = .leading
+        inner.spacing = 14
+        inner.translatesAutoresizingMaskIntoConstraints = false
+
+        explainerCard.addSubview(inner)
+        NSLayoutConstraint.activate([
+            inner.leadingAnchor.constraint(equalTo: explainerCard.leadingAnchor, constant: 16),
+            inner.trailingAnchor.constraint(equalTo: explainerCard.trailingAnchor, constant: -16),
+            inner.topAnchor.constraint(equalTo: explainerCard.topAnchor, constant: 16),
+            inner.bottomAnchor.constraint(equalTo: explainerCard.bottomAnchor, constant: -16),
+            onRow.widthAnchor.constraint(equalTo: inner.widthAnchor),
+            offRow.widthAnchor.constraint(equalTo: inner.widthAnchor)
+        ])
+    }
+
+    private func buildPreferencesCard() -> NSView {
+        let card = brandCard()
+
+        menuBarToggle.onToggle = { [weak self] enabled in self?.onShowMenuBarIconChange(enabled) }
+        openAtLoginToggle.onToggle = { [weak self] enabled in
+            self?.onLaunchAtLoginChange(enabled)
+            self?.updateValues()
+        }
+        languageSegment.onSelect = { [weak self] rawValue in
+            guard let language = AppLanguage(rawValue: rawValue) else { return }
+            self?.onLanguageChange(language)
+        }
+
+        let menuBarRow = settingRow(title: menuBarTitle, desc: menuBarDesc, accessory: menuBarToggle)
+        openAtLoginRow = settingRow(title: openAtLoginTitle, desc: openAtLoginDesc, accessory: openAtLoginToggle)
+        let languageRow = settingRow(title: languageTitle, desc: nil, accessory: languageSegment)
+
+        let divider1 = openAtLoginDivider
+        let divider2 = brandDivider()
+
+        let inner = NSStackView(views: [menuBarRow, divider1, openAtLoginRow, divider2, languageRow])
+        inner.orientation = .vertical
+        inner.alignment = .leading
+        inner.spacing = 14
+        inner.setCustomSpacing(14, after: menuBarRow)
+        inner.translatesAutoresizingMaskIntoConstraints = false
+
+        card.addSubview(inner)
+        NSLayoutConstraint.activate([
+            inner.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            inner.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+            inner.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
+            inner.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
+        ])
+        for row in [menuBarRow, divider1, openAtLoginRow, divider2, languageRow] {
+            row.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
+        }
+        return card
+    }
+
+    /// A "title + optional description / accessory on the right" row.
+    private func settingRow(title: NSTextField, desc: NSTextField?, accessory: NSView) -> NSView {
+        let texts: NSView
+        if let desc {
+            let column = NSStackView(views: [title, desc])
+            column.orientation = .vertical
+            column.alignment = .leading
+            column.spacing = 2
+            texts = column
+        } else {
+            texts = title
+        }
+        texts.translatesAutoresizingMaskIntoConstraints = false
+        texts.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+        accessory.setContentHuggingPriority(.required, for: .horizontal)
+        accessory.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let row = NSStackView(views: [texts, accessory])
+        row.orientation = .horizontal
+        row.alignment = .centerY
+        row.distribution = .fill
+        row.spacing = 12
+        row.translatesAutoresizingMaskIntoConstraints = false
+        return row
+    }
+
+    private func explainerRow(dot: NSView, title: NSTextField, desc: NSTextField) -> NSView {
+        let column = NSStackView(views: [title, desc])
+        column.orientation = .vertical
+        column.alignment = .leading
+        column.spacing = 2
+        column.translatesAutoresizingMaskIntoConstraints = false
+
+        let dotHolder = NSView()
+        dotHolder.translatesAutoresizingMaskIntoConstraints = false
+        dotHolder.addSubview(dot)
+        NSLayoutConstraint.activate([
+            dotHolder.widthAnchor.constraint(equalToConstant: 12),
+            dot.topAnchor.constraint(equalTo: dotHolder.topAnchor, constant: 4),
+            dot.leadingAnchor.constraint(equalTo: dotHolder.leadingAnchor),
+            dot.bottomAnchor.constraint(lessThanOrEqualTo: dotHolder.bottomAnchor)
+        ])
+
+        let row = NSStackView(views: [dotHolder, column])
+        row.orientation = .horizontal
+        row.alignment = .top
+        row.spacing = 12
+        row.translatesAutoresizingMaskIntoConstraints = false
+        return row
+    }
+
     private func updateValues() {
-        showMenuBarIconButton.state = Preferences.showMenuBarIcon ? .on : .off
-        languagePopup.selectItem(withTitle: Preferences.language.displayName)
-        openAtLoginButton.state = Preferences.launchAtLogin ? .on : .off
+        menuBarToggle.setOn(Preferences.showMenuBarIcon)
+        openAtLoginToggle.setOn(Preferences.launchAtLogin)
+        languageSegment.setSelected(Preferences.language.rawValue)
     }
 
     private func finishInitialSetupIfNeeded() {
         guard isInitialSetup else { return }
         isInitialSetup = false
-        onShowMenuBarIconChange(showMenuBarIconButton.state == .on)
-        if let rawValue = languagePopup.selectedItem?.representedObject as? String,
-           let language = AppLanguage(rawValue: rawValue) {
+        onShowMenuBarIconChange(menuBarToggle.isOn)
+        if let language = AppLanguage(rawValue: languageSegment.selectedValue) {
             onLanguageChange(language)
         }
         onFinishInitialSetup()
     }
 
-    @objc private func showMenuBarIconChanged(_ sender: NSButton) {
-        onShowMenuBarIconChange(sender.state == .on)
-    }
-
-    @objc private func languageChanged(_ sender: NSPopUpButton) {
-        guard let rawValue = sender.selectedItem?.representedObject as? String,
-              let language = AppLanguage(rawValue: rawValue) else {
-            return
-        }
-
-        onLanguageChange(language)
-    }
-
-    @objc private func openAtLoginChanged(_ sender: NSButton) {
-        onLaunchAtLoginChange(sender.state == .on)
-        updateValues()
-    }
-
-    @objc private func done() {
+    private func done() {
         finishInitialSetupIfNeeded()
         close()
+    }
+}
+
+// MARK: - Branded controls
+
+/// On/off pill toggle drawn in the landing-page LED palette.
+private final class LEDToggle: NSView {
+    private let track = CALayer()
+    private let knob = CALayer()
+    private(set) var isOn: Bool
+    var onToggle: ((Bool) -> Void)?
+
+    init(isOn: Bool) {
+        self.isOn = isOn
+        super.init(frame: NSRect(x: 0, y: 0, width: 42, height: 24))
+        wantsLayer = true
+        translatesAutoresizingMaskIntoConstraints = false
+        widthAnchor.constraint(equalToConstant: 42).isActive = true
+        heightAnchor.constraint(equalToConstant: 24).isActive = true
+
+        track.frame = NSRect(x: 0, y: 0, width: 42, height: 24)
+        track.cornerRadius = 12
+        layer?.addSublayer(track)
+
+        knob.frame = NSRect(x: 3, y: 3, width: 18, height: 18)
+        knob.cornerRadius = 9
+        knob.backgroundColor = NSColor.white.cgColor
+        knob.shadowColor = NSColor.black.cgColor
+        knob.shadowOpacity = 0.35
+        knob.shadowRadius = 2
+        knob.shadowOffset = CGSize(width: 0, height: -1)
+        layer?.addSublayer(knob)
+
+        apply(animated: false)
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    func setOn(_ value: Bool) {
+        isOn = value
+        apply(animated: false)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        isOn.toggle()
+        apply(animated: true)
+        onToggle?(isOn)
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    private func apply(animated: Bool) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(!animated)
+        CATransaction.setAnimationDuration(0.18)
+        track.backgroundColor = (isOn ? Brand.led : Brand.offDot).cgColor
+        knob.frame.origin.x = isOn ? 21 : 3
+        CATransaction.commit()
+    }
+}
+
+/// Segmented control matching the landing-page EN/JA language switch.
+private final class SegmentedPill: NSView {
+    private struct Segment {
+        let value: String
+        let container: ClickableView
+        let label: NSTextField
+    }
+
+    private var segments: [Segment] = []
+    private(set) var selectedValue: String
+    var onSelect: ((String) -> Void)?
+
+    init(items: [(title: String, value: String)], selected: String) {
+        selectedValue = selected
+        super.init(frame: .zero)
+        wantsLayer = true
+        layer?.cornerRadius = 11
+        layer?.backgroundColor = Brand.surface2.cgColor
+        layer?.borderWidth = 1
+        layer?.borderColor = Brand.borderStrong.cgColor
+        translatesAutoresizingMaskIntoConstraints = false
+        setContentHuggingPriority(.required, for: .horizontal)
+
+        let stack = NSStackView()
+        stack.orientation = .horizontal
+        stack.distribution = .fillEqually
+        stack.spacing = 2
+        stack.edgeInsets = NSEdgeInsets(top: 3, left: 3, bottom: 3, right: 3)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
+            stack.topAnchor.constraint(equalTo: topAnchor),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+
+        for item in items {
+            let container = ClickableView()
+            container.wantsLayer = true
+            container.layer?.cornerRadius = 8
+            container.translatesAutoresizingMaskIntoConstraints = false
+
+            let label = NSTextField(labelWithString: item.title)
+            label.font = .systemFont(ofSize: 12, weight: .bold)
+            label.alignment = .center
+            label.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(label)
+
+            NSLayoutConstraint.activate([
+                container.heightAnchor.constraint(equalToConstant: 24),
+                container.widthAnchor.constraint(greaterThanOrEqualToConstant: 48),
+                label.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+                label.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+                label.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: 10)
+            ])
+
+            let value = item.value
+            container.onClick = { [weak self] in self?.select(value) }
+            stack.addArrangedSubview(container)
+            segments.append(Segment(value: value, container: container, label: label))
+        }
+
+        updateSelection()
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    func setSelected(_ value: String) {
+        selectedValue = value
+        updateSelection()
+    }
+
+    private func select(_ value: String) {
+        guard value != selectedValue else { return }
+        selectedValue = value
+        updateSelection()
+        onSelect?(value)
+    }
+
+    private func updateSelection() {
+        for segment in segments {
+            let isSelected = segment.value == selectedValue
+            segment.container.layer?.backgroundColor = isSelected ? Brand.led.cgColor : NSColor.clear.cgColor
+            segment.label.textColor = isSelected ? .black : Brand.textDim
+        }
+    }
+}
+
+/// LED-green primary button matching the landing-page CTA.
+private final class LEDButton: NSView {
+    private let label = NSTextField(labelWithString: "")
+    var onClick: (() -> Void)?
+
+    var title: String {
+        get { label.stringValue }
+        set { label.stringValue = newValue }
+    }
+
+    init() {
+        super.init(frame: .zero)
+        wantsLayer = true
+        layer?.cornerRadius = 11
+        layer?.backgroundColor = Brand.led.cgColor
+        translatesAutoresizingMaskIntoConstraints = false
+
+        label.font = .systemFont(ofSize: 13, weight: .semibold)
+        label.textColor = .black
+        label.alignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(label)
+
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: 38),
+            label.centerXAnchor.constraint(equalTo: centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+
+        addTrackingArea(NSTrackingArea(
+            rect: .zero,
+            options: [.activeInActiveApp, .inVisibleRect, .mouseEnteredAndExited],
+            owner: self
+        ))
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override func mouseDown(with event: NSEvent) {
+        onClick?()
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        layer?.backgroundColor = Brand.ledBright.cgColor
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        layer?.backgroundColor = Brand.led.cgColor
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+}
+
+/// A plain view that forwards a click as a closure.
+private final class ClickableView: NSView {
+    var onClick: (() -> Void)?
+
+    override func mouseDown(with event: NSEvent) {
+        onClick?()
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+}
+
+// MARK: - Branded view factories
+
+private func brandLabel(
+    size: CGFloat,
+    weight: NSFont.Weight = .regular,
+    color: NSColor,
+    wraps: Bool = false
+) -> NSTextField {
+    let label = NSTextField(labelWithString: "")
+    label.font = .systemFont(ofSize: size, weight: weight)
+    label.textColor = color
+    label.translatesAutoresizingMaskIntoConstraints = false
+    if wraps {
+        label.lineBreakMode = .byWordWrapping
+        label.maximumNumberOfLines = 0
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+    }
+    return label
+}
+
+private func brandCard() -> NSView {
+    let view = NSView()
+    view.wantsLayer = true
+    view.layer?.backgroundColor = Brand.surface.cgColor
+    view.layer?.cornerRadius = 14
+    view.layer?.borderWidth = 1
+    view.layer?.borderColor = Brand.border.cgColor
+    view.translatesAutoresizingMaskIntoConstraints = false
+    return view
+}
+
+private func brandDivider() -> NSView {
+    let view = NSView()
+    view.wantsLayer = true
+    view.layer?.backgroundColor = Brand.border.cgColor
+    view.translatesAutoresizingMaskIntoConstraints = false
+    view.heightAnchor.constraint(equalToConstant: 1).isActive = true
+    return view
+}
+
+private func brandStatusDot(on: Bool) -> NSView {
+    let dot = NSView()
+    dot.wantsLayer = true
+    dot.translatesAutoresizingMaskIntoConstraints = false
+    dot.widthAnchor.constraint(equalToConstant: 12).isActive = true
+    dot.heightAnchor.constraint(equalToConstant: 12).isActive = true
+    dot.layer?.cornerRadius = 6
+    if on {
+        dot.layer?.backgroundColor = Brand.led.cgColor
+        dot.layer?.shadowColor = Brand.led.cgColor
+        dot.layer?.shadowOpacity = 0.85
+        dot.layer?.shadowRadius = 5
+        dot.layer?.shadowOffset = .zero
+        dot.layer?.masksToBounds = false
+    } else {
+        dot.layer?.backgroundColor = Brand.offDot.cgColor
+        dot.layer?.borderWidth = 1
+        dot.layer?.borderColor = Brand.offDotBorder.cgColor
+    }
+    return dot
+}
+
+private enum BrandIcon {
+    static func make(diameter: CGFloat) -> NSImage {
+        let image = NSImage(size: NSSize(width: diameter, height: diameter))
+        image.lockFocus()
+        let center = NSPoint(x: diameter / 2, y: diameter / 2)
+        if let glow = NSGradient(colors: [
+            Brand.ledBright.withAlphaComponent(0.95),
+            Brand.led.withAlphaComponent(0.45),
+            Brand.led.withAlphaComponent(0.0)
+        ]) {
+            glow.draw(fromCenter: center, radius: 0, toCenter: center, radius: diameter / 2, options: [])
+        }
+        Brand.led.setFill()
+        let radius = diameter * 0.20
+        NSBezierPath(ovalIn: NSRect(
+            x: center.x - radius,
+            y: center.y - radius,
+            width: radius * 2,
+            height: radius * 2
+        )).fill()
+        image.unlockFocus()
+        image.isTemplate = false
+        return image
     }
 }
 

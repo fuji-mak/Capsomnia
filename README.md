@@ -15,7 +15,7 @@ Turn Caps Lock on when local work should keep running. Turn Caps Lock off when y
 It is useful for AI agents, mobile access, and other long-running or remote work.
 
 <p align="center">
-  <img src="resources/caps-lock-on.jpg" alt="Caps Lock light on" width="720">
+  <img src="resources/caps-lock-on.jpg" alt="Caps Lock light on" width="560">
 </p>
 
 <p align="center">

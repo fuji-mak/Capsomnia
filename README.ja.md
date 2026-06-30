@@ -15,7 +15,7 @@
 AIエージェントの実行、モバイル接続、その他長時間の実行や遠隔での作業に有効です。
 
 <p align="center">
-  <img src="resources/caps-lock-on.jpg" alt="Caps Lock ランプ点灯" width="720">
+  <img src="resources/caps-lock-on.jpg" alt="Caps Lock ランプ点灯" width="560">
 </p>
 
 <p align="center">

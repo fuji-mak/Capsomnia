@@ -12,6 +12,8 @@ Capsomnia is a small macOS menu bar app that turns Caps Lock into a physical kee
 
 Turn Caps Lock on when local work should keep running. Turn Caps Lock off when you want normal sleep behavior back.
 
+It is useful for AI agents, mobile access, and other long-running or remote work.
+
 ## Quick Start
 
 Requirements:
@@ -32,13 +34,11 @@ The installer builds `Capsomnia.app` locally, places it in `~/Applications/`, in
 
 Capsomnia is currently a developer-oriented source distribution. A signed and notarized app or package is not available yet.
 
-## How It Works
+## What It Does
 
-- Caps Lock on: runs `pmset -a disablesleep 1`
-- Caps Lock off: runs `pmset -a disablesleep 0`
-- Lid closed while Caps Lock is on: optionally runs `pmset displaysleepnow` so the display can sleep while work continues
-- Yellow-green menu bar dot: system sleep is disabled
-- Gray menu bar dot: normal sleep behavior
+- Caps Lock on: keeps AI agents and other work from being interrupted when the MacBook lid is closed. Remote operation through tools such as Codex Mobile remains possible. The Caps Lock light physically shows the current state.
+- Caps Lock off: restores normal sleep behavior.
+- Lid closed while Caps Lock is on: puts only the display to sleep while work keeps running.
 - Quitting the app restores normal sleep behavior
 
 Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions, builds, downloads, and unattended scripts.
@@ -63,11 +63,10 @@ You can open Capsomnia from `~/Applications/Capsomnia.app` or from the menu bar 
 
 `caffeinate` is useful for preventing idle sleep while your Mac is open. Closing a MacBook lid is different: normal `caffeinate` assertions do not reliably keep local jobs running in closed-lid use.
 
-Capsomnia uses `pmset -a disablesleep 1`, which disables system sleep itself. This is more suitable when you explicitly want local work to continue while the lid is closed.
+Capsomnia keeps work running in closed-lid use the same way it would while the lid is open. The yellow-green Caps Lock light makes that state visible.
 
 ## Safety Notes
 
-- Closed-lid background work is the intended use case.
 - Sleep-disabled closed-lid use can increase heat and battery drain.
 - Use good judgment for airflow, power, and runtime when leaving your Mac unattended.
 - Capsomnia is a manual switch: Caps Lock on means "keep running"; Caps Lock off means "normal sleep behavior".
@@ -142,22 +141,6 @@ sudo -n -l /Library/PrivilegedHelperTools/capsomnia-pmset on \
 ```
 
 If the helper permission check fails, run `./scripts/install.sh` again. If the menu bar dot does not react immediately, Capsomnia also polls the Caps Lock state once per second as a fallback.
-
-## Website Development
-
-The GitHub Pages site lives in `docs/`. The HTML is written with Tailwind CSS utility classes.
-
-```sh
-npm install
-npm run build:site
-```
-
-Main files:
-
-- `docs/index.html`: page structure and Tailwind classes
-- `docs/styles.input.css`: site variables, small custom CSS, and Tailwind input
-- `docs/styles.css`: generated CSS
-- `docs/capsomnia.js`: language switcher and copy behavior
 
 ## Project Status
 

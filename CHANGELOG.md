@@ -6,8 +6,8 @@ All notable changes to Capsomnia will be documented in this file.
 
 Signed package distribution.
 
-- Added Developer ID package build workflow.
-- Added notarization and stapling helper script.
+- Published Developer ID signed and Apple notarized package distribution.
+- Kept release packaging steps outside the public repository.
 - Updated uninstall cleanup for both package and source installs.
 - Updated English and Japanese documentation for signed package installation.
 

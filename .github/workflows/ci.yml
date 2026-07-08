@@ -16,9 +16,7 @@ jobs:
       - name: Check shell scripts
         run: |
           zsh -n scripts/build-app.sh
-          zsh -n scripts/build-pkg.sh
           zsh -n scripts/install.sh
-          zsh -n scripts/notarize-pkg.sh
           zsh -n scripts/uninstall.sh
           zsh -n support/capsomnia-pmset
 

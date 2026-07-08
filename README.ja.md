@@ -115,11 +115,25 @@ git pull
 
 ## アンインストール
 
+パッケージインストールの場合:
+
+```sh
+/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
+```
+
+ソースインストールの場合:
+
+```sh
+~/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
+```
+
+ソース clone から実行する場合は、これと同じです。
+
 ```sh
 ./scripts/uninstall.sh
 ```
 
-LaunchAgent、`/Applications` または `~/Applications` の `Capsomnia.app`、helper、sudoers rule を削除し、通常のスリープ動作へ戻します。
+アンインストーラは LaunchAgent を unload し、Capsomnia を停止し、`/Applications` または `~/Applications` の `Capsomnia.app`、helper、sudoers rule を削除し、通常のスリープ動作へ戻します。管理者認証が必要になることがあります。
 
 ## セキュリティモデル
 

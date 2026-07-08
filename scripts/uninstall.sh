@@ -14,6 +14,7 @@ SUDOERS_PATH="/etc/sudoers.d/capsomnia"
 
 launchctl bootout "gui/$(id -u)" "$LAUNCH_AGENT" 2>/dev/null || true
 launchctl bootout "gui/$(id -u)" "$SYSTEM_LAUNCH_AGENT" 2>/dev/null || true
+/usr/bin/pkill -x "$APP_NAME" 2>/dev/null || true
 
 sudo "$HELPER_PATH" off 2>/dev/null || /usr/bin/pmset -a disablesleep 0 2>/dev/null || true
 

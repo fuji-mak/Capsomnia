@@ -139,6 +139,8 @@ The uninstaller unloads the LaunchAgent, stops Capsomnia, removes `Capsomnia.app
 
 Capsomnia's menu bar app does not run as root. System sleep settings require elevated privileges, so Capsomnia uses a small fixed helper through passwordless `sudo`.
 
+Capsomnia itself does not make network requests, collect telemetry, or require an account.
+
 Capsomnia tries to use a local macOS event tap so Caps Lock changes are detected immediately. macOS may classify this as Input Monitoring. Capsomnia does not record or upload keystrokes; it only checks the Caps Lock flag. If the permission is not granted, Capsomnia falls back to polling the Caps Lock state once per second.
 
 The app can only invoke:

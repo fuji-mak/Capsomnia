@@ -33,6 +33,8 @@ Please include:
 
 Capsomnia's menu bar app runs as the current user. It does not run as root.
 
+Capsomnia itself does not make network requests, collect telemetry, or require an account.
+
 System sleep settings require elevated privileges, so Capsomnia installs a small root-owned helper at:
 
 ```text

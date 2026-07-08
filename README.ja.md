@@ -139,6 +139,8 @@ git pull
 
 メニューバーアプリ本体は root では動きません。ただしシステムのスリープ設定変更には権限が必要なため、固定 helper を passwordless `sudo` 経由で呼び出します。
 
+Capsomnia 本体はネットワーク通信を行わず、テレメトリを収集せず、アカウントも必要としません。
+
 Capsomnia は Caps Lock の変化をすぐ検知するため、macOS のローカル event tap を使おうとします。macOS 上では Input Monitoring（入力監視）として表示されることがあります。Capsomnia はキーボード入力を記録・送信せず、Caps Lock のフラグだけを確認します。許可されない場合は、1 秒ごとの Caps Lock 状態確認にフォールバックします。
 
 アプリが呼び出せるのは次の 3 コマンドだけです。

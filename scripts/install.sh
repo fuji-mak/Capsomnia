@@ -69,6 +69,15 @@ cat > "$LAUNCH_AGENT" <<EOF
   <key>RunAtLoad</key>
   <true/>
 
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
   <key>StandardOutPath</key>
   <string>$LOG_DIR/stdout.log</string>
 

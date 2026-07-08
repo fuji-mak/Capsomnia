@@ -157,6 +157,12 @@ Check whether sleep is disabled:
 pmset -g | grep disablesleep
 ```
 
+Restore normal sleep manually:
+
+```sh
+sudo pmset -a disablesleep 0
+```
+
 Restart the LaunchAgent:
 
 ```sh
@@ -165,6 +171,8 @@ launchctl bootstrap "gui/$(id -u)" /Library/LaunchAgents/com.github.fuji-mak.cap
 ```
 
 For source installs, use `$HOME/Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist` instead.
+
+Capsomnia's LaunchAgent restarts the app after a crash or other unsuccessful exit. On startup, Capsomnia reads the current Caps Lock state and reapplies the matching sleep setting. Normal Quit still exits cleanly and does not restart the app.
 
 Check the helper permissions:
 

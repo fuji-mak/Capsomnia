@@ -18,6 +18,8 @@
 
 現在のバージョン: `0.3.1`
 
+[English README](README.md) · [`Capsomnia-0.3.1.pkg` をダウンロード](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia-0.3.1.pkg)
+
 **Capsomnia** は、Caps Lock を「閉じた MacBook でも作業を止めないための物理スイッチ」にする小さな macOS アプリです。
 
 作業を走らせ続けたいときは Caps Lock をオン。通常のスリープ動作に戻したいときは Caps Lock をオフにします。

@@ -2,6 +2,14 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 0.3.4 - 2026-07-08
+
+Single-instance installer release.
+
+- Prevented package installs from starting a second Capsomnia process.
+- Stopped existing Capsomnia processes before relaunching from the LaunchAgent during install.
+- Added an app-side duplicate-instance guard so accidental second launches exit without changing sleep state.
+
 ## 0.3.3 - 2026-07-08
 
 Installer welcome release.

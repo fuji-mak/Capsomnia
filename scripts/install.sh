@@ -28,6 +28,9 @@ trap cleanup EXIT
 
 mkdir -p "$HOME/Applications" "$LOG_DIR" "$HOME/Library/LaunchAgents"
 
+launchctl bootout "gui/$(id -u)" "$LAUNCH_AGENT" 2>/dev/null || true
+/usr/bin/pkill -x "$APP_NAME" 2>/dev/null || true
+
 cd "$ROOT_DIR"
 BUILT_APP="$("$ROOT_DIR/scripts/build-app.sh" "$build_tmp/$APP_NAME.app")"
 /bin/rm -rf "$APP_BUNDLE"
@@ -75,10 +78,8 @@ cat > "$LAUNCH_AGENT" <<EOF
 </plist>
 EOF
 
-launchctl bootout "gui/$(id -u)" "$LAUNCH_AGENT" 2>/dev/null || true
 /usr/bin/defaults write "$LABEL" ForceWelcomeOnNextLaunch -bool true
 launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT"
 launchctl enable "gui/$(id -u)/$LABEL"
-/usr/bin/open "$APP_BUNDLE"
 
 echo "Installed $APP_NAME."

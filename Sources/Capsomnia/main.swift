@@ -12,6 +12,7 @@ private let logDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
 private let logPath = logDirectoryURL
     .appendingPathComponent("capsomnia.log")
     .path
+private let openSettingsNotificationName = Notification.Name("\(appLabel).openSettings")
 private let brandLEDColor = NSColor(
     srgbRed: 184.0 / 255.0,
     green: 255.0 / 255.0,
@@ -275,6 +276,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var lastAppliedState: Bool?
     private var didRequestDisplaySleepForClosedLid = false
     private var hasLoggedMissingClamshellState = false
+    private var shouldRestoreSleepOnTerminate = true
     private var eventTap: CFMachPort?
     private var pollingTimer: Timer?
     private var signalSources: [DispatchSourceSignal] = []
@@ -284,7 +286,18 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if terminateIfNewerInteractiveDuplicate() {
+            return
+        }
+
         Preferences.registerDefaults()
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(handleOpenSettingsNotification),
+            name: openSettingsNotificationName,
+            object: appLabel
+        )
+
         NSApp.setActivationPolicy(.accessory)
         syncStatusItemVisibility()
         installSignalHandlers()
@@ -303,8 +316,39 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        guard shouldRestoreSleepOnTerminate else { return }
         log("terminate restore_off")
         _ = runHelper("off")
+    }
+
+    private func terminateIfNewerInteractiveDuplicate() -> Bool {
+        guard ProcessInfo.processInfo.environment["XPC_SERVICE_NAME"] != appLabel else {
+            return false
+        }
+
+        let currentPID = getpid()
+        let olderInstances = NSRunningApplication
+            .runningApplications(withBundleIdentifier: appLabel)
+            .filter { !$0.isTerminated && $0.processIdentifier > 0 && $0.processIdentifier < currentPID }
+
+        guard let existing = olderInstances.min(by: { $0.processIdentifier < $1.processIdentifier }) else {
+            return false
+        }
+
+        shouldRestoreSleepOnTerminate = false
+        DistributedNotificationCenter.default().post(
+            name: openSettingsNotificationName,
+            object: appLabel,
+            userInfo: nil
+        )
+        existing.activate(options: [])
+        log("duplicate_instance existing_pid=\(existing.processIdentifier) terminate_without_restore")
+        NSApp.terminate(nil)
+        return true
+    }
+
+    @objc private func handleOpenSettingsNotification(_ notification: Notification) {
+        showSettingsWindow(initialSetup: !Preferences.didCompleteInitialSetup)
     }
 
     private func syncStatusItemVisibility() {

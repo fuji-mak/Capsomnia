@@ -16,9 +16,9 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `0.3.3`
+Current version: `0.3.4`
 
-[日本語 README](README.ja.md) · [Download `Capsomnia-0.3.3.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia-0.3.3.pkg)
+[日本語 README](README.ja.md) · [Download `Capsomnia-0.3.4.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia-0.3.4.pkg)
 
 Capsomnia is a small macOS menu bar app that turns Caps Lock into a physical keep-awake switch for closed-lid MacBook work.
 
@@ -43,7 +43,7 @@ Requirements:
 
 Install the signed package:
 
-1. Download `Capsomnia-0.3.3.pkg` from [GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest).
+1. Download `Capsomnia-0.3.4.pkg` from [GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest).
 2. Open the package and follow the installer.
 
 Release packages are signed with Developer ID and notarized by Apple. The package installs `Capsomnia.app` in `/Applications`, installs the privileged sleep-control helper, adds a narrow sudoers rule, and starts the LaunchAgent. Capsomnia opens after installation and starts automatically at login afterward.

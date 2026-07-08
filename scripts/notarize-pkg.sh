@@ -25,8 +25,8 @@ fi
 
 /bin/cp "$PKG_PATH" "$STABLE_PKG"
 (
-  cd "$ROOT_DIR"
-  /usr/bin/shasum -a 256 "dist/$(/usr/bin/basename "$PKG_PATH")" "dist/$(/usr/bin/basename "$STABLE_PKG")" > "$CHECKSUMS_PATH"
+  cd "$ROOT_DIR/dist"
+  /usr/bin/shasum -a 256 "$(/usr/bin/basename "$PKG_PATH")" "$(/usr/bin/basename "$STABLE_PKG")" > "$CHECKSUMS_PATH"
 )
 
 echo "$PKG_PATH"

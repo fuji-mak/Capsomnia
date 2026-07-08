@@ -59,7 +59,7 @@
       securityHelperTitle: "The helper only ever runs",
       securityHelperBody: "It accepts <code>on</code>, <code>off</code>, and <code>display-sleep</code> and nothing else.",
       securityReq:
-        "Quitting the app, or running <code>./scripts/uninstall.sh</code>, restores normal sleep behavior. Sleep-disabled closed-lid use can increase heat and battery drain — mind airflow, power, and runtime.",
+        "Quitting the app restores normal sleep behavior. Sleep-disabled closed-lid use can increase heat and battery drain — mind airflow, power, and runtime.",
       linksTitle: "Links",
       linkRepoTitle: "GitHub repository",
       linkRepoSub: "Source, issues, releases",
@@ -127,7 +127,7 @@
       securityHelperTitle: "helperが実行するのはこれだけ",
       securityHelperBody: "<code>on</code>、<code>off</code>、<code>display-sleep</code> 以外は受け付けません。",
       securityReq:
-        "アプリを終了するか <code>./scripts/uninstall.sh</code> を実行すると、通常のスリープ動作に戻ります。スリープ無効の蓋閉じ運用は、発熱やバッテリー消費が増えることがあります。通気、電源、実行時間には注意してください。",
+        "アプリを終了すると通常のスリープ動作に戻ります。スリープ無効の蓋閉じ運用は、発熱やバッテリー消費が増えることがあります。通気、電源、実行時間には注意してください。",
       linksTitle: "リンク",
       linkRepoTitle: "GitHubリポジトリ",
       linkRepoSub: "ソースコード、Issue、Release",

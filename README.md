@@ -115,11 +115,25 @@ The install script overwrites the app bundle, helper, sudoers rule, and LaunchAg
 
 ## Uninstall
 
+For package installs:
+
+```sh
+/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
+```
+
+For source installs:
+
+```sh
+~/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
+```
+
+From a source clone, this is equivalent:
+
 ```sh
 ./scripts/uninstall.sh
 ```
 
-The uninstaller unloads the LaunchAgent, removes `Capsomnia.app` from `/Applications` or `~/Applications`, removes the helper, removes the sudoers rule, and restores normal sleep behavior.
+The uninstaller unloads the LaunchAgent, stops Capsomnia, removes `Capsomnia.app` from `/Applications` or `~/Applications`, removes the helper, removes the sudoers rule, and restores normal sleep behavior. Administrator authentication may be required.
 
 ## Security Model
 

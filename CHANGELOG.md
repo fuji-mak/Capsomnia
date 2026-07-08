@@ -4,10 +4,15 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 0.3.6 - 2026-07-08
+
 - Restart Capsomnia after crashes through a crash-only LaunchAgent `KeepAlive` rule, then reapply the current Caps Lock sleep state on startup.
 - Bundle the uninstaller inside `Capsomnia.app` so package users can uninstall without cloning the repository.
 - Documented that Capsomnia itself makes no network requests, collects no telemetry, and requires no account.
 - Documented the manual `sudo pmset -a disablesleep 0` recovery command.
+- Fixed uninstaller fallback recovery so it can restore normal sleep behavior even if the helper path is unavailable.
+- Removed `dist/` prefixes from generated `SHA256SUMS.txt` entries.
+- Prevented AppleDouble `._*` files from being included in package payloads.
 
 ## 0.3.5 - 2026-07-08
 

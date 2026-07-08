@@ -10,6 +10,13 @@ PKG_SIGN_ID="${PKG_SIGN_ID:-Developer ID Installer: Taketo Fujimaki (ZJZ8627852)
 HELPER_PATH="/Library/PrivilegedHelperTools/capsomnia-pmset"
 LEGACY_HELPER_PATH="/usr/local/sbin/capsomnia-pmset"
 SUDOERS_PATH="/etc/sudoers.d/capsomnia"
+export COPYFILE_DISABLE=true
+PKGBUILD_FILTERS=(
+  --filter '(^|/)\.DS_Store$'
+  --filter '(^|/)\.svn($|/)'
+  --filter '(^|/)CVS($|/)'
+  --filter '(^|/)\._'
+)
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT_DIR/resources/Info.plist")"
 WORK_DIR="$(/usr/bin/mktemp -d)"
@@ -17,6 +24,7 @@ PAYLOAD_ROOT="$WORK_DIR/payload"
 SCRIPTS_DIR="$WORK_DIR/scripts"
 COMPONENT_PLIST="$WORK_DIR/components.plist"
 UNSIGNED_PKG="$DIST_DIR/$APP_NAME-$VERSION-unsigned.pkg"
+SANITIZED_UNSIGNED_PKG="$WORK_DIR/$APP_NAME-$VERSION-sanitized-unsigned.pkg"
 SIGNED_PKG="$DIST_DIR/$APP_NAME-$VERSION.pkg"
 
 cleanup() {
@@ -136,21 +144,47 @@ EOF
 
 /bin/chmod 0755 "$SCRIPTS_DIR/postinstall"
 
-/usr/bin/pkgbuild --analyze --root "$PAYLOAD_ROOT" "$COMPONENT_PLIST"
+/usr/bin/xattr -cr "$PAYLOAD_ROOT" "$SCRIPTS_DIR"
+/usr/bin/find "$PAYLOAD_ROOT" -name '._*' -type f -delete
+
+/usr/bin/env COPYFILE_DISABLE=true /usr/bin/pkgbuild --analyze --root "$PAYLOAD_ROOT" "${PKGBUILD_FILTERS[@]}" "$COMPONENT_PLIST"
 /usr/libexec/PlistBuddy -c "Set :0:BundleIsRelocatable false" "$COMPONENT_PLIST" 2>/dev/null \
   || /usr/libexec/PlistBuddy -c "Add :0:BundleIsRelocatable bool false" "$COMPONENT_PLIST"
 /usr/libexec/PlistBuddy -c "Set :0:BundleOverwriteAction upgrade" "$COMPONENT_PLIST" 2>/dev/null \
   || /usr/libexec/PlistBuddy -c "Add :0:BundleOverwriteAction string upgrade" "$COMPONENT_PLIST"
 
-/usr/bin/pkgbuild \
+/usr/bin/env COPYFILE_DISABLE=true /usr/bin/pkgbuild \
   --root "$PAYLOAD_ROOT" \
   --scripts "$SCRIPTS_DIR" \
   --component-plist "$COMPONENT_PLIST" \
+  "${PKGBUILD_FILTERS[@]}" \
   --identifier "$LABEL.pkg" \
   --version "$VERSION" \
   --install-location "/" \
   --min-os-version "14.0" \
   "$UNSIGNED_PKG"
+
+EXPANDED_PKG="$WORK_DIR/expanded-pkg"
+PAYLOAD_ARCHIVE="$WORK_DIR/payload.cpio.gz"
+/usr/sbin/pkgutil --expand-full "$UNSIGNED_PKG" "$EXPANDED_PKG"
+/usr/bin/xattr -cr "$EXPANDED_PKG/Payload" "$EXPANDED_PKG/Scripts"
+/usr/bin/find "$EXPANDED_PKG/Payload" -name '._*' -type f -delete
+/usr/bin/mkbom "$EXPANDED_PKG/Payload" "$EXPANDED_PKG/Bom"
+
+payload_file_count="$(/usr/bin/lsbom -s "$EXPANDED_PKG/Bom" | /usr/bin/wc -l | /usr/bin/tr -d ' ')"
+payload_install_kbytes="$(/usr/bin/du -sk "$EXPANDED_PKG/Payload" | /usr/bin/awk '{print $1}')"
+/usr/bin/sed -E -i '' \
+  "s/<payload numberOfFiles=\"[0-9]+\" installKBytes=\"[0-9]+\"\\/>/<payload numberOfFiles=\"$payload_file_count\" installKBytes=\"$payload_install_kbytes\"\\/>/" \
+  "$EXPANDED_PKG/PackageInfo"
+
+(
+  cd "$EXPANDED_PKG/Payload"
+  /usr/bin/find . | /usr/bin/cpio -o -H odc -z > "$PAYLOAD_ARCHIVE"
+) 2>/dev/null
+/bin/rm -rf "$EXPANDED_PKG/Payload"
+/bin/mv "$PAYLOAD_ARCHIVE" "$EXPANDED_PKG/Payload"
+/usr/sbin/pkgutil --flatten "$EXPANDED_PKG" "$SANITIZED_UNSIGNED_PKG"
+/bin/mv -f "$SANITIZED_UNSIGNED_PKG" "$UNSIGNED_PKG"
 
 /usr/bin/productsign --sign "$PKG_SIGN_ID" "$UNSIGNED_PKG" "$SIGNED_PKG"
 

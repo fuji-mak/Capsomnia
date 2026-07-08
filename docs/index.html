@@ -34,7 +34,7 @@
     <meta name="twitter:image" content="https://fuji-mak.github.io/Capsomnia/og-image.png" />
     <meta name="twitter:image:alt" content="Capsomnia: Caps LockをMacのスリープ防止スイッチに。" />
 
-    <link rel="stylesheet" href="styles.css?v=20260629-header2" />
+    <link rel="stylesheet" href="styles.css?v=20260708-privacy-chips" />
   </head>
   <body class="bg-[var(--bg)] text-[var(--text)] antialiased [text-rendering:optimizeLegibility]">
     <a
@@ -331,9 +331,32 @@
             The menu bar app runs as the current user — never as root. Changing system sleep settings needs elevated
             privileges, so Capsomnia uses one small, fixed, root-owned helper through passwordless <code>sudo</code>.
           </p>
-          <p class="mt-4 text-sm font-semibold text-[var(--led)]" data-i18n="securityOffline">
-            No network requests. No telemetry. No accounts.
-          </p>
+          <ul class="mt-6 flex list-none flex-wrap gap-2.5 p-0" aria-label="Privacy" data-i18n-aria-label="securityOfflineLabel">
+            <li
+              class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+            >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
+              ></span>
+              <span data-i18n="securityOfflineNetwork">No network requests</span>
+            </li>
+            <li
+              class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+            >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
+              ></span>
+              <span data-i18n="securityOfflineTelemetry">No telemetry</span>
+            </li>
+            <li
+              class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+            >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
+              ></span>
+              <span data-i18n="securityOfflineAccounts">No accounts</span>
+            </li>
+          </ul>
         </div>
         <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
@@ -424,6 +447,6 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
       <p class="text-sm" data-i18n="footerCatch">Macの最も無駄なキーに最高の仕事を与える</p>
     </footer>
 
-    <script src="capsomnia.js?v=20260708-features2"></script>
+    <script src="capsomnia.js?v=20260708-privacy-chips"></script>
   </body>
 </html>

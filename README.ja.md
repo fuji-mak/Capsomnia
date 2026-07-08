@@ -157,6 +157,12 @@ sudoers rule はこの 3 コマンドに限定されています。helper も `o
 pmset -g | grep disablesleep
 ```
 
+通常のスリープ動作へ手動で戻す:
+
+```sh
+sudo pmset -a disablesleep 0
+```
+
 LaunchAgent を再起動する:
 
 ```sh
@@ -165,6 +171,8 @@ launchctl bootstrap "gui/$(id -u)" /Library/LaunchAgents/com.github.fuji-mak.cap
 ```
 
 ソースインストールの場合は、代わりに `$HOME/Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist` を使ってください。
+
+Capsomnia の LaunchAgent は、アプリがクラッシュした場合など正常終了でないときだけアプリを再起動します。起動時に現在の Caps Lock 状態を読み直し、対応するスリープ設定を再適用します。通常の「終了」は正常終了なので、アプリは再起動しません。
 
 helper 権限を確認する:
 

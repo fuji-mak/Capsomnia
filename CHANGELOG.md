@@ -2,6 +2,11 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## Unreleased
+
+- Restart Capsomnia after crashes through a crash-only LaunchAgent `KeepAlive` rule, then reapply the current Caps Lock sleep state on startup.
+- Documented the manual `sudo pmset -a disablesleep 0` recovery command.
+
 ## 0.3.5 - 2026-07-08
 
 Public release process hardening.

@@ -50,7 +50,7 @@
       featureOssKicker: "Open source",
       featureOssTitle: "Completely free, open-source design",
       featureOssBody:
-        "Released under the MIT License. You can inspect the source, the helper commands, and the security model before installing.",
+        "Released under the MIT License. You can inspect the source, package install scripts, helper commands, and security model before installing.",
       securityTitle: "Security model",
       securityLede:
         "The menu bar app runs as the current user — never as root. Changing system sleep settings needs elevated privileges, so Capsomnia uses one small, fixed, root-owned helper through passwordless <code>sudo</code>.",
@@ -118,7 +118,7 @@
       featureOssKicker: "Open source",
       featureOssTitle: "完全無料、OSS公開で安心設計",
       featureOssBody:
-        "MIT Licenseで公開。ソースコード、helperが実行できるコマンド、安全性モデルを確認できます。",
+        "MIT Licenseで公開。ソースコード、パッケージのインストール処理、helperが実行できるコマンド、安全性モデルを確認できます。",
       securityTitle: "安全性の考え方",
       securityLede:
         "メニューバーアプリ本体は現在のユーザーとして動き、rootでは動きません。システムのスリープ設定変更には昇格権限が必要なため、Capsomniaは固定の小さなroot所有helperを、passwordless <code>sudo</code> 経由で呼び出します。",

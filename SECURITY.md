@@ -14,10 +14,13 @@ Capsomnia is currently in early public release. Security fixes target the latest
 
 Please do not open a public issue for sensitive security reports.
 
-Report vulnerabilities by contacting the project maintainer through GitHub:
+Report sensitive vulnerabilities by contacting the project maintainer on X:
 
+- X: https://x.com/tf_makimaki
 - Repository: https://github.com/fuji-mak/Capsomnia
 - Maintainer: https://github.com/fuji-mak
+
+For non-sensitive bugs or documentation issues, opening a public GitHub issue is fine.
 
 Please include:
 

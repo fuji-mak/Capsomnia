@@ -16,9 +16,9 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-現在のバージョン: `0.3.4`
+現在のバージョン: `0.3.5`
 
-[English README](README.md) · [`Capsomnia-0.3.4.pkg` をダウンロード](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia-0.3.4.pkg)
+[English README](README.md) · [`Capsomnia.pkg` をダウンロード](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
 
 **Capsomnia** は、Caps Lock を「閉じた MacBook でも作業を止めないための物理スイッチ」にする小さな macOS アプリです。
 
@@ -43,10 +43,12 @@ AIエージェントの実行、モバイル接続、その他長時間の実行
 
 署名済みパッケージでインストール:
 
-1. [GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest) から `Capsomnia-0.3.4.pkg` をダウンロード
+1. [GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest) から `Capsomnia.pkg` をダウンロード
 2. パッケージを開き、インストーラに従う
 
 リリース用パッケージは Developer ID で署名し、Apple の公証を通しています。パッケージは `Capsomnia.app` を `/Applications` に配置し、スリープ制御用の privileged helper、限定的な sudoers rule、LaunchAgent を設定します。インストール後、Capsomnia が開き、以降はログイン時に自動起動します。
+
+パッケージのビルドとインストール処理は [`scripts/build-pkg.sh`](scripts/build-pkg.sh) と [`scripts/notarize-pkg.sh`](scripts/notarize-pkg.sh) で公開しています。
 
 ## ソースからビルド
 
@@ -62,10 +64,10 @@ cd Capsomnia
 
 ## できること
 
-- Caps Lock オン: MacBookの蓋を閉じてもAIエージェントなどの処理が途切れないようにします。Codex Mobile等による遠隔操作も可能。Caps Lockのライトが状態を物理的に示します。
-- Caps Lock オフ: 通常のスリープ処理になります。
-- Caps Lock ON中に蓋を閉じた時: 作業を走らせたまま画面だけスリープ
-- アプリ終了時は通常のスリープ動作へ戻す
+- Caps Lock オン: MacBookの蓋を閉じてもAIエージェントなどの処理が途切れないようにします。Codex Mobile等による遠隔操作も可能です。Caps Lockのライトが状態を物理的に示します。
+- Caps Lock オフ: 通常のスリープ動作に戻ります。
+- Caps Lock ON中に蓋を閉じた時: 作業を走らせたまま画面だけスリープします。
+- アプリ終了時: 通常のスリープ動作へ戻します。
 
 長時間動くローカルジョブ、AI コーディングエージェント、SSH、ビルド、ダウンロード、放置スクリプトなどを止めたくないときに使う想定です。
 
@@ -122,6 +124,8 @@ LaunchAgent、`/Applications` または `~/Applications` の `Capsomnia.app`、h
 ## セキュリティモデル
 
 メニューバーアプリ本体は root では動きません。ただしシステムのスリープ設定変更には権限が必要なため、固定 helper を passwordless `sudo` 経由で呼び出します。
+
+Capsomnia は Caps Lock の変化をすぐ検知するため、macOS のローカル event tap を使おうとします。macOS 上では Input Monitoring（入力監視）として表示されることがあります。Capsomnia はキーボード入力を記録・送信せず、Caps Lock のフラグだけを確認します。許可されない場合は、1 秒ごとの Caps Lock 状態確認にフォールバックします。
 
 アプリが呼び出せるのは次の 3 コマンドだけです。
 

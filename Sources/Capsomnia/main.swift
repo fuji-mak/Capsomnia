@@ -75,7 +75,6 @@ private struct AppStrings {
     let openCapsomnia: String
     let quit: String
     let settingsTitle: String
-    let initialSettingsTitle: String
     let initialSettingsNote: String
     let welcomeTitle: String
     let explainerOnTitle: String
@@ -102,7 +101,6 @@ private struct AppStrings {
                 openCapsomnia: "Open Capsomnia",
                 quit: "Quit",
                 settingsTitle: "Settings",
-                initialSettingsTitle: "Welcome to Capsomnia",
                 initialSettingsNote: "Open Capsomnia again any time to change these.",
                 welcomeTitle: "Welcome to Capsomnia",
                 explainerOnTitle: "Caps Lock on",
@@ -127,7 +125,6 @@ private struct AppStrings {
                 openCapsomnia: "Capsomniaを開く",
                 quit: "終了",
                 settingsTitle: "設定",
-                initialSettingsTitle: "Capsomniaへようこそ",
                 initialSettingsNote: "あとからCapsomniaを開けばいつでも変更できます。",
                 welcomeTitle: "Capsomniaへようこそ",
                 explainerOnTitle: "Caps Lock ON",

@@ -1,0 +1,148 @@
+#!/bin/zsh
+set -euo pipefail
+
+APP_NAME="Capsomnia"
+LABEL="com.github.fuji-mak.capsomnia"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+DIST_DIR="${1:-$ROOT_DIR/dist}"
+APP_SIGN_ID="${APP_SIGN_ID:-Developer ID Application: Taketo Fujimaki (ZJZ8627852)}"
+PKG_SIGN_ID="${PKG_SIGN_ID:-Developer ID Installer: Taketo Fujimaki (ZJZ8627852)}"
+HELPER_PATH="/Library/PrivilegedHelperTools/capsomnia-pmset"
+LEGACY_HELPER_PATH="/usr/local/sbin/capsomnia-pmset"
+SUDOERS_PATH="/etc/sudoers.d/capsomnia"
+
+VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT_DIR/resources/Info.plist")"
+WORK_DIR="$(/usr/bin/mktemp -d)"
+PAYLOAD_ROOT="$WORK_DIR/payload"
+SCRIPTS_DIR="$WORK_DIR/scripts"
+COMPONENT_PLIST="$WORK_DIR/components.plist"
+UNSIGNED_PKG="$DIST_DIR/$APP_NAME-$VERSION-unsigned.pkg"
+SIGNED_PKG="$DIST_DIR/$APP_NAME-$VERSION.pkg"
+
+cleanup() {
+  /bin/rm -rf "$WORK_DIR"
+}
+trap cleanup EXIT
+
+/bin/mkdir -p \
+  "$DIST_DIR" \
+  "$PAYLOAD_ROOT/Applications" \
+  "$PAYLOAD_ROOT/Library/LaunchAgents" \
+  "$PAYLOAD_ROOT/Library/PrivilegedHelperTools" \
+  "$SCRIPTS_DIR"
+
+BUILT_APP="$("$ROOT_DIR/scripts/build-app.sh" "$WORK_DIR/$APP_NAME.app")"
+/usr/bin/codesign --force --options runtime --timestamp --sign "$APP_SIGN_ID" "$BUILT_APP"
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$BUILT_APP"
+
+/usr/bin/ditto "$BUILT_APP" "$PAYLOAD_ROOT/Applications/$APP_NAME.app"
+/usr/bin/install -m 0755 "$ROOT_DIR/support/capsomnia-pmset" "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
+
+/bin/cat > "$PAYLOAD_ROOT/Library/LaunchAgents/$LABEL.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>$LABEL</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Applications/$APP_NAME.app/Contents/MacOS/$APP_NAME</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+</dict>
+</plist>
+EOF
+
+/bin/cat > "$SCRIPTS_DIR/postinstall" <<'EOF'
+#!/bin/zsh
+set -euo pipefail
+
+APP_NAME="Capsomnia"
+LABEL="com.github.fuji-mak.capsomnia"
+HELPER_PATH="/Library/PrivilegedHelperTools/capsomnia-pmset"
+LEGACY_HELPER_PATH="/usr/local/sbin/capsomnia-pmset"
+SUDOERS_PATH="/etc/sudoers.d/capsomnia"
+SYSTEM_LAUNCH_AGENT="/Library/LaunchAgents/$LABEL.plist"
+
+console_user="$(/usr/bin/stat -f "%Su" /dev/console 2>/dev/null || true)"
+if [[ -z "$console_user" || "$console_user" == "root" || "$console_user" == "_mbsetupuser" ]]; then
+  console_user="${SUDO_USER:-}"
+fi
+
+if [[ -z "$console_user" || "$console_user" == "root" || "$console_user" == *[!A-Za-z0-9._-]* ]]; then
+  echo "Capsomnia installer could not determine the target user for sudoers." >&2
+  exit 1
+fi
+
+console_uid="$(/usr/bin/id -u "$console_user")"
+console_home="$(/usr/bin/dscl . -read "/Users/$console_user" NFSHomeDirectory 2>/dev/null | /usr/bin/awk '{print $2}')"
+
+/bin/mkdir -p "$(dirname "$HELPER_PATH")" "$(dirname "$SUDOERS_PATH")"
+/usr/sbin/chown root:wheel "$(dirname "$HELPER_PATH")" "$(dirname "$SUDOERS_PATH")"
+/bin/chmod 0755 "$(dirname "$HELPER_PATH")" "$(dirname "$SUDOERS_PATH")"
+/usr/sbin/chown root:wheel "$HELPER_PATH" "$SYSTEM_LAUNCH_AGENT"
+/bin/chmod 0755 "$HELPER_PATH"
+/bin/chmod 0644 "$SYSTEM_LAUNCH_AGENT"
+/bin/rm -f "$LEGACY_HELPER_PATH"
+/usr/bin/find \
+  "/Applications/$APP_NAME.app" \
+  "/Library/PrivilegedHelperTools" \
+  "/Library/LaunchAgents" \
+  -name '._*' -type f -delete 2>/dev/null || true
+
+sudoers_tmp="$(/usr/bin/mktemp)"
+cleanup() {
+  /bin/rm -f "$sudoers_tmp"
+}
+trap cleanup EXIT
+
+cat > "$sudoers_tmp" <<SUDOERS
+# Allow Capsomnia to toggle only its fixed pmset helper.
+$console_user ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off, $HELPER_PATH display-sleep
+SUDOERS
+
+/usr/sbin/visudo -cf "$sudoers_tmp"
+/usr/bin/install -o root -g wheel -m 0440 "$sudoers_tmp" "$SUDOERS_PATH"
+
+if [[ -n "$console_home" ]]; then
+  legacy_user_agent="$console_home/Library/LaunchAgents/$LABEL.plist"
+  /bin/launchctl bootout "gui/$console_uid" "$legacy_user_agent" 2>/dev/null || true
+  /bin/rm -f "$legacy_user_agent"
+fi
+
+/bin/launchctl bootout "gui/$console_uid" "$SYSTEM_LAUNCH_AGENT" 2>/dev/null || true
+/bin/launchctl asuser "$console_uid" /usr/bin/sudo -u "$console_user" /usr/bin/pkill -x "$APP_NAME" 2>/dev/null || true
+/bin/sleep 1
+/usr/bin/sudo -u "$console_user" /usr/bin/defaults write "$LABEL" ForceWelcomeOnNextLaunch -bool true 2>/dev/null || true
+/bin/launchctl bootstrap "gui/$console_uid" "$SYSTEM_LAUNCH_AGENT" 2>/dev/null || true
+/bin/launchctl enable "gui/$console_uid/$LABEL" 2>/dev/null || true
+
+exit 0
+EOF
+
+/bin/chmod 0755 "$SCRIPTS_DIR/postinstall"
+
+/usr/bin/pkgbuild --analyze --root "$PAYLOAD_ROOT" "$COMPONENT_PLIST"
+/usr/libexec/PlistBuddy -c "Set :0:BundleIsRelocatable false" "$COMPONENT_PLIST" 2>/dev/null \
+  || /usr/libexec/PlistBuddy -c "Add :0:BundleIsRelocatable bool false" "$COMPONENT_PLIST"
+/usr/libexec/PlistBuddy -c "Set :0:BundleOverwriteAction upgrade" "$COMPONENT_PLIST" 2>/dev/null \
+  || /usr/libexec/PlistBuddy -c "Add :0:BundleOverwriteAction string upgrade" "$COMPONENT_PLIST"
+
+/usr/bin/pkgbuild \
+  --root "$PAYLOAD_ROOT" \
+  --scripts "$SCRIPTS_DIR" \
+  --component-plist "$COMPONENT_PLIST" \
+  --identifier "$LABEL.pkg" \
+  --version "$VERSION" \
+  --install-location "/" \
+  --min-os-version "14.0" \
+  "$UNSIGNED_PKG"
+
+/usr/bin/productsign --sign "$PKG_SIGN_ID" "$UNSIGNED_PKG" "$SIGNED_PKG"
+
+echo "$SIGNED_PKG"

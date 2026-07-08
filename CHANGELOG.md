@@ -2,6 +2,18 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 0.3.5 - 2026-07-08
+
+Public release process hardening.
+
+- Switched public download links to the stable `Capsomnia.pkg` release asset.
+- Restored the signed package build and notarization scripts to the public repository.
+- Documented Input Monitoring behavior and the one-second polling fallback.
+- Updated the security reporting contact to a working X profile.
+- Added CI coverage for committed generated site CSS.
+- Synchronized landing page static copy with the localization dictionary.
+- Removed an unused settings title string.
+
 ## 0.3.4 - 2026-07-08
 
 Single-instance installer release.

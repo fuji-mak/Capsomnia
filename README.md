@@ -16,9 +16,9 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `0.3.4`
+Current version: `0.3.5`
 
-[日本語 README](README.ja.md) · [Download `Capsomnia-0.3.4.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia-0.3.4.pkg)
+[日本語 README](README.ja.md) · [Download `Capsomnia.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
 
 Capsomnia is a small macOS menu bar app that turns Caps Lock into a physical keep-awake switch for closed-lid MacBook work.
 
@@ -43,10 +43,12 @@ Requirements:
 
 Install the signed package:
 
-1. Download `Capsomnia-0.3.4.pkg` from [GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest).
+1. Download `Capsomnia.pkg` from [GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest).
 2. Open the package and follow the installer.
 
 Release packages are signed with Developer ID and notarized by Apple. The package installs `Capsomnia.app` in `/Applications`, installs the privileged sleep-control helper, adds a narrow sudoers rule, and starts the LaunchAgent. Capsomnia opens after installation and starts automatically at login afterward.
+
+The package build and install scripts are public in [`scripts/build-pkg.sh`](scripts/build-pkg.sh) and [`scripts/notarize-pkg.sh`](scripts/notarize-pkg.sh).
 
 ## Build From Source
 
@@ -65,7 +67,7 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 - Caps Lock on: keeps AI agents and other work from being interrupted when the MacBook lid is closed. Remote operation through tools such as Codex Mobile remains possible. The Caps Lock light physically shows the current state.
 - Caps Lock off: restores normal sleep behavior.
 - Lid closed while Caps Lock is on: puts only the display to sleep while work keeps running.
-- Quitting the app restores normal sleep behavior
+- Quitting the app restores normal sleep behavior.
 
 Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions, builds, downloads, and unattended scripts.
 
@@ -122,6 +124,8 @@ The uninstaller unloads the LaunchAgent, removes `Capsomnia.app` from `/Applicat
 ## Security Model
 
 Capsomnia's menu bar app does not run as root. System sleep settings require elevated privileges, so Capsomnia uses a small fixed helper through passwordless `sudo`.
+
+Capsomnia tries to use a local macOS event tap so Caps Lock changes are detected immediately. macOS may classify this as Input Monitoring. Capsomnia does not record or upload keystrokes; it only checks the Caps Lock flag. If the permission is not granted, Capsomnia falls back to polling the Caps Lock state once per second.
 
 The app can only invoke:
 

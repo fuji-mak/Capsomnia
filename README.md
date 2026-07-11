@@ -38,7 +38,7 @@ It is useful for AI agents, mobile access, and other long-running or remote work
 
 Requirements:
 
-- macOS 14 or later
+- Apple silicon Mac with macOS 14 or later
 - Administrator access during installation
 
 Install the signed package:

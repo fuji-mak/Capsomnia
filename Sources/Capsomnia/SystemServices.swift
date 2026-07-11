@@ -46,6 +46,49 @@ enum LaunchAgentManager {
     }
 }
 
+enum SleepStateReader {
+    static func isDisabled() -> Bool? {
+        let process = Process()
+        let stdoutPipe = Pipe()
+
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+        process.arguments = ["-g"]
+        process.standardOutput = stdoutPipe
+        process.standardError = FileHandle.nullDevice
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            return nil
+        }
+
+        guard process.terminationStatus == 0 else { return nil }
+
+        let data = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+        guard let output = String(data: data, encoding: .utf8) else { return nil }
+        return parse(output)
+    }
+
+    static func parse(_ output: String) -> Bool? {
+        for line in output.split(whereSeparator: { $0.isNewline }) {
+            let fields = line.split(whereSeparator: { $0.isWhitespace })
+            guard fields.count >= 2,
+                  fields[0].lowercased() == "sleepdisabled" else {
+                continue
+            }
+
+            switch fields[1] {
+            case "1": return true
+            case "0": return false
+            default: return nil
+            }
+        }
+
+        return nil
+    }
+}
+
 enum ClamshellStateReader {
     static func isClosed() -> Bool? {
         let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPMrootDomain"))

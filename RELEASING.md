@@ -2,7 +2,7 @@
 
 Capsomnia releases publish two package assets:
 
-- `Capsomnia-<version>.pkg` for immutable versioned downloads
+- `Capsomnia-<version>.pkg` for versioned downloads
 - `Capsomnia.pkg` for stable `releases/latest/download/Capsomnia.pkg` links
 
 ## Version Updates
@@ -15,6 +15,8 @@ Before building a release, update:
 - `README.ja.md`: current version
 - `CHANGELOG.md`: release entry
 
+Never replace a published tag or release asset. If a published build needs any change, increment the version and create a new release. Enable GitHub Immutable Releases before publishing the first stable release.
+
 Download links should point to `Capsomnia.pkg`, not a versioned asset name.
 
 ## Build
@@ -23,7 +25,7 @@ Download links should point to `Capsomnia.pkg`, not a versioned asset name.
 ./scripts/build-pkg.sh
 ```
 
-This writes a signed versioned package to `dist/Capsomnia-<version>.pkg`.
+This writes a signed versioned package to `dist/Capsomnia-<version>.pkg`. Both `Capsomnia.app` and the native privileged helper are signed with the Developer ID Application identity before the installer package is signed.
 
 CI builds the same package payload without signing and verifies that every BOM entry is owned by `root:wheel` and that no AppleDouble entries remain:
 

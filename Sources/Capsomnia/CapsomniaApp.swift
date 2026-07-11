@@ -6,9 +6,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var lastAppliedState: Bool?
     private var failedSleepState: Bool?
     private var nextSleepStateRetryAt = Date.distantPast
+    private var nextSleepStateVerificationAt = Date.distantPast
     private var nextDisplaySleepRetryAt = Date.distantPast
     private var didRequestDisplaySleepForClosedLid = false
     private var hasLoggedMissingClamshellState = false
+    private var hasLoggedMissingSleepState = false
     private var shouldRestoreSleepOnTerminate = true
     private var pollingTimer: Timer?
     private var signalSources: [DispatchSourceSignal] = []
@@ -18,6 +20,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
     private let errorImage = DotImage.make(color: .systemRed)
     private let helperRetryInterval: TimeInterval = 5
+    private let sleepStateVerificationInterval: TimeInterval = 10
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if terminateIfNewerInteractiveDuplicate() {
@@ -271,19 +274,40 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func apply(capsLockOn: Bool, reason: String) {
-        if lastAppliedState == capsLockOn {
-            if failedSleepState != nil {
-                failedSleepState = nil
-                nextSleepStateRetryAt = .distantPast
-                syncStatusItemVisibility()
-            }
-            evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
-            return
-        }
-
         let now = Date()
         if failedSleepState == capsLockOn, now < nextSleepStateRetryAt {
             return
+        }
+
+        if lastAppliedState == capsLockOn {
+            if failedSleepState == nil, now < nextSleepStateVerificationAt {
+                evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
+                return
+            }
+
+            guard let actualState = SleepStateReader.isDisabled() else {
+                if !hasLoggedMissingSleepState {
+                    log("\(reason) sleep_state_unavailable")
+                    hasLoggedMissingSleepState = true
+                }
+                failedSleepState = capsLockOn
+                nextSleepStateRetryAt = now.addingTimeInterval(helperRetryInterval)
+                nextSleepStateVerificationAt = nextSleepStateRetryAt
+                updateStatusError()
+                return
+            }
+
+            hasLoggedMissingSleepState = false
+            if actualState == capsLockOn {
+                failedSleepState = nil
+                nextSleepStateRetryAt = .distantPast
+                nextSleepStateVerificationAt = now.addingTimeInterval(sleepStateVerificationInterval)
+                syncStatusItemVisibility()
+                evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
+                return
+            }
+
+            log("\(reason) sleep_state_drift expected=\(capsLockOn ? "on" : "off") actual=\(actualState ? "on" : "off")")
         }
 
         let mode = capsLockOn ? "on" : "off"
@@ -298,8 +322,21 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         lastAppliedState = capsLockOn
+        let confirmedState = SleepStateReader.isDisabled()
+        guard confirmedState == Optional(capsLockOn) else {
+            hasLoggedMissingSleepState = confirmedState == nil
+            failedSleepState = capsLockOn
+            nextSleepStateRetryAt = now.addingTimeInterval(helperRetryInterval)
+            nextSleepStateVerificationAt = nextSleepStateRetryAt
+            log("\(reason) sleep_state_confirmation_failed expected=\(mode) actual=\(confirmedState.map { $0 ? "on" : "off" } ?? "unknown")")
+            updateStatusError()
+            return
+        }
+
+        hasLoggedMissingSleepState = false
         failedSleepState = nil
         nextSleepStateRetryAt = .distantPast
+        nextSleepStateVerificationAt = now.addingTimeInterval(sleepStateVerificationInterval)
         syncStatusItemVisibility()
         evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
     }

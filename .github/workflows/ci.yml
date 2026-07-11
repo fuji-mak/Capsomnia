@@ -13,6 +13,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build release executable
         run: swift build -c release
+      - name: Test sleep-state parsing
+        run: swift test
+      - name: Verify native privileged helper
+        run: |
+          file .build/release/capsomnia-pmset | grep -q 'Mach-O'
+          set +e
+          .build/release/capsomnia-pmset invalid-mode
+          helper_status=$?
+          set -e
+          test "$helper_status" -eq 64
       - name: Build and verify unsigned package payload
         run: SKIP_SIGNING=true ./scripts/build-pkg.sh "$RUNNER_TEMP/capsomnia-pkg"
       - name: Check shell scripts
@@ -22,7 +32,6 @@ jobs:
           zsh -n scripts/install.sh
           zsh -n scripts/notarize-pkg.sh
           zsh -n scripts/uninstall.sh
-          zsh -n support/capsomnia-pmset
 
   site:
     name: GitHub Pages site

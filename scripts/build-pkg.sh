@@ -42,13 +42,26 @@ trap cleanup EXIT
   "$SCRIPTS_DIR"
 
 BUILT_APP="$("$ROOT_DIR/scripts/build-app.sh" "$WORK_DIR/$APP_NAME.app")"
+/usr/bin/install -m 0755 \
+  "$ROOT_DIR/.build/release/capsomnia-pmset" \
+  "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
 if [[ "$SKIP_SIGNING" != "true" ]]; then
   /usr/bin/codesign --force --options runtime --timestamp --sign "$APP_SIGN_ID" "$BUILT_APP"
   /usr/bin/codesign --verify --deep --strict --verbose=2 "$BUILT_APP"
+  /usr/bin/codesign \
+    --force \
+    --options runtime \
+    --timestamp \
+    --sign "$APP_SIGN_ID" \
+    "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
+  /usr/bin/codesign \
+    --verify \
+    --strict \
+    --verbose=2 \
+    "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
 fi
 
 /usr/bin/ditto "$BUILT_APP" "$PAYLOAD_ROOT/Applications/$APP_NAME.app"
-/usr/bin/install -m 0755 "$ROOT_DIR/support/capsomnia-pmset" "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
 
 /bin/cat > "$PAYLOAD_ROOT/Library/LaunchAgents/$LABEL.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -112,11 +125,6 @@ console_home="$(/usr/bin/dscl . -read "/Users/$console_user" NFSHomeDirectory 2>
 /usr/sbin/chown -R root:wheel "/Applications/$APP_NAME.app"
 /bin/chmod -R go-w "/Applications/$APP_NAME.app"
 /bin/rm -f "$LEGACY_HELPER_PATH"
-/usr/bin/find \
-  "/Applications/$APP_NAME.app" \
-  "/Library/PrivilegedHelperTools" \
-  "/Library/LaunchAgents" \
-  -name '._*' -type f -delete 2>/dev/null || true
 
 sudoers_tmp="$(/usr/bin/mktemp)"
 cleanup() {

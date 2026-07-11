@@ -7,9 +7,20 @@ let package = Package(
     platforms: [
         .macOS(.v14)
     ],
+    products: [
+        .executable(name: "Capsomnia", targets: ["Capsomnia"]),
+        .executable(name: "capsomnia-pmset", targets: ["CapsomniaPmsetHelper"])
+    ],
     targets: [
         .executableTarget(
             name: "Capsomnia"
+        ),
+        .executableTarget(
+            name: "CapsomniaPmsetHelper"
+        ),
+        .testTarget(
+            name: "CapsomniaTests",
+            dependencies: ["Capsomnia"]
         )
     ],
     swiftLanguageModes: [.v5]

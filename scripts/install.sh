@@ -40,7 +40,7 @@ BUILT_APP="$("$ROOT_DIR/scripts/build-app.sh" "$build_tmp/$APP_NAME.app")"
 sudo /bin/mkdir -p "$(dirname "$HELPER_PATH")" "$(dirname "$SUDOERS_PATH")"
 sudo /usr/sbin/chown root:wheel "$(dirname "$HELPER_PATH")" "$(dirname "$SUDOERS_PATH")"
 sudo /bin/chmod 0755 "$(dirname "$HELPER_PATH")" "$(dirname "$SUDOERS_PATH")"
-sudo /usr/bin/install -o root -g wheel -m 0755 "support/capsomnia-pmset" "$HELPER_PATH"
+sudo /usr/bin/install -o root -g wheel -m 0755 ".build/release/capsomnia-pmset" "$HELPER_PATH"
 sudo /bin/rm -f "$LEGACY_HELPER_PATH"
 
 sudoers_tmp="$(mktemp)"

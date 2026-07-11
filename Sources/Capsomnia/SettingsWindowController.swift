@@ -18,13 +18,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let explainerOffTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
     private let explainerOffDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
 
-    private let permissionsHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
     private let permissionsCard = brandCard()
-    private let inputMonitoringTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
-    private let inputMonitoringDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let inputMonitoringIntro = brandLabel(size: 13, weight: .medium, color: Brand.text, wraps: true)
+    private let inputMonitoringSteps = brandLabel(size: 13, color: Brand.textDim, wraps: true)
     private let openInputMonitoringButton = OutlineButton()
-    private let backgroundItemTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
-    private let backgroundItemDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let backgroundItemNote = brandLabel(size: 11, color: Brand.textFaint, wraps: true)
 
     private let preferencesHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
 
@@ -115,19 +113,17 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         let isInitialSetup = page != .settings
         window?.title = isInitialSetup ? strings.welcomeTitle : strings.settingsTitle
-        titleLabel.stringValue = isInitialSetup ? strings.welcomeTitle : "Capsomnia"
+        titleLabel.stringValue = page == .permissions ? strings.setupTitle : (isInitialSetup ? strings.welcomeTitle : "Capsomnia")
 
         explainerOnTitle.stringValue = strings.explainerOnTitle
         explainerOnDesc.stringValue = strings.explainerOnDesc
         explainerOffTitle.stringValue = strings.explainerOffTitle
         explainerOffDesc.stringValue = strings.explainerOffDesc
 
-        permissionsHeading.stringValue = strings.permissionsHeading.uppercased()
-        inputMonitoringTitle.stringValue = strings.inputMonitoringTitle
-        inputMonitoringDesc.stringValue = strings.inputMonitoringDesc
+        inputMonitoringIntro.stringValue = strings.inputMonitoringIntro
+        inputMonitoringSteps.stringValue = strings.inputMonitoringSteps
         openInputMonitoringButton.title = strings.openInputMonitoring
-        backgroundItemTitle.stringValue = strings.backgroundItemTitle
-        backgroundItemDesc.stringValue = strings.backgroundItemDesc
+        backgroundItemNote.stringValue = strings.backgroundItemNote
 
         preferencesHeading.stringValue = strings.preferencesHeading.uppercased()
 
@@ -142,8 +138,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         noteLabel.stringValue = strings.initialSettingsNote
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
 
-        explainerCard.isHidden = page != .permissions
-        permissionsHeading.isHidden = page != .permissions
+        explainerCard.isHidden = page != .initialPreferences
         permissionsCard.isHidden = page != .permissions
         displaySleepOnLidCloseRow.isHidden = false
         displaySleepOnLidCloseDivider.isHidden = false
@@ -215,10 +210,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         window?.contentView = contentView
 
         permissionsLayoutConstraints = [
-            explainerCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             permissionsCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
         ]
         initialPreferencesLayoutConstraints = [
+            explainerCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             preferencesCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             noteLabel.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
@@ -253,16 +248,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             bodyStack.alignment = .leading
             bodyStack.distribution = .fill
             bodyStack.spacing = 16
-            bodyStack.addArrangedSubview(explainerCard)
-            bodyStack.addArrangedSubview(permissionsHeading)
             bodyStack.addArrangedSubview(permissionsCard)
-            bodyStack.setCustomSpacing(8, after: permissionsHeading)
             NSLayoutConstraint.activate(permissionsLayoutConstraints)
         case .initialPreferences:
             bodyStack.orientation = .vertical
             bodyStack.alignment = .leading
             bodyStack.distribution = .fill
             bodyStack.spacing = 16
+            bodyStack.addArrangedSubview(explainerCard)
             bodyStack.addArrangedSubview(preferencesHeading)
             bodyStack.addArrangedSubview(preferencesCard)
             bodyStack.addArrangedSubview(noteLabel)
@@ -318,21 +311,15 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func buildPermissionsCard() {
-        let inputRow = explainerRow(
-            dot: brandStatusDot(on: true),
-            title: inputMonitoringTitle,
-            desc: inputMonitoringDesc
-        )
-        let backgroundRow = explainerRow(
-            dot: brandStatusDot(on: false),
-            title: backgroundItemTitle,
-            desc: backgroundItemDesc
-        )
-
-        let inner = NSStackView(views: [backgroundRow, inputRow, openInputMonitoringButton])
+        let inner = NSStackView(views: [
+            inputMonitoringIntro,
+            inputMonitoringSteps,
+            openInputMonitoringButton,
+            backgroundItemNote
+        ])
         inner.orientation = .vertical
         inner.alignment = .leading
-        inner.spacing = 14
+        inner.spacing = 16
         inner.translatesAutoresizingMaskIntoConstraints = false
 
         permissionsCard.addSubview(inner)
@@ -341,9 +328,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             inner.trailingAnchor.constraint(equalTo: permissionsCard.trailingAnchor, constant: -16),
             inner.topAnchor.constraint(equalTo: permissionsCard.topAnchor, constant: 16),
             inner.bottomAnchor.constraint(equalTo: permissionsCard.bottomAnchor, constant: -16),
-            inputRow.widthAnchor.constraint(equalTo: inner.widthAnchor),
             openInputMonitoringButton.widthAnchor.constraint(equalTo: inner.widthAnchor),
-            backgroundRow.widthAnchor.constraint(equalTo: inner.widthAnchor)
+            inputMonitoringIntro.widthAnchor.constraint(equalTo: inner.widthAnchor),
+            inputMonitoringSteps.widthAnchor.constraint(equalTo: inner.widthAnchor),
+            backgroundItemNote.widthAnchor.constraint(equalTo: inner.widthAnchor)
         ])
     }
 

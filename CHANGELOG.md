@@ -4,6 +4,12 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 0.3.10 - 2026-07-11
+
+- Simplified the Input Monitoring screen to a short three-step flow.
+- Moved the Caps Lock on/off explanation to the preferences step.
+- Reduced the background item notice to a single unobtrusive line.
+
 ## 0.3.9 - 2026-07-11
 
 - Require Input Monitoring before completing first-run setup.

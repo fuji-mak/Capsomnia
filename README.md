@@ -26,6 +26,8 @@ Turn Caps Lock on when local work should keep running. Turn Caps Lock off when y
 
 It is useful for AI agents, mobile access, and other long-running or remote work.
 
+Capsomnia itself does not make network requests, collect telemetry, or require an account.
+
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="Caps Lock light on" width="560">
 </p>
@@ -139,8 +141,6 @@ The uninstaller unloads the LaunchAgent, stops Capsomnia, removes `Capsomnia.app
 Capsomnia's menu bar app does not run as root. System sleep settings require elevated privileges, so Capsomnia uses a small fixed native helper through passwordless `sudo`. The helper is a compiled executable and does not invoke a shell or load shell startup files.
 
 Package-installed app files, the helper, and the system LaunchAgent are owned by `root:wheel`. The packaged helper is also signed with the same Developer ID as the app. Capsomnia verifies the actual `SleepDisabled` state after every change and every ten seconds afterward. If the helper cannot apply a change, the state cannot be verified, or the setting drifts, the menu bar dot turns red and Capsomnia retries after five seconds instead of showing the requested state as active. The red error dot appears temporarily even if the menu bar icon is normally hidden.
-
-Capsomnia itself does not make network requests, collect telemetry, or require an account.
 
 Capsomnia does not request Input Monitoring or read keyboard events. It checks only the local Caps Lock state every 250 milliseconds, with timer tolerance so macOS can coalesce wakeups.
 

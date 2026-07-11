@@ -75,16 +75,15 @@ struct AppStrings {
     let settingsTitle: String
     let initialSettingsNote: String
     let welcomeTitle: String
+    let setupTitle: String
+    let inputMonitoringIntro: String
+    let inputMonitoringSteps: String
     let explainerOnTitle: String
     let explainerOnDesc: String
     let explainerOffTitle: String
     let explainerOffDesc: String
-    let permissionsHeading: String
-    let inputMonitoringTitle: String
-    let inputMonitoringDesc: String
     let openInputMonitoring: String
-    let backgroundItemTitle: String
-    let backgroundItemDesc: String
+    let backgroundItemNote: String
     let preferencesHeading: String
     let done: String
     let getStarted: String
@@ -107,16 +106,15 @@ struct AppStrings {
                 settingsTitle: "Settings",
                 initialSettingsNote: "Open Capsomnia again any time to change these.",
                 welcomeTitle: "Welcome to Capsomnia",
+                setupTitle: "Finish setting up Capsomnia",
+                inputMonitoringIntro: "Capsomnia requires Input Monitoring permission.",
+                inputMonitoringSteps: "1. Select Open Input Monitoring\n2. Turn on Capsomnia\n3. Select Quit & Reopen",
                 explainerOnTitle: "Caps Lock on",
                 explainerOnDesc: "System sleep is disabled — work keeps running, lid open or closed.",
                 explainerOffTitle: "Caps Lock off",
                 explainerOffDesc: "Normal sleep behavior resumes.",
-                permissionsHeading: "Permissions",
-                inputMonitoringTitle: "Input Monitoring",
-                inputMonitoringDesc: "Required to detect Caps Lock changes. Capsomnia does not read typed text. Turn Capsomnia on, then be sure to choose Quit & Reopen when macOS asks. After reopening, setup continues automatically.",
                 openInputMonitoring: "Open Input Monitoring",
-                backgroundItemTitle: "Background Item",
-                backgroundItemDesc: "macOS may show \"Taketo Fujimaki\" as a background item. It lets Capsomnia start at login and recover after crashes. Capsomnia has no network access or telemetry.",
+                backgroundItemNote: "macOS may show “Taketo Fujimaki” as a background item.",
                 preferencesHeading: "Preferences",
                 done: "Done",
                 getStarted: "Get started",
@@ -137,16 +135,15 @@ struct AppStrings {
                 settingsTitle: "設定",
                 initialSettingsNote: "あとからCapsomniaを開けばいつでも変更できます。",
                 welcomeTitle: "Capsomniaへようこそ",
+                setupTitle: "準備を完了してください",
+                inputMonitoringIntro: "Capsomniaを動かすには入力監視の許可が必要です。",
+                inputMonitoringSteps: "1.「入力監視を開く」を押す\n2. Capsomniaをオンにする\n3.「終了して再度開く」を押す",
                 explainerOnTitle: "Caps Lock ON",
                 explainerOnDesc: "システムスリープを無効化。蓋を閉じても作業が走り続けます。",
                 explainerOffTitle: "Caps Lock OFF",
                 explainerOffDesc: "通常のスリープ動作に戻ります。",
-                permissionsHeading: "権限",
-                inputMonitoringTitle: "入力監視",
-                inputMonitoringDesc: "Caps Lockの切り替えを検知するために必要です。入力内容は読みません。Capsomniaをオンにし、macOSに表示される「終了して再度開く」を必ず押してください。再起動後、自動的に次の設定へ進みます。",
                 openInputMonitoring: "入力監視を開く",
-                backgroundItemTitle: "バックグラウンド項目",
-                backgroundItemDesc: "macOSが「Taketo Fujimakiのバックグラウンド項目」を表示することがあります。ログイン時の起動とクラッシュ時の復帰のためです。ネットワーク通信やテレメトリ収集は行いません。",
+                backgroundItemNote: "macOSに“Taketo Fujimakiのバックグラウンド項目”と表示される場合があります。",
                 preferencesHeading: "環境設定",
                 done: "完了",
                 getStarted: "はじめる",

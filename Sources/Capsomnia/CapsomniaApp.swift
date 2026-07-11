@@ -40,14 +40,14 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         applyCurrentCapsLockState(reason: "startup")
 
         if shouldShowInitialSetup {
-            showSettingsWindow(initialSetup: true)
+            showSettingsWindow(page: initialSetupPage())
         } else if Preferences.inputMonitoringRequested {
             installEventTap()
         }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        showSettingsWindow(initialSetup: !Preferences.didCompleteInitialSetup)
+        showSettingsWindow(page: currentSettingsPage())
         return true
     }
 
@@ -90,7 +90,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     @objc private func handleOpenSettingsNotification(_ notification: Notification) {
-        showSettingsWindow(initialSetup: !Preferences.didCompleteInitialSetup)
+        showSettingsWindow(page: currentSettingsPage())
     }
 
     private func syncStatusItemVisibility() {
@@ -178,7 +178,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openCapsomnia() {
-        showSettingsWindow(initialSetup: !Preferences.didCompleteInitialSetup)
+        showSettingsWindow(page: currentSettingsPage())
     }
 
     @objc private func quit() {
@@ -186,7 +186,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
-    private func showSettingsWindow(initialSetup: Bool) {
+    private func showSettingsWindow(page: SettingsPage) {
         if settingsWindowController == nil {
             settingsWindowController = SettingsWindowController(
                 onShowMenuBarIconChange: { [weak self] enabled in
@@ -214,7 +214,15 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             )
         }
 
-        settingsWindowController?.show(initialSetup: initialSetup)
+        settingsWindowController?.show(page: page)
+    }
+
+    private func currentSettingsPage() -> SettingsPage {
+        Preferences.didCompleteInitialSetup ? .settings : initialSetupPage()
+    }
+
+    private func initialSetupPage() -> SettingsPage {
+        CGPreflightListenEventAccess() ? .initialPreferences : .permissions
     }
 
     private func setShowMenuBarIcon(_ enabled: Bool) {

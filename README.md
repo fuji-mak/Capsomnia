@@ -16,7 +16,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `0.3.8`
+Current version: `0.3.9`
 
 [日本語 README](README.ja.md) · [Download `Capsomnia.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
 
@@ -73,17 +73,18 @@ Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions,
 
 ## Settings
 
-On first launch, Capsomnia opens a small initial settings window where you can choose:
+On first launch, Capsomnia explains its background item and asks you to enable Input Monitoring. Enable Capsomnia in System Settings and choose **Quit & Reopen** when macOS asks. Capsomnia does not read typed text; this permission is used only to detect Caps Lock changes.
+
+After Capsomnia reopens and confirms the permission, you can choose:
 
 - whether to show the menu bar dot
+- whether to turn the display off when the lid closes
+- whether to open Capsomnia at login
 - English or Japanese
 
-Open Capsomnia again later to change:
+Open Capsomnia again later to change the same settings.
 
-- menu bar dot visibility
-- display sleep when the lid closes, enabled by default
-- language
-- opening at login, enabled by default
+Input Monitoring must be enabled before the initial setup can be completed.
 
 You can open Capsomnia from `/Applications/Capsomnia.app` after package installation, from `~/Applications/Capsomnia.app` after source installation, or from the menu bar item while it is visible.
 

@@ -1,8 +1,13 @@
 import AppKit
 
+enum SettingsPage {
+    case permissions
+    case initialPreferences
+    case settings
+}
+
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private static let settingsContentWidth: CGFloat = 400
-    private static let initialContentWidth: CGFloat = 760
 
     private let headerIcon = NSImageView()
     private let titleLabel = brandLabel(size: 21, weight: .bold, color: Brand.text)
@@ -50,10 +55,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     private let rootStack = NSStackView()
     private let bodyStack = NSStackView()
-    private let leftColumn = NSStackView()
-    private let rightColumn = NSStackView()
     private var preferencesCard = NSView()
-    private var initialLayoutConstraints: [NSLayoutConstraint] = []
+    private var permissionsLayoutConstraints: [NSLayoutConstraint] = []
+    private var initialPreferencesLayoutConstraints: [NSLayoutConstraint] = []
     private var settingsLayoutConstraints: [NSLayoutConstraint] = []
 
     private let onShowMenuBarIconChange: (Bool) -> Void
@@ -62,7 +66,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let onDisplaySleepOnLidCloseChange: (Bool) -> Void
     private let onOpenInputMonitoring: () -> Void
     private let onFinishInitialSetup: () -> Void
-    private var isInitialSetup = false
+    private var page: SettingsPage = .settings
 
     init(
         onShowMenuBarIconChange: @escaping (Bool) -> Void,
@@ -109,6 +113,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     func reloadText() {
         let strings = AppStrings.current()
 
+        let isInitialSetup = page != .settings
         window?.title = isInitialSetup ? strings.welcomeTitle : strings.settingsTitle
         titleLabel.stringValue = isInitialSetup ? strings.welcomeTitle : "Capsomnia"
 
@@ -137,20 +142,20 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         noteLabel.stringValue = strings.initialSettingsNote
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
 
-        explainerCard.isHidden = !isInitialSetup
-        permissionsHeading.isHidden = !isInitialSetup
-        permissionsCard.isHidden = !isInitialSetup
-        displaySleepOnLidCloseRow.isHidden = isInitialSetup
-        displaySleepOnLidCloseDivider.isHidden = isInitialSetup
-        openAtLoginRow.isHidden = isInitialSetup
-        openAtLoginDivider.isHidden = isInitialSetup
-        noteLabel.isHidden = !isInitialSetup
+        explainerCard.isHidden = page != .permissions
+        permissionsHeading.isHidden = page != .permissions
+        permissionsCard.isHidden = page != .permissions
+        displaySleepOnLidCloseRow.isHidden = false
+        displaySleepOnLidCloseDivider.isHidden = false
+        openAtLoginRow.isHidden = false
+        openAtLoginDivider.isHidden = false
+        noteLabel.isHidden = page != .initialPreferences
 
         updateValues()
     }
 
-    func show(initialSetup: Bool) {
-        isInitialSetup = initialSetup
+    func show(page: SettingsPage) {
+        self.page = page
         applyLayout()
         reloadText()
         resizeToFit()
@@ -160,12 +165,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-        finishInitialSetupIfNeeded()
+        guard page == .initialPreferences else { return }
+        finishInitialSetup()
     }
 
     private func resizeToFit() {
         guard let window, let contentView = window.contentView else { return }
-        let width = isInitialSetup ? Self.initialContentWidth : Self.settingsContentWidth
+        let width = Self.settingsContentWidth
         let currentHeight = max(contentView.bounds.height, 1)
         window.setContentSize(NSSize(width: width, height: currentHeight))
         contentView.layoutSubtreeIfNeeded()
@@ -199,8 +205,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         openInputMonitoringButton.onClick = { [weak self] in self?.onOpenInputMonitoring() }
 
         configureColumn(rootStack)
-        configureColumn(leftColumn)
-        configureColumn(rightColumn)
         rootStack.addArrangedSubview(header)
         rootStack.addArrangedSubview(bodyStack)
         rootStack.setCustomSpacing(20, after: header)
@@ -210,12 +214,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         contentView.addSubview(rootStack)
         window?.contentView = contentView
 
-        initialLayoutConstraints = [
-            explainerCard.widthAnchor.constraint(equalTo: leftColumn.widthAnchor),
-            permissionsCard.widthAnchor.constraint(equalTo: leftColumn.widthAnchor),
-            preferencesCard.widthAnchor.constraint(equalTo: rightColumn.widthAnchor),
-            noteLabel.widthAnchor.constraint(equalTo: rightColumn.widthAnchor),
-            doneButton.widthAnchor.constraint(equalTo: rightColumn.widthAnchor)
+        permissionsLayoutConstraints = [
+            explainerCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            permissionsCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
+        ]
+        initialPreferencesLayoutConstraints = [
+            preferencesCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            noteLabel.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
         ]
         settingsLayoutConstraints = [
             preferencesCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
@@ -236,31 +242,34 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func applyLayout() {
-        NSLayoutConstraint.deactivate(initialLayoutConstraints + settingsLayoutConstraints)
+        NSLayoutConstraint.deactivate(
+            permissionsLayoutConstraints + initialPreferencesLayoutConstraints + settingsLayoutConstraints
+        )
         clearArrangedSubviews(bodyStack)
-        clearArrangedSubviews(leftColumn)
-        clearArrangedSubviews(rightColumn)
 
-        if isInitialSetup {
-            leftColumn.addArrangedSubview(explainerCard)
-            leftColumn.addArrangedSubview(permissionsHeading)
-            leftColumn.addArrangedSubview(permissionsCard)
-            leftColumn.setCustomSpacing(8, after: permissionsHeading)
-
-            rightColumn.addArrangedSubview(preferencesHeading)
-            rightColumn.addArrangedSubview(preferencesCard)
-            rightColumn.addArrangedSubview(noteLabel)
-            rightColumn.addArrangedSubview(doneButton)
-            rightColumn.setCustomSpacing(8, after: preferencesHeading)
-
-            bodyStack.orientation = .horizontal
-            bodyStack.alignment = .top
-            bodyStack.distribution = .fillEqually
+        switch page {
+        case .permissions:
+            bodyStack.orientation = .vertical
+            bodyStack.alignment = .leading
+            bodyStack.distribution = .fill
             bodyStack.spacing = 16
-            bodyStack.addArrangedSubview(leftColumn)
-            bodyStack.addArrangedSubview(rightColumn)
-            NSLayoutConstraint.activate(initialLayoutConstraints)
-        } else {
+            bodyStack.addArrangedSubview(explainerCard)
+            bodyStack.addArrangedSubview(permissionsHeading)
+            bodyStack.addArrangedSubview(permissionsCard)
+            bodyStack.setCustomSpacing(8, after: permissionsHeading)
+            NSLayoutConstraint.activate(permissionsLayoutConstraints)
+        case .initialPreferences:
+            bodyStack.orientation = .vertical
+            bodyStack.alignment = .leading
+            bodyStack.distribution = .fill
+            bodyStack.spacing = 16
+            bodyStack.addArrangedSubview(preferencesHeading)
+            bodyStack.addArrangedSubview(preferencesCard)
+            bodyStack.addArrangedSubview(noteLabel)
+            bodyStack.addArrangedSubview(doneButton)
+            bodyStack.setCustomSpacing(8, after: preferencesHeading)
+            NSLayoutConstraint.activate(initialPreferencesLayoutConstraints)
+        case .settings:
             bodyStack.orientation = .vertical
             bodyStack.alignment = .leading
             bodyStack.distribution = .fill
@@ -320,7 +329,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             desc: backgroundItemDesc
         )
 
-        let inner = NSStackView(views: [inputRow, openInputMonitoringButton, backgroundRow])
+        let inner = NSStackView(views: [backgroundRow, inputRow, openInputMonitoringButton])
         inner.orientation = .vertical
         inner.alignment = .leading
         inner.spacing = 14
@@ -455,9 +464,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         languageSegment.setSelected(Preferences.language.rawValue)
     }
 
-    private func finishInitialSetupIfNeeded() {
-        guard isInitialSetup else { return }
-        isInitialSetup = false
+    private func finishInitialSetup() {
+        page = .settings
         onShowMenuBarIconChange(menuBarToggle.isOn)
         if let language = AppLanguage(rawValue: languageSegment.selectedValue) {
             onLanguageChange(language)
@@ -466,7 +474,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func done() {
-        finishInitialSetupIfNeeded()
+        if page == .initialPreferences {
+            finishInitialSetup()
+        }
         close()
     }
 }

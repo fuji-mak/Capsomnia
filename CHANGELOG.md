@@ -4,6 +4,12 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 0.3.9 - 2026-07-11
+
+- Require Input Monitoring before completing first-run setup.
+- Split onboarding into a permission screen followed by preferences after macOS reopens Capsomnia.
+- Show the background item explanation before the Input Monitoring instructions.
+
 ## 0.3.8 - 2026-07-11
 
 - Split the first-run onboarding window into two columns so the initial screen is shorter.

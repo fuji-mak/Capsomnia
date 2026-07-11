@@ -16,7 +16,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-現在のバージョン: `0.3.8`
+現在のバージョン: `0.3.9`
 
 [English README](README.md) · [`Capsomnia.pkg` をダウンロード](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
 
@@ -73,17 +73,18 @@ cd Capsomnia
 
 ## 設定
 
-初回起動時は小さな初期設定画面が開き、次の項目を選べます。
+初回起動時は、バックグラウンド項目について説明し、入力監視を有効にするよう案内します。システム設定で Capsomnia をオンにし、macOS に表示される **「終了して再度開く」** を押してください。Capsomnia は入力内容を読みません。この権限は Caps Lock の切り替え検知にのみ使います。
+
+Capsomnia が再起動して権限を確認すると、次の項目を選べます。
 
 - メニューバーに丸を表示するか
+- 蓋を閉じたら画面をオフにするか
+- ログイン時に起動するか
 - 日本語・英語のどちらを使うか
 
-あとから Capsomnia をもう一度開くと、次の項目を変更できます。
+あとから Capsomnia をもう一度開くと、同じ項目を変更できます。
 
-- メニューバーの丸を表示するか
-- 蓋を閉じたら画面をオフにするか、デフォルトはオン
-- 言語
-- ログイン時に起動するか、デフォルトはオン
+入力監視を有効にするまでは初期設定を完了できません。
 
 パッケージインストール後は `/Applications/Capsomnia.app`、ソースインストール後は `~/Applications/Capsomnia.app` から開けます。メニューバー項目を表示している場合は、そこからも開けます。
 

@@ -269,12 +269,21 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func openInputMonitoring() {
+        let hasRequestedBefore = Preferences.inputMonitoringRequested
         Preferences.showWelcomeOnNextLaunch()
         Preferences.inputMonitoringRequested = true
         Preferences.markInputMonitoringReopenPending()
-        installEventTap()
-        openInputMonitoringSettings()
-        log("open_input_monitoring_settings")
+
+        if CGRequestListenEventAccess() {
+            installEventTap()
+            showSettingsWindow(page: .initialPreferences)
+            log("input_monitoring_already_granted")
+        } else if hasRequestedBefore {
+            openInputMonitoringSettings()
+            log("open_input_monitoring_settings_after_previous_request")
+        } else {
+            log("request_input_monitoring_access")
+        }
     }
 
     private func consumeInputMonitoringReopenRequest() -> Bool {

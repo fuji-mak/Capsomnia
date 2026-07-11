@@ -21,7 +21,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let permissionsCard = brandCard()
     private let inputMonitoringIntro = brandLabel(size: 13, weight: .medium, color: Brand.text, wraps: true)
     private let inputMonitoringSteps = brandLabel(size: 13, color: Brand.textDim, wraps: true)
-    private let openInputMonitoringButton = OutlineButton()
+    private let openInputMonitoringButton = LEDButton()
     private let backgroundItemNote = brandLabel(size: 11, color: Brand.textFaint, wraps: true)
 
     private let preferencesHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)

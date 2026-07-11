@@ -4,6 +4,12 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 0.3.11 - 2026-07-11
+
+- Changed the Input Monitoring action to the primary LED-green button style.
+- Prevented the macOS permission alert and Input Monitoring settings from opening simultaneously.
+- Open Input Monitoring settings directly only after a previous permission request.
+
 ## 0.3.10 - 2026-07-11
 
 - Simplified the Input Monitoring screen to a short three-step flow.

@@ -1,7 +1,8 @@
 import AppKit
 
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
-    private static let contentWidth: CGFloat = 400
+    private static let settingsContentWidth: CGFloat = 400
+    private static let initialContentWidth: CGFloat = 760
 
     private let headerIcon = NSImageView()
     private let titleLabel = brandLabel(size: 21, weight: .bold, color: Brand.text)
@@ -47,6 +48,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let noteLabel = brandLabel(size: 12, color: Brand.textFaint, wraps: true)
     private let doneButton = LEDButton()
 
+    private let rootStack = NSStackView()
+    private let bodyStack = NSStackView()
+    private let leftColumn = NSStackView()
+    private let rightColumn = NSStackView()
+    private var preferencesCard = NSView()
+    private var initialLayoutConstraints: [NSLayoutConstraint] = []
+    private var settingsLayoutConstraints: [NSLayoutConstraint] = []
+
     private let onShowMenuBarIconChange: (Bool) -> Void
     private let onLanguageChange: (AppLanguage) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
@@ -71,7 +80,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onFinishInitialSetup = onFinishInitialSetup
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: Self.contentWidth, height: 480),
+            contentRect: NSRect(x: 0, y: 0, width: Self.settingsContentWidth, height: 480),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -129,6 +138,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
 
         explainerCard.isHidden = !isInitialSetup
+        permissionsHeading.isHidden = !isInitialSetup
+        permissionsCard.isHidden = !isInitialSetup
         displaySleepOnLidCloseRow.isHidden = isInitialSetup
         displaySleepOnLidCloseDivider.isHidden = isInitialSetup
         openAtLoginRow.isHidden = isInitialSetup
@@ -140,6 +151,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     func show(initialSetup: Bool) {
         isInitialSetup = initialSetup
+        applyLayout()
         reloadText()
         resizeToFit()
         window?.center()
@@ -152,10 +164,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func resizeToFit() {
-        guard let contentView = window?.contentView else { return }
+        guard let window, let contentView = window.contentView else { return }
+        let width = isInitialSetup ? Self.initialContentWidth : Self.settingsContentWidth
+        let currentHeight = max(contentView.bounds.height, 1)
+        window.setContentSize(NSSize(width: width, height: currentHeight))
         contentView.layoutSubtreeIfNeeded()
         let height = contentView.fittingSize.height
-        window?.setContentSize(NSSize(width: Self.contentWidth, height: height))
+        window.setContentSize(NSSize(width: width, height: height))
     }
 
     private func buildContent() {
@@ -178,45 +193,98 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         buildExplainerCard()
         buildPermissionsCard()
 
-        let preferencesCard = buildPreferencesCard()
+        preferencesCard = buildPreferencesCard()
 
         doneButton.onClick = { [weak self] in self?.done() }
         openInputMonitoringButton.onClick = { [weak self] in self?.onOpenInputMonitoring() }
 
-        let stack = NSStackView(views: [
-            header,
-            explainerCard,
-            permissionsHeading,
-            permissionsCard,
-            preferencesHeading,
-            preferencesCard,
-            noteLabel,
-            doneButton
+        configureColumn(rootStack)
+        configureColumn(leftColumn)
+        configureColumn(rightColumn)
+        rootStack.addArrangedSubview(header)
+        rootStack.addArrangedSubview(bodyStack)
+        rootStack.setCustomSpacing(20, after: header)
+        rootStack.translatesAutoresizingMaskIntoConstraints = false
+        bodyStack.translatesAutoresizingMaskIntoConstraints = false
+
+        contentView.addSubview(rootStack)
+        window?.contentView = contentView
+
+        initialLayoutConstraints = [
+            explainerCard.widthAnchor.constraint(equalTo: leftColumn.widthAnchor),
+            permissionsCard.widthAnchor.constraint(equalTo: leftColumn.widthAnchor),
+            preferencesCard.widthAnchor.constraint(equalTo: rightColumn.widthAnchor),
+            noteLabel.widthAnchor.constraint(equalTo: rightColumn.widthAnchor),
+            doneButton.widthAnchor.constraint(equalTo: rightColumn.widthAnchor)
+        ]
+        settingsLayoutConstraints = [
+            preferencesCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
+        ]
+
+        NSLayoutConstraint.activate([
+            rootStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 28),
+            rootStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -28),
+            rootStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 28),
+            rootStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24),
+            header.widthAnchor.constraint(equalTo: rootStack.widthAnchor),
+            bodyStack.widthAnchor.constraint(equalTo: rootStack.widthAnchor)
         ])
+
+        applyLayout()
+        reloadText()
+    }
+
+    private func applyLayout() {
+        NSLayoutConstraint.deactivate(initialLayoutConstraints + settingsLayoutConstraints)
+        clearArrangedSubviews(bodyStack)
+        clearArrangedSubviews(leftColumn)
+        clearArrangedSubviews(rightColumn)
+
+        if isInitialSetup {
+            leftColumn.addArrangedSubview(explainerCard)
+            leftColumn.addArrangedSubview(permissionsHeading)
+            leftColumn.addArrangedSubview(permissionsCard)
+            leftColumn.setCustomSpacing(8, after: permissionsHeading)
+
+            rightColumn.addArrangedSubview(preferencesHeading)
+            rightColumn.addArrangedSubview(preferencesCard)
+            rightColumn.addArrangedSubview(noteLabel)
+            rightColumn.addArrangedSubview(doneButton)
+            rightColumn.setCustomSpacing(8, after: preferencesHeading)
+
+            bodyStack.orientation = .horizontal
+            bodyStack.alignment = .top
+            bodyStack.distribution = .fillEqually
+            bodyStack.spacing = 16
+            bodyStack.addArrangedSubview(leftColumn)
+            bodyStack.addArrangedSubview(rightColumn)
+            NSLayoutConstraint.activate(initialLayoutConstraints)
+        } else {
+            bodyStack.orientation = .vertical
+            bodyStack.alignment = .leading
+            bodyStack.distribution = .fill
+            bodyStack.spacing = 16
+            bodyStack.addArrangedSubview(preferencesHeading)
+            bodyStack.addArrangedSubview(preferencesCard)
+            bodyStack.addArrangedSubview(doneButton)
+            bodyStack.setCustomSpacing(8, after: preferencesHeading)
+            NSLayoutConstraint.activate(settingsLayoutConstraints)
+        }
+    }
+
+    private func configureColumn(_ stack: NSStackView) {
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 16
-        stack.setCustomSpacing(20, after: header)
-        stack.setCustomSpacing(8, after: permissionsHeading)
-        stack.setCustomSpacing(8, after: preferencesHeading)
         stack.translatesAutoresizingMaskIntoConstraints = false
+    }
 
-        contentView.addSubview(stack)
-        window?.contentView = contentView
-
-        // Full-width children inside the leading-aligned stack.
-        for child in [header, explainerCard, permissionsCard, preferencesCard, noteLabel, doneButton] {
-            child.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+    private func clearArrangedSubviews(_ stack: NSStackView) {
+        for view in stack.arrangedSubviews {
+            stack.removeArrangedSubview(view)
+            view.removeFromSuperview()
         }
-
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 28),
-            stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -28),
-            stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 28),
-            stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
-        ])
-
-        reloadText()
     }
 
     private func buildExplainerCard() {

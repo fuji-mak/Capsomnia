@@ -165,6 +165,7 @@ private enum PreferenceKey {
     static let didCompleteInitialSetup = "DidCompleteInitialSetup"
     static let forceWelcomeOnNextLaunch = "ForceWelcomeOnNextLaunch"
     static let inputMonitoringRequested = "InputMonitoringRequested"
+    static let inputMonitoringReopenRequestedAt = "InputMonitoringReopenRequestedAt"
 }
 
 enum Preferences {
@@ -219,6 +220,18 @@ enum Preferences {
 
     static func showWelcomeOnNextLaunch() {
         defaults.set(true, forKey: PreferenceKey.forceWelcomeOnNextLaunch)
+    }
+
+    static func markInputMonitoringReopenPending() {
+        defaults.set(Date().timeIntervalSince1970, forKey: PreferenceKey.inputMonitoringReopenRequestedAt)
+    }
+
+    static func consumeFreshInputMonitoringReopenRequest(maxAge: TimeInterval = 600) -> Bool {
+        let requestedAt = defaults.double(forKey: PreferenceKey.inputMonitoringReopenRequestedAt)
+        guard requestedAt > 0 else { return false }
+
+        defaults.removeObject(forKey: PreferenceKey.inputMonitoringReopenRequestedAt)
+        return Date().timeIntervalSince1970 - requestedAt <= maxAge
     }
 
     static func migrateInputMonitoringPreferenceIfNeeded() {

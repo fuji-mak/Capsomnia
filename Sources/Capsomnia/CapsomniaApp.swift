@@ -53,7 +53,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         guard shouldRestoreSleepOnTerminate else { return }
-        log("terminate restore_off")
+
+        let shouldReopen = consumeInputMonitoringReopenRequest()
+        if shouldReopen {
+            scheduleReopenAfterTermination()
+        }
+
+        log("terminate restore_off\(shouldReopen ? " reopen_after_permission_quit" : "")")
         _ = runHelper("off")
     }
 
@@ -257,9 +263,37 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private func openInputMonitoring() {
         Preferences.showWelcomeOnNextLaunch()
         Preferences.inputMonitoringRequested = true
+        Preferences.markInputMonitoringReopenPending()
         installEventTap()
         openInputMonitoringSettings()
         log("open_input_monitoring_settings")
+    }
+
+    private func consumeInputMonitoringReopenRequest() -> Bool {
+        let shouldReopen = Preferences.consumeFreshInputMonitoringReopenRequest()
+        if shouldReopen {
+            Preferences.showWelcomeOnNextLaunch()
+        }
+        return shouldReopen
+    }
+
+    private func scheduleReopenAfterTermination() {
+        let bundlePath = Bundle.main.bundleURL.path
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = [
+            "-c",
+            "sleep 1; /usr/bin/open \"$1\"",
+            "capsomnia-reopen",
+            bundlePath
+        ]
+
+        do {
+            try process.run()
+            log("scheduled_reopen_after_permission_quit")
+        } catch {
+            log("schedule_reopen_failed error=\(error.localizedDescription)")
+        }
     }
 
     private func openInputMonitoringSettings() {
@@ -419,9 +453,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         for signalNumber in [SIGINT, SIGTERM] {
             let source = DispatchSource.makeSignalSource(signal: signalNumber, queue: .main)
             source.setEventHandler { [weak self] in
-                self?.log("signal=\(signalNumber) restore_off")
+                let shouldReopen = self?.consumeInputMonitoringReopenRequest() ?? false
+                if shouldReopen {
+                    self?.scheduleReopenAfterTermination()
+                }
+                self?.log("signal=\(signalNumber) restore_off\(shouldReopen ? " reopen_after_permission_quit" : "")")
                 _ = self?.runHelper("off")
-                exit(0)
+                exit(shouldReopen ? 1 : 0)
             }
             source.resume()
             signalSources.append(source)

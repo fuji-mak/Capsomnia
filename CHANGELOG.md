@@ -4,6 +4,11 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 0.3.8 - 2026-07-11
+
+- Split the first-run onboarding window into two columns so the initial screen is shorter.
+- Reopen Capsomnia after the macOS Input Monitoring "Quit & Reopen" flow when macOS does not bring it back automatically.
+
 ## 0.3.7 - 2026-07-11
 
 - Added onboarding and documentation for Input Monitoring and the macOS background item prompt.

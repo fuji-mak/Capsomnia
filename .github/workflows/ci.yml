@@ -35,3 +35,12 @@ jobs:
       - run: npm run build:site
       - name: Check generated site CSS
         run: git diff --exit-code -- docs/styles.css
+      - name: Validate SEO files
+        run: |
+          test -f docs/robots.txt
+          test -f docs/sitemap.xml
+          test -f docs/googlee5de8ad27617297a.html
+          grep -q 'https://fuji-mak.github.io/Capsomnia/' docs/sitemap.xml
+          grep -q 'Sitemap: https://fuji-mak.github.io/Capsomnia/sitemap.xml' docs/robots.txt
+          grep -q 'google-site-verification: googlee5de8ad27617297a.html' docs/googlee5de8ad27617297a.html
+          grep -q '"@type": "SoftwareApplication"' docs/index.html

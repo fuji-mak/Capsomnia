@@ -4,6 +4,16 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 1.0.0 - 2026-07-11
+
+First stable release of Capsomnia.
+
+- Toggle system sleep prevention with Caps Lock while keeping normal sleep behavior one switch away.
+- Keep local work running with the MacBook lid closed, with optional display sleep.
+- Provide a signed and notarized installer, a restricted root-owned helper, crash recovery, and a bundled uninstaller.
+- Include a two-step first-run flow for Input Monitoring and user preferences.
+- Make no network requests, collect no telemetry, and require no account.
+
 ## 0.3.11 - 2026-07-11
 
 - Changed the Input Monitoring action to the primary LED-green button style.

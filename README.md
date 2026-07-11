@@ -143,6 +143,8 @@ Capsomnia itself does not make network requests, collect telemetry, or require a
 
 Capsomnia tries to use a local macOS event tap so Caps Lock changes are detected immediately. macOS may classify this as Input Monitoring. Capsomnia does not record or upload keystrokes; it only checks the Caps Lock flag. If the permission is not granted, Capsomnia falls back to polling the Caps Lock state once per second.
 
+macOS may show a "Taketo Fujimaki" background item after installation. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
+
 The app can only invoke:
 
 ```sh

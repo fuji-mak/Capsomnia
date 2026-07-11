@@ -34,7 +34,7 @@
     <meta name="twitter:image" content="https://fuji-mak.github.io/Capsomnia/og-image.png" />
     <meta name="twitter:image:alt" content="Capsomnia: Caps LockをMacのスリープ防止スイッチに。" />
 
-    <link rel="stylesheet" href="styles.css?v=20260708-privacy-chips" />
+    <link rel="stylesheet" href="styles.css?v=20260711-permissions" />
   </head>
   <body class="bg-[var(--bg)] text-[var(--text)] antialiased [text-rendering:optimizeLegibility]">
     <a
@@ -386,6 +386,26 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
             </p>
           </div>
         </div>
+        <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
+            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]" data-i18n="securityInputTitle">
+              Input Monitoring is optional
+            </h3>
+            <p class="text-sm text-[var(--text-faint)]" data-i18n="securityInputBody">
+              Capsomnia uses it only to detect Caps Lock changes immediately. It does not read typed text, and it falls
+              back to a one-second Caps Lock check if you skip the permission.
+            </p>
+          </div>
+          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
+            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]" data-i18n="securityBackgroundTitle">
+              Background item prompt
+            </h3>
+            <p class="text-sm text-[var(--text-faint)]" data-i18n="securityBackgroundBody">
+              macOS may show “Taketo Fujimaki” as a background item. This is the LaunchAgent that starts Capsomnia at
+              login and recovers after crashes.
+            </p>
+          </div>
+        </div>
         <p class="mt-7 max-w-[760px] text-sm text-[var(--text-faint)]" data-i18n="securityReq">
           Quitting the app restores normal sleep behavior. Sleep-disabled closed-lid use can increase heat and battery
           drain — mind airflow, power, and runtime.
@@ -447,6 +467,6 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
       <p class="text-sm" data-i18n="footerCatch">Macの最も無駄なキーに最高の仕事を与える</p>
     </footer>
 
-    <script src="capsomnia.js?v=20260708-privacy-chips"></script>
+    <script src="capsomnia.js?v=20260711-permissions"></script>
   </body>
 </html>

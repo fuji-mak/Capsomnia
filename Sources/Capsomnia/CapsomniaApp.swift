@@ -21,6 +21,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         Preferences.registerDefaults()
+        Preferences.migrateInputMonitoringPreferenceIfNeeded()
+        let shouldShowInitialSetup = Preferences.consumeForceWelcomeOnNextLaunch()
+            || !Preferences.didCompleteInitialSetup
+
         DistributedNotificationCenter.default().addObserver(
             self,
             selector: #selector(handleOpenSettingsNotification),
@@ -31,12 +35,14 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         syncStatusItemVisibility()
         installSignalHandlers()
-        installEventTapOrFallback()
+        installPollingMonitor()
         log("start")
         applyCurrentCapsLockState(reason: "startup")
 
-        if Preferences.consumeForceWelcomeOnNextLaunch() || !Preferences.didCompleteInitialSetup {
+        if shouldShowInitialSetup {
             showSettingsWindow(initialSetup: true)
+        } else if Preferences.inputMonitoringRequested {
+            installEventTap()
         }
     }
 
@@ -189,8 +195,15 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 onDisplaySleepOnLidCloseChange: { [weak self] enabled in
                     self?.setDisplaySleepOnLidClose(enabled)
                 },
-                onFinishInitialSetup: {
+                onOpenInputMonitoring: { [weak self] in
+                    self?.openInputMonitoring()
+                },
+                onFinishInitialSetup: { [weak self] in
+                    Preferences.ensureInputMonitoringChoiceRecorded()
                     Preferences.didCompleteInitialSetup = true
+                    if Preferences.inputMonitoringRequested {
+                        self?.installEventTap()
+                    }
                 }
             )
         }
@@ -241,7 +254,33 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         log("preference display_sleep_on_lid_close=\(enabled ? "on" : "off")")
     }
 
-    private func installEventTapOrFallback() {
+    private func openInputMonitoring() {
+        Preferences.showWelcomeOnNextLaunch()
+        Preferences.inputMonitoringRequested = true
+        installEventTap()
+        openInputMonitoringSettings()
+        log("open_input_monitoring_settings")
+    }
+
+    private func openInputMonitoringSettings() {
+        let candidates = [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent",
+            "x-apple.systempreferences:com.apple.Settings.PrivacySecurity.extension?Privacy_ListenEvent"
+        ]
+
+        for candidate in candidates {
+            guard let url = URL(string: candidate) else { continue }
+            if NSWorkspace.shared.open(url) {
+                return
+            }
+        }
+
+        NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/System Settings.app"))
+    }
+
+    private func installEventTap() {
+        guard eventTap == nil else { return }
+
         let eventMask = CGEventMask(1 << CGEventType.flagsChanged.rawValue)
         let userInfo = Unmanaged.passUnretained(self).toOpaque()
 
@@ -254,7 +293,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             userInfo: userInfo
         ) else {
             log("event_tap_unavailable using_polling_fallback")
-            installPollingMonitor()
             return
         }
 
@@ -263,7 +301,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
         log("event_tap_ready")
-        installPollingMonitor()
     }
 
     private func installPollingMonitor() {

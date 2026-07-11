@@ -62,6 +62,12 @@
       securityInvokeBody: "The sudoers rule is limited to these three exact commands.",
       securityHelperTitle: "The helper only ever runs",
       securityHelperBody: "It accepts <code>on</code>, <code>off</code>, and <code>display-sleep</code> and nothing else.",
+      securityInputTitle: "Input Monitoring is optional",
+      securityInputBody:
+        "Capsomnia uses it only to detect Caps Lock changes immediately. It does not read typed text, and it falls back to a one-second Caps Lock check if you skip the permission.",
+      securityBackgroundTitle: "Background item prompt",
+      securityBackgroundBody:
+        "macOS may show “Taketo Fujimaki” as a background item. This is the LaunchAgent that starts Capsomnia at login and recovers after crashes.",
       securityReq:
         "Quitting the app restores normal sleep behavior. Sleep-disabled closed-lid use can increase heat and battery drain — mind airflow, power, and runtime.",
       linksTitle: "Links",
@@ -134,6 +140,12 @@
       securityInvokeBody: "sudoersルールは、この3つの完全一致コマンドだけに限定されています。",
       securityHelperTitle: "helperが実行するのはこれだけ",
       securityHelperBody: "<code>on</code>、<code>off</code>、<code>display-sleep</code> 以外は受け付けません。",
+      securityInputTitle: "入力監視は任意です",
+      securityInputBody:
+        "CapsomniaはCaps Lockの切り替えをすぐ検知するためだけに使います。入力内容は読みません。許可しない場合も、1秒ごとのCaps Lock状態確認で動作します。",
+      securityBackgroundTitle: "バックグラウンド項目の表示",
+      securityBackgroundBody:
+        "macOSが「Taketo Fujimaki」のバックグラウンド項目を表示することがあります。これはログイン時にCapsomniaを起動し、クラッシュ後に復帰するためのLaunchAgentです。",
       securityReq:
         "アプリを終了すると通常のスリープ動作に戻ります。スリープ無効の蓋閉じ運用は、発熱やバッテリー消費が増えることがあります。通気、電源、実行時間には注意してください。",
       linksTitle: "リンク",

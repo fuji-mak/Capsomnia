@@ -4,6 +4,8 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- Added onboarding and documentation for Input Monitoring and the macOS background item prompt.
+
 ## 0.3.6 - 2026-07-08
 
 - Restart Capsomnia after crashes through a crash-only LaunchAgent `KeepAlive` rule, then reapply the current Caps Lock sleep state on startup.

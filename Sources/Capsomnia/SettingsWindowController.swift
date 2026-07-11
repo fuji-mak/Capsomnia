@@ -12,6 +12,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let explainerOffTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
     private let explainerOffDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
 
+    private let permissionsHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
+    private let permissionsCard = brandCard()
+    private let inputMonitoringTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
+    private let inputMonitoringDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let openInputMonitoringButton = OutlineButton()
+    private let backgroundItemTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
+    private let backgroundItemDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+
     private let preferencesHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
 
     private let menuBarTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
@@ -43,6 +51,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let onLanguageChange: (AppLanguage) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
     private let onDisplaySleepOnLidCloseChange: (Bool) -> Void
+    private let onOpenInputMonitoring: () -> Void
     private let onFinishInitialSetup: () -> Void
     private var isInitialSetup = false
 
@@ -51,12 +60,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onLanguageChange: @escaping (AppLanguage) -> Void,
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
         onDisplaySleepOnLidCloseChange: @escaping (Bool) -> Void,
+        onOpenInputMonitoring: @escaping () -> Void,
         onFinishInitialSetup: @escaping () -> Void
     ) {
         self.onShowMenuBarIconChange = onShowMenuBarIconChange
         self.onLanguageChange = onLanguageChange
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
         self.onDisplaySleepOnLidCloseChange = onDisplaySleepOnLidCloseChange
+        self.onOpenInputMonitoring = onOpenInputMonitoring
         self.onFinishInitialSetup = onFinishInitialSetup
 
         let window = NSWindow(
@@ -96,6 +107,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         explainerOnDesc.stringValue = strings.explainerOnDesc
         explainerOffTitle.stringValue = strings.explainerOffTitle
         explainerOffDesc.stringValue = strings.explainerOffDesc
+
+        permissionsHeading.stringValue = strings.permissionsHeading.uppercased()
+        inputMonitoringTitle.stringValue = strings.inputMonitoringTitle
+        inputMonitoringDesc.stringValue = strings.inputMonitoringDesc
+        openInputMonitoringButton.title = strings.openInputMonitoring
+        backgroundItemTitle.stringValue = strings.backgroundItemTitle
+        backgroundItemDesc.stringValue = strings.backgroundItemDesc
 
         preferencesHeading.stringValue = strings.preferencesHeading.uppercased()
 
@@ -158,14 +176,18 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         header.setCustomSpacing(14, after: headerIcon)
 
         buildExplainerCard()
+        buildPermissionsCard()
 
         let preferencesCard = buildPreferencesCard()
 
         doneButton.onClick = { [weak self] in self?.done() }
+        openInputMonitoringButton.onClick = { [weak self] in self?.onOpenInputMonitoring() }
 
         let stack = NSStackView(views: [
             header,
             explainerCard,
+            permissionsHeading,
+            permissionsCard,
             preferencesHeading,
             preferencesCard,
             noteLabel,
@@ -175,6 +197,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         stack.alignment = .leading
         stack.spacing = 16
         stack.setCustomSpacing(20, after: header)
+        stack.setCustomSpacing(8, after: permissionsHeading)
         stack.setCustomSpacing(8, after: preferencesHeading)
         stack.translatesAutoresizingMaskIntoConstraints = false
 
@@ -182,7 +205,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         window?.contentView = contentView
 
         // Full-width children inside the leading-aligned stack.
-        for child in [header, explainerCard, preferencesCard, noteLabel, doneButton] {
+        for child in [header, explainerCard, permissionsCard, preferencesCard, noteLabel, doneButton] {
             child.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
 
@@ -214,6 +237,36 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             inner.bottomAnchor.constraint(equalTo: explainerCard.bottomAnchor, constant: -16),
             onRow.widthAnchor.constraint(equalTo: inner.widthAnchor),
             offRow.widthAnchor.constraint(equalTo: inner.widthAnchor)
+        ])
+    }
+
+    private func buildPermissionsCard() {
+        let inputRow = explainerRow(
+            dot: brandStatusDot(on: true),
+            title: inputMonitoringTitle,
+            desc: inputMonitoringDesc
+        )
+        let backgroundRow = explainerRow(
+            dot: brandStatusDot(on: false),
+            title: backgroundItemTitle,
+            desc: backgroundItemDesc
+        )
+
+        let inner = NSStackView(views: [inputRow, openInputMonitoringButton, backgroundRow])
+        inner.orientation = .vertical
+        inner.alignment = .leading
+        inner.spacing = 14
+        inner.translatesAutoresizingMaskIntoConstraints = false
+
+        permissionsCard.addSubview(inner)
+        NSLayoutConstraint.activate([
+            inner.leadingAnchor.constraint(equalTo: permissionsCard.leadingAnchor, constant: 16),
+            inner.trailingAnchor.constraint(equalTo: permissionsCard.trailingAnchor, constant: -16),
+            inner.topAnchor.constraint(equalTo: permissionsCard.topAnchor, constant: 16),
+            inner.bottomAnchor.constraint(equalTo: permissionsCard.bottomAnchor, constant: -16),
+            inputRow.widthAnchor.constraint(equalTo: inner.widthAnchor),
+            openInputMonitoringButton.widthAnchor.constraint(equalTo: inner.widthAnchor),
+            backgroundRow.widthAnchor.constraint(equalTo: inner.widthAnchor)
         ])
     }
 

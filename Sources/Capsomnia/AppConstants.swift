@@ -79,6 +79,12 @@ struct AppStrings {
     let explainerOnDesc: String
     let explainerOffTitle: String
     let explainerOffDesc: String
+    let permissionsHeading: String
+    let inputMonitoringTitle: String
+    let inputMonitoringDesc: String
+    let openInputMonitoring: String
+    let backgroundItemTitle: String
+    let backgroundItemDesc: String
     let preferencesHeading: String
     let done: String
     let getStarted: String
@@ -105,6 +111,12 @@ struct AppStrings {
                 explainerOnDesc: "System sleep is disabled — work keeps running, lid open or closed.",
                 explainerOffTitle: "Caps Lock off",
                 explainerOffDesc: "Normal sleep behavior resumes.",
+                permissionsHeading: "Permissions",
+                inputMonitoringTitle: "Input Monitoring",
+                inputMonitoringDesc: "Used only to detect Caps Lock changes immediately. Capsomnia does not read typed text, and it still works with a slower fallback if you skip this. If macOS asks, choose Quit & Reopen; this screen will return.",
+                openInputMonitoring: "Open Input Monitoring",
+                backgroundItemTitle: "Background Item",
+                backgroundItemDesc: "macOS may show \"Taketo Fujimaki\" as a background item. It lets Capsomnia start at login and recover after crashes. Capsomnia has no network access or telemetry.",
                 preferencesHeading: "Preferences",
                 done: "Done",
                 getStarted: "Get started",
@@ -129,6 +141,12 @@ struct AppStrings {
                 explainerOnDesc: "システムスリープを無効化。蓋を閉じても作業が走り続けます。",
                 explainerOffTitle: "Caps Lock OFF",
                 explainerOffDesc: "通常のスリープ動作に戻ります。",
+                permissionsHeading: "権限",
+                inputMonitoringTitle: "入力監視",
+                inputMonitoringDesc: "Caps Lockの切り替えをすぐ検知するためだけに使います。入力内容は読みません。許可しなくても少し遅れて動作します。macOSに「終了して再度開く」と表示されたら押してください。この画面に戻ります。",
+                openInputMonitoring: "入力監視を開く",
+                backgroundItemTitle: "バックグラウンド項目",
+                backgroundItemDesc: "macOSが「Taketo Fujimakiのバックグラウンド項目」を表示することがあります。ログイン時の起動とクラッシュ時の復帰のためです。ネットワーク通信やテレメトリ収集は行いません。",
                 preferencesHeading: "環境設定",
                 done: "完了",
                 getStarted: "はじめる",
@@ -146,6 +164,7 @@ private enum PreferenceKey {
     static let displaySleepOnLidClose = "DisplaySleepOnLidClose"
     static let didCompleteInitialSetup = "DidCompleteInitialSetup"
     static let forceWelcomeOnNextLaunch = "ForceWelcomeOnNextLaunch"
+    static let inputMonitoringRequested = "InputMonitoringRequested"
 }
 
 enum Preferences {
@@ -196,5 +215,25 @@ enum Preferences {
             defaults.set(false, forKey: PreferenceKey.forceWelcomeOnNextLaunch)
         }
         return shouldShowWelcome
+    }
+
+    static func showWelcomeOnNextLaunch() {
+        defaults.set(true, forKey: PreferenceKey.forceWelcomeOnNextLaunch)
+    }
+
+    static func migrateInputMonitoringPreferenceIfNeeded() {
+        guard defaults.object(forKey: PreferenceKey.inputMonitoringRequested) == nil else { return }
+        guard defaults.bool(forKey: PreferenceKey.didCompleteInitialSetup) else { return }
+        defaults.set(true, forKey: PreferenceKey.inputMonitoringRequested)
+    }
+
+    static func ensureInputMonitoringChoiceRecorded() {
+        guard defaults.object(forKey: PreferenceKey.inputMonitoringRequested) == nil else { return }
+        defaults.set(false, forKey: PreferenceKey.inputMonitoringRequested)
+    }
+
+    static var inputMonitoringRequested: Bool {
+        get { defaults.bool(forKey: PreferenceKey.inputMonitoringRequested) }
+        set { defaults.set(newValue, forKey: PreferenceKey.inputMonitoringRequested) }
     }
 }

@@ -207,39 +207,14 @@
       }
     });
 
-    document.querySelectorAll("[data-i18n-aria-label]").forEach(function (el) {
-      var key = el.getAttribute("data-i18n-aria-label");
-      if (Object.prototype.hasOwnProperty.call(dict, key)) {
-        el.setAttribute("aria-label", dict[key]);
-      }
-    });
-
-    document.querySelectorAll("[data-i18n-alt]").forEach(function (el) {
-      var key = el.getAttribute("data-i18n-alt");
-      if (Object.prototype.hasOwnProperty.call(dict, key)) {
-        el.setAttribute("alt", dict[key]);
-      }
-    });
-
-    document.querySelectorAll("[data-i18n-src]").forEach(function (el) {
-      var key = el.getAttribute("data-i18n-src");
-      if (Object.prototype.hasOwnProperty.call(dict, key)) {
-        el.setAttribute("src", dict[key]);
-      }
-    });
-
-    document.querySelectorAll("[data-i18n-width]").forEach(function (el) {
-      var key = el.getAttribute("data-i18n-width");
-      if (Object.prototype.hasOwnProperty.call(dict, key)) {
-        el.setAttribute("width", dict[key]);
-      }
-    });
-
-    document.querySelectorAll("[data-i18n-height]").forEach(function (el) {
-      var key = el.getAttribute("data-i18n-height");
-      if (Object.prototype.hasOwnProperty.call(dict, key)) {
-        el.setAttribute("height", dict[key]);
-      }
+    ["aria-label", "alt", "src", "width", "height"].forEach(function (attr) {
+      var dataAttr = "data-i18n-" + attr;
+      document.querySelectorAll("[" + dataAttr + "]").forEach(function (el) {
+        var key = el.getAttribute(dataAttr);
+        if (Object.prototype.hasOwnProperty.call(dict, key)) {
+          el.setAttribute(attr, dict[key]);
+        }
+      });
     });
 
     document.querySelectorAll("[data-lang-option]").forEach(function (btn) {

@@ -16,7 +16,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var signalSources: [DispatchSourceSignal] = []
     private var statusItem: NSStatusItem?
     private var settingsWindowController: SettingsWindowController?
-    private let onImage = DotImage.make(color: brandLEDColor)
+    private let onImage = DotImage.make(color: Brand.led)
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
     private let errorImage = DotImage.make(color: .systemRed)
     private let helperRetryInterval: TimeInterval = 5
@@ -92,15 +92,19 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         showSettingsWindow(page: currentSettingsPage())
     }
 
+    /// The state Capsomnia is acting on: the last state it applied, falling
+    /// back to the live hardware Caps Lock state before the first apply.
+    private var currentCapsLockState: Bool {
+        lastAppliedState ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+    }
+
     private func syncStatusItemVisibility() {
         if Preferences.showMenuBarIcon {
             if statusItem == nil {
                 installStatusItem()
             }
 
-            let capsLockOn = lastAppliedState
-                ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
-            refreshStatus(capsLockOn: capsLockOn)
+            refreshStatus(capsLockOn: currentCapsLockState)
         } else if let item = statusItem {
             NSStatusBar.system.removeStatusItem(item)
             statusItem = nil
@@ -226,9 +230,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         Preferences.language = language
         rebuildStatusMenu()
 
-        let capsLockOn = lastAppliedState
-            ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
-        refreshStatus(capsLockOn: capsLockOn)
+        refreshStatus(capsLockOn: currentCapsLockState)
         settingsWindowController?.reloadText()
         log("preference language=\(language.rawValue)")
     }
@@ -248,9 +250,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private func setDisplaySleepOnLidClose(_ enabled: Bool) {
         Preferences.displaySleepOnLidClose = enabled
         if enabled {
-            let capsLockOn = lastAppliedState
-                ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
-            evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: "preference")
+            evaluateDisplaySleepForClosedLid(capsLockOn: currentCapsLockState, reason: "preference")
         } else {
             didRequestDisplaySleepForClosedLid = false
         }
@@ -290,20 +290,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                     log("\(reason) sleep_state_unavailable")
                     hasLoggedMissingSleepState = true
                 }
-                failedSleepState = capsLockOn
-                nextSleepStateRetryAt = now.addingTimeInterval(helperRetryInterval)
-                nextSleepStateVerificationAt = nextSleepStateRetryAt
-                updateStatusError()
+                markSleepStateFailed(capsLockOn, at: now)
                 return
             }
 
             hasLoggedMissingSleepState = false
             if actualState == capsLockOn {
-                failedSleepState = nil
-                nextSleepStateRetryAt = .distantPast
-                nextSleepStateVerificationAt = now.addingTimeInterval(sleepStateVerificationInterval)
-                syncStatusItemVisibility()
-                evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
+                markSleepStateConfirmed(capsLockOn, at: now, reason: reason)
                 return
             }
 
@@ -315,9 +308,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         log("\(reason) capslock=\(mode) helper_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)")
 
         guard result.status == 0 else {
-            failedSleepState = capsLockOn
-            nextSleepStateRetryAt = now.addingTimeInterval(helperRetryInterval)
-            updateStatusError()
+            markSleepStateFailed(capsLockOn, at: now, resetVerification: false)
             return
         }
 
@@ -325,14 +316,24 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         let confirmedState = SleepStateReader.isDisabled()
         guard confirmedState == Optional(capsLockOn) else {
             hasLoggedMissingSleepState = confirmedState == nil
-            failedSleepState = capsLockOn
-            nextSleepStateRetryAt = now.addingTimeInterval(helperRetryInterval)
-            nextSleepStateVerificationAt = nextSleepStateRetryAt
             log("\(reason) sleep_state_confirmation_failed expected=\(mode) actual=\(confirmedState.map { $0 ? "on" : "off" } ?? "unknown")")
-            updateStatusError()
+            markSleepStateFailed(capsLockOn, at: now)
             return
         }
 
+        markSleepStateConfirmed(capsLockOn, at: now, reason: reason)
+    }
+
+    private func markSleepStateFailed(_ capsLockOn: Bool, at now: Date, resetVerification: Bool = true) {
+        failedSleepState = capsLockOn
+        nextSleepStateRetryAt = now.addingTimeInterval(helperRetryInterval)
+        if resetVerification {
+            nextSleepStateVerificationAt = nextSleepStateRetryAt
+        }
+        updateStatusError()
+    }
+
+    private func markSleepStateConfirmed(_ capsLockOn: Bool, at now: Date, reason: String) {
         hasLoggedMissingSleepState = false
         failedSleepState = nil
         nextSleepStateRetryAt = .distantPast
@@ -409,32 +410,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func runHelper(_ mode: String) -> (status: Int32, stdout: String, stderr: String) {
-        let process = Process()
-        let stdoutPipe = Pipe()
-        let stderrPipe = Pipe()
-
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
-        process.arguments = ["-n", helperPath, mode]
-        process.standardOutput = stdoutPipe
-        process.standardError = stderrPipe
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return (
-                process.terminationStatus,
-                read(stdoutPipe.fileHandleForReading),
-                read(stderrPipe.fileHandleForReading)
-            )
-        } catch {
-            return (-1, "", "\(error)")
-        }
-    }
-
-    private func read(_ handle: FileHandle) -> String {
-        let data = handle.readDataToEndOfFile()
-        return String(data: data, encoding: .utf8)?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        CommandRunner.run("/usr/bin/sudo", ["-n", helperPath, mode])
     }
 
     private func installSignalHandlers() {

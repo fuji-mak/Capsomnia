@@ -163,7 +163,8 @@ struct CapsLockLEDRetryPolicy {
 /// Serializes synchronous HID output away from the main thread and coalesces
 /// repeated confirmations of the same state. A changed user choice gets a fresh
 /// retry budget; an unchanged failing request stops after three attempts until
-/// a wake event or a different requested state provides new evidence to retry.
+/// a different requested state or physical Caps Lock handoff provides new
+/// evidence to retry.
 final class CapsLockLEDController {
     typealias Logger = (String) -> Void
 

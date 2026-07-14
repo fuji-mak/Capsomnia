@@ -68,7 +68,7 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 
 - Caps Lock on: keeps AI agents and other work from being interrupted when the MacBook lid is closed. Remote operation through tools such as Codex Mobile remains possible. The Caps Lock light physically shows the current state.
 - Caps Lock off: restores normal sleep behavior.
-- Menu bar “Prevent sleep”: provides the same on/off control when Caps Lock is remapped to Control or another key. A physical Caps Lock transition returns control to the original hardware switch.
+- Menu bar “Prevent sleep”: provides the same on/off control when Caps Lock is remapped to Control or another key, and synchronizes the built-in Caps Lock LED when HID output is available. A physical Caps Lock transition returns control to the original hardware switch.
 - Lid closed while Caps Lock is on: puts only the display to sleep while work keeps running.
 - Quitting the app restores normal sleep behavior.
 
@@ -80,6 +80,7 @@ Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions,
 - Closed-lid use while sleep prevention is active may increase heat and battery consumption.
 - Do not rely on Capsomnia for critical jobs or as a substitute for backups.
 - Turn Caps Lock off after use and confirm that normal sleep behavior has returned.
+- macOS can overwrite a manually written Caps Lock LED during input-source or keyboard-state changes. This change synchronizes the LED when the manual state changes; it does not continuously force the light back on.
 - Use Capsomnia at your own risk. Compatibility is not guaranteed for every Mac, macOS version, or environment.
 
 ## Settings
@@ -93,7 +94,7 @@ On first launch, Capsomnia explains how the Caps Lock switch works and lets you 
 
 Open Capsomnia again later to change the same settings.
 
-No Input Monitoring permission is required. Capsomnia checks the local Caps Lock state every 250 milliseconds. If you enabled Input Monitoring for an earlier version, you can disable it in System Settings.
+Sleep control does not require Input Monitoring. Capsomnia checks the local Caps Lock state every 250 milliseconds and does not read keyboard events. On some macOS and keyboard configurations, manual LED output may remain unavailable until Capsomnia is allowed in System Settings > Privacy & Security > Input Monitoring; sleep control and the menu bar state continue to work if the LED write is denied.
 
 You can open Capsomnia from `/Applications/Capsomnia.app` after package installation, from `~/Applications/Capsomnia.app` after source installation, or from the menu bar item while it is visible.
 
@@ -145,7 +146,7 @@ Capsomnia's menu bar app does not run as root. System sleep settings require ele
 
 Package-installed app files, the helper, and the system LaunchAgent are owned by `root:wheel`. The packaged helper is also signed with the same Developer ID as the app. Capsomnia verifies the actual `SleepDisabled` state after every change and every ten seconds afterward. If the helper cannot apply a change, the state cannot be verified, or the setting drifts, the menu bar dot turns red and Capsomnia retries after five seconds instead of showing the requested state as active. The red error dot appears temporarily even if the menu bar icon is normally hidden.
 
-Capsomnia does not request Input Monitoring or read keyboard events. It checks only the local Caps Lock state every 250 milliseconds, with timer tolerance so macOS can coalesce wakeups.
+Capsomnia does not read keyboard events. It checks only the local Caps Lock state every 250 milliseconds, with timer tolerance so macOS can coalesce wakeups. A manual menu choice writes the standard Caps Lock HID output after the sleep setting is confirmed. LED failures use bounded retries and do not affect sleep control.
 
 macOS may show a "Taketo Fujimaki" background item after installation. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
 

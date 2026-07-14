@@ -12,6 +12,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var didRequestDisplaySleepForClosedLid = false
     private var hasLoggedMissingClamshellState = false
     private var hasLoggedMissingSleepState = false
+    private var hasTouchedCapsLockLED = false
     private var shouldRestoreSleepOnTerminate = true
     private var pollingTimer: Timer?
     private var signalSources: [DispatchSourceSignal] = []
@@ -22,6 +23,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let errorImage = DotImage.make(color: .systemRed)
     private let helperRetryInterval: TimeInterval = 5
     private let sleepStateVerificationInterval: TimeInterval = 10
+    private lazy var capsLockLEDController = CapsLockLEDController { [weak self] message in
+        // HID writes run on their own serial queue. Bring diagnostics back to
+        // the main queue so the existing file logger is never used concurrently.
+        DispatchQueue.main.async {
+            self?.log(message)
+        }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if terminateIfNewerInteractiveDuplicate() {
@@ -59,6 +67,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         guard shouldRestoreSleepOnTerminate else { return }
 
+        restoreCapsLockLEDBeforeExit(reason: "terminate")
         let result = runHelper("off")
         log("terminate restore_off helper_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)")
     }
@@ -195,7 +204,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         // synchronous helper remains unchanged, but the menu can close before it
         // runs instead of appearing stuck while the subprocess finishes.
         DispatchQueue.main.async { [weak self] in
-            self?.apply(capsLockOn: enabled, reason: "menu")
+            guard let self else { return }
+            self.apply(capsLockOn: enabled, reason: "menu")
+
+            // `apply` can legitimately take its already-confirmed fast path.
+            // Synchronize here as well as after confirmation so that path still
+            // gets the physical indicator requested by the menu action.
+            self.synchronizeManualCapsLockLED(capsLockOn: enabled, reason: "menu")
         }
     }
 
@@ -302,7 +317,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
     private func applyCurrentCapsLockState(reason: String) {
         let flags = CGEventSource.flagsState(.hidSystemState)
-        let resolution = sleepStateSelection.observeHardwareState(flags.contains(.maskAlphaShift))
+        let hardwareState = flags.contains(.maskAlphaShift)
+        let resolution = sleepStateSelection.observeHardwareState(hardwareState)
         // The menu checkmark mirrors both the original physical switch and a
         // manual override. Assigning the existing item is cheaper than rebuilding
         // the localized menu on every 250 ms poll.
@@ -311,6 +327,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             .state = resolution.sleepPreventionOn ? .on : .off
         if resolution.clearedManualOverride {
             log("\(reason) hardware_capslock_changed manual_override=cleared")
+            restoreCapsLockLEDToHardwareState(hardwareState, reason: reason)
         }
         apply(capsLockOn: resolution.sleepPreventionOn, reason: reason)
     }
@@ -381,7 +398,45 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         nextSleepStateRetryAt = .distantPast
         nextSleepStateVerificationAt = now.addingTimeInterval(sleepStateVerificationInterval)
         syncStatusItemVisibility()
+        synchronizeManualCapsLockLED(capsLockOn: capsLockOn, reason: reason)
         evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
+    }
+
+    private func synchronizeManualCapsLockLED(capsLockOn: Bool, reason: String) {
+        // The LED must not claim that sleep prevention is active until the
+        // helper result is confirmed. A failed or superseded menu request keeps
+        // the software error state without publishing a misleading light.
+        guard sleepStateSelection.manualOverride == Optional(capsLockOn),
+              failedSleepState == nil,
+              lastAppliedState == capsLockOn else {
+            return
+        }
+
+        hasTouchedCapsLockLED = true
+        capsLockLEDController.synchronize(enabled: capsLockOn, reason: reason)
+    }
+
+    private func restoreCapsLockLEDToHardwareState(_ hardwareState: Bool, reason: String) {
+        guard hasTouchedCapsLockLED else { return }
+
+        // A real Caps Lock transition returns ownership to macOS. Mark the
+        // environment as changed because macOS may already have overwritten the
+        // output report, even when the controller last wrote the same value.
+        capsLockLEDController.synchronize(
+            enabled: hardwareState,
+            reason: "\(reason)_manual_override_cleared",
+            environmentChanged: true
+        )
+    }
+
+    private func restoreCapsLockLEDBeforeExit(reason: String) {
+        guard hasTouchedCapsLockLED else { return }
+
+        // Manual LED output must not survive the app that owns it. A synchronous
+        // best-effort write also invalidates queued retries before termination.
+        let hardwareState = CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        capsLockLEDController.restoreImmediately(enabled: hardwareState, reason: reason)
+        hasTouchedCapsLockLED = false
     }
 
     private func evaluateDisplaySleepForClosedLid(capsLockOn: Bool, reason: String) {
@@ -462,6 +517,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         for signalNumber in [SIGINT, SIGTERM] {
             let source = DispatchSource.makeSignalSource(signal: signalNumber, queue: .main)
             source.setEventHandler { [weak self] in
+                self?.restoreCapsLockLEDBeforeExit(reason: "signal_\(signalNumber)")
                 let result = self?.runHelper("off")
                 self?.log(
                     "signal=\(signalNumber) restore_off helper_status=\(result?.status ?? -1) "

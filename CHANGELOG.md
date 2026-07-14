@@ -4,6 +4,8 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- Add a "Toggle Caps Lock" menu bar item that flips the real Caps Lock state directly, for keyboards where the physical Caps Lock key is remapped to something else (e.g. Control).
+
 ## 1.0.0 - 2026-07-12
 
 First stable release of Capsomnia.

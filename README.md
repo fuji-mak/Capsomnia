@@ -73,6 +73,14 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 
 Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions, builds, downloads, and unattended scripts.
 
+## Usage Notes
+
+- Ensure sufficient airflow and use a stable power source.
+- Closed-lid use while sleep prevention is active may increase heat and battery consumption.
+- Do not rely on Capsomnia for critical jobs or as a substitute for backups.
+- Turn Caps Lock off after use and confirm that normal sleep behavior has returned.
+- Use Capsomnia at your own risk. Compatibility is not guaranteed for every Mac, macOS version, or environment.
+
 ## Settings
 
 On first launch, Capsomnia explains how the Caps Lock switch works and lets you choose:
@@ -93,12 +101,6 @@ You can open Capsomnia from `/Applications/Capsomnia.app` after package installa
 `caffeinate` is useful for preventing idle sleep while your Mac is open. Closing a MacBook lid is different: normal `caffeinate` assertions do not reliably keep local jobs running in closed-lid use.
 
 Capsomnia keeps work running in closed-lid use the same way it would while the lid is open. The yellow-green Caps Lock light makes that state visible.
-
-## Safety Notes
-
-- Sleep-disabled closed-lid use can increase heat and battery drain.
-- Use good judgment for airflow, power, and runtime when leaving your Mac unattended.
-- Capsomnia is a manual switch: Caps Lock on means "keep running"; Caps Lock off means "normal sleep behavior".
 
 ## Update
 

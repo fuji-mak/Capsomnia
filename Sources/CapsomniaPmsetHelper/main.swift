@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 
-private let usage = "usage: capsomnia-pmset on|off|display-sleep\n"
+private let usage = "usage: capsomnia-pmset on|off|display-sleep|sleep-now\n"
 
 guard CommandLine.arguments.count == 2 else {
     FileHandle.standardError.write(Data(usage.utf8))
@@ -16,6 +16,8 @@ case "off":
     pmsetArguments = ["-a", "disablesleep", "0"]
 case "display-sleep":
     pmsetArguments = ["displaysleepnow"]
+case "sleep-now":
+    pmsetArguments = ["sleepnow"]
 default:
     FileHandle.standardError.write(Data(usage.utf8))
     exit(64)

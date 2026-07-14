@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(/usr/bin/dirname "$0")/.." && /bin/pwd)"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT_DIR/resources/Info.plist")"
-PKG_PATH="${1:-$ROOT_DIR/dist/Capsomnia-$VERSION.pkg}"
+PKG_PATH="${1:-$ROOT_DIR/dist/Capsomnia-$VERSION-cn.pkg}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-capsomnia-notary}"
 STABLE_PKG="$ROOT_DIR/dist/Capsomnia.pkg"
 CHECKSUMS_PATH="$ROOT_DIR/dist/SHA256SUMS.txt"

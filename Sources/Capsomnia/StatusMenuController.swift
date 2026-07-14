@@ -4,27 +4,41 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     let menu = NSMenu()
 
     private let onEnabledChange: (Bool) -> Void
+    private let onAutoSleepAfterAgentTaskChange: (Bool) -> Void
     private let onDisplaySleepChange: (Bool) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
     private let onLanguageChange: (AppLanguage) -> Void
+    private let onCancelPendingAutoSleep: () -> Void
+    private let onMenuOpen: () -> Void
     private let onQuit: () -> Void
 
     private var enabledRow: StatusMenuToggleRow?
+    private var autoSleepAfterAgentTaskItem: NSMenuItem?
+    private var cancelPendingAutoSleepItem: NSMenuItem?
     private var displaySleepItem: NSMenuItem?
     private var launchAtLoginItem: NSMenuItem?
+    private var errorItem: NSMenuItem?
     private var languageItems: [AppLanguage: NSMenuItem] = [:]
+    private var hasSystemError = false
+    private var pendingAutoSleepSeconds: Int?
 
     init(
         onEnabledChange: @escaping (Bool) -> Void,
+        onAutoSleepAfterAgentTaskChange: @escaping (Bool) -> Void,
         onDisplaySleepChange: @escaping (Bool) -> Void,
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
         onLanguageChange: @escaping (AppLanguage) -> Void,
+        onCancelPendingAutoSleep: @escaping () -> Void,
+        onMenuOpen: @escaping () -> Void,
         onQuit: @escaping () -> Void
     ) {
         self.onEnabledChange = onEnabledChange
+        self.onAutoSleepAfterAgentTaskChange = onAutoSleepAfterAgentTaskChange
         self.onDisplaySleepChange = onDisplaySleepChange
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
         self.onLanguageChange = onLanguageChange
+        self.onCancelPendingAutoSleep = onCancelPendingAutoSleep
+        self.onMenuOpen = onMenuOpen
         self.onQuit = onQuit
         super.init()
 
@@ -35,6 +49,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     }
 
     func menuWillOpen(_ menu: NSMenu) {
+        onMenuOpen()
         refreshControls()
     }
 
@@ -44,11 +59,24 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     func refreshControls() {
         enabledRow?.setOn(Preferences.enabled)
+        autoSleepAfterAgentTaskItem?.state = Preferences.autoSleepAfterAgentTask ? .on : .off
         displaySleepItem?.state = Preferences.displaySleepOnLidClose ? .on : .off
         launchAtLoginItem?.state = Preferences.launchAtLogin ? .on : .off
+        errorItem?.isHidden = !hasSystemError
         for (language, item) in languageItems {
             item.state = language == Preferences.language ? .on : .off
         }
+        updatePendingAutoSleepItem()
+    }
+
+    func setPendingAutoSleep(seconds: Int?) {
+        pendingAutoSleepSeconds = seconds
+        updatePendingAutoSleepItem()
+    }
+
+    func setSystemError(_ hasError: Bool) {
+        hasSystemError = hasError
+        errorItem?.isHidden = !hasError
     }
 
     private func rebuild() {
@@ -65,6 +93,34 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         }
         enabledRow = enabled
         menu.addItem(customItem(view: enabled))
+
+        let error = NSMenuItem(title: strings.menuError, action: nil, keyEquivalent: "")
+        error.isEnabled = false
+        error.isHidden = !hasSystemError
+        errorItem = error
+        menu.addItem(error)
+
+        menu.addItem(.separator())
+
+        let autoSleepAfterAgentTask = NSMenuItem(
+            title: strings.autoSleepAfterAgentTask,
+            action: #selector(toggleAutoSleepAfterAgentTask),
+            keyEquivalent: ""
+        )
+        autoSleepAfterAgentTask.target = self
+        autoSleepAfterAgentTask.state = Preferences.autoSleepAfterAgentTask ? .on : .off
+        autoSleepAfterAgentTaskItem = autoSleepAfterAgentTask
+        menu.addItem(autoSleepAfterAgentTask)
+
+        let cancelPendingAutoSleep = NSMenuItem(
+            title: "",
+            action: #selector(cancelPendingAutoSleep),
+            keyEquivalent: ""
+        )
+        cancelPendingAutoSleep.target = self
+        cancelPendingAutoSleepItem = cancelPendingAutoSleep
+        menu.addItem(cancelPendingAutoSleep)
+        updatePendingAutoSleepItem()
 
         menu.addItem(.separator())
 
@@ -145,12 +201,31 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         onDisplaySleepChange(!Preferences.displaySleepOnLidClose)
     }
 
+    @objc private func toggleAutoSleepAfterAgentTask() {
+        onAutoSleepAfterAgentTaskChange(!Preferences.autoSleepAfterAgentTask)
+    }
+
+    @objc private func cancelPendingAutoSleep() {
+        onCancelPendingAutoSleep()
+    }
+
     @objc private func toggleLaunchAtLogin() {
         onLaunchAtLoginChange(!Preferences.launchAtLogin)
     }
 
     @objc private func quit() {
         onQuit()
+    }
+
+    private func updatePendingAutoSleepItem() {
+        guard let item = cancelPendingAutoSleepItem else { return }
+        if let pendingAutoSleepSeconds {
+            item.title = AppStrings.current().cancelPendingAutoSleep(pendingAutoSleepSeconds)
+            item.isHidden = false
+        } else {
+            item.title = ""
+            item.isHidden = true
+        }
     }
 }
 
@@ -161,16 +236,16 @@ private final class StatusMenuToggleRow: NSView {
 
     init(title: String, isOn: Bool, onChange: @escaping (Bool) -> Void) {
         self.onChange = onChange
-        super.init(frame: NSRect(x: 0, y: 0, width: 300, height: 58))
+        let labelFont = NSFont.systemFont(ofSize: 15, weight: .semibold)
+        let labelWidth = ceil((title as NSString).size(withAttributes: [.font: labelFont]).width)
+        let rowWidth = max(300, labelWidth + 47 + 16 + 52 + 14)
+        super.init(frame: NSRect(x: 0, y: 0, width: rowWidth, height: 58))
 
         wantsLayer = true
         layer?.cornerRadius = 8
 
         let label = NSTextField(labelWithString: title)
-        label.font = .systemFont(
-            ofSize: 15,
-            weight: .semibold
-        )
+        label.font = labelFont
         label.textColor = .labelColor
         label.translatesAutoresizingMaskIntoConstraints = false
 
@@ -185,7 +260,9 @@ private final class StatusMenuToggleRow: NSView {
         addSubview(label)
         addSubview(toggle)
         NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
+            // Custom menu views already receive an outer menu inset. A 47-point
+            // inner inset lines the label up with native menu item text.
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 47),
             label.centerYAnchor.constraint(equalTo: centerYAnchor),
             label.trailingAnchor.constraint(lessThanOrEqualTo: toggle.leadingAnchor, constant: -16),
             toggle.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),

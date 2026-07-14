@@ -4,6 +4,27 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 1.4.0 - 2026-07-15
+
+- Add the persistent, default-on “Sleep After Codex/Claude Tasks Finish” menu item.
+- Preserve Codex's existing completion notifier through a local forwarding bridge.
+- Add Claude Code Stop-hook integration when Claude is installed.
+- Recheck integrations at app launch and whenever the status menu opens, so tools installed later are detected without reinstalling Capsomnia.
+- Wait 30 seconds after a task finishes and expose a one-time Cancel command before sleeping.
+- Restore normal sleep, invoke the restricted `pmset sleepnow` helper action, then restore keep-awake mode after the Mac wakes.
+- Remove only Capsomnia-owned Codex and Claude integration entries during uninstall.
+
+- Rename all three controls to describe their behavior in plain language.
+- Align the primary switch label with the native menu content inset.
+- Expand the primary row for longer English and Japanese labels instead of truncating them.
+- Show a menu warning while sleep-setting recovery is in progress.
+- Enforce a single running instance with both process detection and a file lock.
+- Let launchd retry a temporary duplicate and wait for old processes during upgrades.
+- Read the real launchd state instead of trusting the saved login-start preference.
+- Reduce background polling and react immediately when displays wake.
+- Verify keep-awake state every 60 seconds only while enabled.
+- Check for lid closure every five seconds while open, then stop polling after closure.
+
 ## 1.3.1 - 2026-07-14
 
 - Rebuild the app around one native menu-bar menu; no separate settings window.

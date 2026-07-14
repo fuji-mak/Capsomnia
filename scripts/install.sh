@@ -5,7 +5,7 @@ APP_NAME="Capsomnia"
 LABEL="com.github.fuji-mak.capsomnia"
 ROOT_DIR="$(cd "$(/usr/bin/dirname "$0")/.." && /bin/pwd)"
 APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
-LEGACY_INSTALL_DIR="$HOME/Library/Application Support/$APP_NAME"
+LEGACY_APP_BUNDLE="$HOME/Library/Application Support/$APP_NAME/$APP_NAME.app"
 LOG_DIR="$HOME/Library/Logs/$APP_NAME"
 LAUNCH_AGENT="$HOME/Library/LaunchAgents/$LABEL.plist"
 HELPER_PATH="/Library/PrivilegedHelperTools/capsomnia-pmset"
@@ -140,10 +140,17 @@ install_started=true
 
 /bin/launchctl bootout "gui/$CURRENT_UID" "$LAUNCH_AGENT" 2>/dev/null || true
 /usr/bin/pkill -x "$APP_NAME" 2>/dev/null || true
+for _ in {1..40}; do
+  /usr/bin/pgrep -x "$APP_NAME" >/dev/null 2>&1 || break
+  /bin/sleep 0.1
+done
+if /usr/bin/pgrep -x "$APP_NAME" >/dev/null 2>&1; then
+  /usr/bin/pkill -KILL -x "$APP_NAME" 2>/dev/null || true
+fi
 
 /bin/rm -rf "$APP_BUNDLE"
 /usr/bin/ditto "$BUILT_APP" "$APP_BUNDLE"
-/bin/rm -rf "$LEGACY_INSTALL_DIR"
+/bin/rm -rf "$LEGACY_APP_BUNDLE"
 
 /usr/bin/sudo /bin/mkdir -p "$(/usr/bin/dirname "$HELPER_PATH")" "$(/usr/bin/dirname "$SUDOERS_PATH")"
 /usr/bin/sudo /usr/sbin/chown root:wheel "$(/usr/bin/dirname "$HELPER_PATH")" "$(/usr/bin/dirname "$SUDOERS_PATH")"
@@ -153,8 +160,8 @@ install_started=true
 
 sudoers_tmp="$(/usr/bin/mktemp)"
 /bin/cat > "$sudoers_tmp" <<EOF
-# Capsomnia 只能切换睡眠状态或关闭显示器，不能以 root 执行其他命令。
-$CURRENT_USER ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off, $HELPER_PATH display-sleep
+# Capsomnia 只能切换睡眠状态、关闭显示器或立即睡眠，不能以 root 执行其他命令。
+$CURRENT_USER ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off, $HELPER_PATH display-sleep, $HELPER_PATH sleep-now
 EOF
 
 /usr/sbin/visudo -cf "$sudoers_tmp"
@@ -201,4 +208,4 @@ EOF
 /bin/launchctl print "gui/$CURRENT_UID/$LABEL" >/dev/null
 
 install_completed=true
-/usr/bin/printf 'Capsomnia 已安装并启动。“启用”打开时持续运行，关闭时恢复正常休眠。\n'
+/usr/bin/printf 'Capsomnia 已安装并启动。“合盖时保持开机状态”打开时持续运行，关闭时恢复正常休眠。\n'

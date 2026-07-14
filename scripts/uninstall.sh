@@ -12,9 +12,41 @@ SYSTEM_LAUNCH_AGENT="/Library/LaunchAgents/$LABEL.plist"
 HELPER_PATH="/Library/PrivilegedHelperTools/capsomnia-pmset"
 LEGACY_HELPER_PATH="/usr/local/sbin/capsomnia-pmset"
 SUDOERS_PATH="/etc/sudoers.d/capsomnia"
+RESOURCE_DIR="$(cd "$(/usr/bin/dirname "$0")" && /bin/pwd)"
 
 /usr/bin/printf '正在退出 Capsomnia，并恢复正常休眠……\n'
 /usr/bin/sudo -v
+
+if [[ -x "$RESOURCE_DIR/capsomnia-ai-hook" ]]; then
+  if ! "$RESOURCE_DIR/capsomnia-ai-hook" remove-integrations; then
+    /usr/bin/printf '卸载已停止：无法安全恢复 Codex/Claude 原配置，应用与授权尚未移除。\n' >&2
+    exit 1
+  fi
+else
+  for config_path in "$HOME/.codex/config.toml" "$HOME/.claude/settings.json"; do
+    if [[ -L "$config_path" && ! -e "$config_path" ]]; then
+      /usr/bin/printf '卸载已停止：配置文件是失效的符号链接，无法确认是否需要恢复：%s\n' "$config_path" >&2
+      exit 1
+    fi
+    [[ -e "$config_path" ]] || continue
+    if [[ ! -r "$config_path" ]]; then
+      /usr/bin/printf '卸载已停止：无法读取配置文件，不能安全确认恢复状态：%s\n' "$config_path" >&2
+      exit 1
+    fi
+    set +e
+    /usr/bin/grep -Fq 'capsomnia-ai-hook' "$config_path"
+    grep_status=$?
+    set -e
+    if [[ "$grep_status" -eq 0 ]]; then
+      /usr/bin/printf '卸载已停止：配置仍引用 Capsomnia，但恢复工具缺失或损坏。请先重新安装当前版本再卸载。\n' >&2
+      exit 1
+    fi
+    if [[ "$grep_status" -ne 1 ]]; then
+      /usr/bin/printf '卸载已停止：检查配置文件时发生错误：%s\n' "$config_path" >&2
+      exit 1
+    fi
+  done
+fi
 
 /bin/launchctl bootout "gui/$CURRENT_UID" "$LAUNCH_AGENT" 2>/dev/null || true
 /bin/launchctl bootout "gui/$CURRENT_UID" "$SYSTEM_LAUNCH_AGENT" 2>/dev/null || true

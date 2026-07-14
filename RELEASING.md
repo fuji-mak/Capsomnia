@@ -2,7 +2,7 @@
 
 Capsomnia releases publish two package assets:
 
-- `Capsomnia-<version>.pkg` for versioned downloads
+- `Capsomnia-<version>-cn.pkg` for versioned community-edition downloads
 - `Capsomnia.pkg` for stable `releases/latest/download/Capsomnia.pkg` links
 
 ## Version Updates
@@ -25,7 +25,7 @@ Download links should point to `Capsomnia.pkg`, not a versioned asset name.
 ./scripts/build-pkg.sh
 ```
 
-This writes a signed versioned package to `dist/Capsomnia-<version>.pkg`. Both `Capsomnia.app` and the native privileged helper are signed with the Developer ID Application identity before the installer package is signed.
+This writes a signed versioned package to `dist/Capsomnia-<version>-cn.pkg`. Both `Capsomnia.app` and the native privileged helper are signed with the Developer ID Application identity before the installer package is signed.
 
 CI builds the same package payload without signing and verifies that every BOM entry is owned by `root:wheel` and that no AppleDouble entries remain:
 
@@ -53,7 +53,7 @@ After committing and tagging:
 
 ```sh
 gh release create v<version> \
-  dist/Capsomnia-<version>.pkg \
+  dist/Capsomnia-<version>-cn.pkg \
   dist/Capsomnia.pkg \
   dist/SHA256SUMS.txt \
   --title "Capsomnia <version>" \

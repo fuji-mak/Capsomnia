@@ -36,7 +36,6 @@ trap cleanup EXIT
 /bin/mkdir -p \
   "$DIST_DIR" \
   "$PAYLOAD_ROOT/Applications" \
-  "$PAYLOAD_ROOT/Library/LaunchAgents" \
   "$PAYLOAD_ROOT/Library/PrivilegedHelperTools" \
   "$SCRIPTS_DIR"
 
@@ -46,10 +45,14 @@ BUILT_APP="$("$ROOT_DIR/scripts/build-app.sh" "$WORK_DIR/$APP_NAME.app")"
   "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
 if [[ "$SKIP_SIGNING" == "true" ]]; then
   # 本地构建无法获得 Apple 公证，但仍使用 ad-hoc 签名封住二进制内容。
+  /usr/bin/codesign --force --options runtime --sign - \
+    "$BUILT_APP/Contents/Resources/capsomnia-ai-hook"
   /usr/bin/codesign --force --options runtime --sign - "$BUILT_APP"
   /usr/bin/codesign --force --options runtime --sign - \
     "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
 else
+  /usr/bin/codesign --force --options runtime --timestamp --sign "$APP_SIGN_ID" \
+    "$BUILT_APP/Contents/Resources/capsomnia-ai-hook"
   /usr/bin/codesign --force --options runtime --timestamp --sign "$APP_SIGN_ID" "$BUILT_APP"
   /usr/bin/codesign \
     --force \
@@ -65,36 +68,7 @@ fi
   --verbose=2 \
   "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
 
-/usr/bin/ditto "$BUILT_APP" "$PAYLOAD_ROOT/Applications/$APP_NAME.app"
-
-/bin/cat > "$PAYLOAD_ROOT/Library/LaunchAgents/$LABEL.plist" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>$LABEL</string>
-
-  <key>ProgramArguments</key>
-  <array>
-    <string>/Applications/$APP_NAME.app/Contents/MacOS/$APP_NAME</string>
-  </array>
-
-  <key>RunAtLoad</key>
-  <true/>
-
-  <key>KeepAlive</key>
-  <dict>
-    <key>SuccessfulExit</key>
-    <false/>
-  </dict>
-
-  <key>ThrottleInterval</key>
-  <integer>10</integer>
-</dict>
-</plist>
-EOF
+/usr/bin/ditto --noextattr --noqtn "$BUILT_APP" "$PAYLOAD_ROOT/Applications/$APP_NAME.app"
 
 /bin/cat > "$SCRIPTS_DIR/postinstall" <<'EOF'
 #!/bin/zsh
@@ -106,11 +80,28 @@ HELPER_PATH="/Library/PrivilegedHelperTools/capsomnia-pmset"
 LEGACY_HELPER_PATH="/usr/local/sbin/capsomnia-pmset"
 SUDOERS_PATH="/etc/sudoers.d/capsomnia"
 SYSTEM_LAUNCH_AGENT="/Library/LaunchAgents/$LABEL.plist"
+USER_LAUNCH_AGENT=""
+USER_LAUNCH_AGENT_BACKUP=""
+USER_LAUNCH_AGENT_TEMPLATE=""
+had_user_launch_agent=false
 install_completed=false
 sudoers_tmp=""
 sudoers_backup=""
 had_sudoers=false
 console_uid=""
+
+install_user_launch_agent_from() {
+  local source_path="$1"
+  local user_tmp
+  user_tmp="$(/bin/launchctl asuser "$console_uid" /usr/bin/sudo -u "$console_user" \
+    /usr/bin/mktemp "$console_home/Library/LaunchAgents/.capsomnia.XXXXXX")"
+  /bin/launchctl asuser "$console_uid" /usr/bin/sudo -u "$console_user" \
+    /bin/cp "$source_path" "$user_tmp"
+  /bin/launchctl asuser "$console_uid" /usr/bin/sudo -u "$console_user" \
+    /bin/chmod 0644 "$user_tmp"
+  /bin/launchctl asuser "$console_uid" /usr/bin/sudo -u "$console_user" \
+    /bin/mv -f "$user_tmp" "$USER_LAUNCH_AGENT"
+}
 
 cleanup() {
   local status=$?
@@ -119,6 +110,9 @@ cleanup() {
 
   if [[ "$status" -ne 0 && "$install_completed" != "true" ]]; then
     /usr/bin/printf 'Capsomnia 安装未完成，正在撤销授权与后台启动设置。\n' >&2
+    if [[ -n "$console_uid" && -n "$USER_LAUNCH_AGENT" ]]; then
+      /bin/launchctl bootout "gui/$console_uid" "$USER_LAUNCH_AGENT" 2>/dev/null || true
+    fi
     if [[ -n "$console_uid" ]]; then
       /bin/launchctl bootout "gui/$console_uid" "$SYSTEM_LAUNCH_AGENT" 2>/dev/null || true
     fi
@@ -134,7 +128,19 @@ cleanup() {
       /bin/rm -f "$SUDOERS_PATH" || rollback_failed=true
       /bin/test ! -e "$SUDOERS_PATH" || rollback_failed=true
     fi
-    if [[ -n "$console_uid" && -f "$SYSTEM_LAUNCH_AGENT" ]]; then
+    if [[ -n "$USER_LAUNCH_AGENT" ]]; then
+      /bin/launchctl asuser "$console_uid" /usr/bin/sudo -u "$console_user" \
+        /bin/rm -f "$USER_LAUNCH_AGENT" 2>/dev/null || rollback_failed=true
+      if [[ "$had_user_launch_agent" == "true" && -n "$USER_LAUNCH_AGENT_BACKUP" ]]; then
+        install_user_launch_agent_from "$USER_LAUNCH_AGENT_BACKUP" 2>/dev/null || rollback_failed=true
+      fi
+    fi
+    if [[ -n "$console_uid" && -n "$USER_LAUNCH_AGENT" && -f "$USER_LAUNCH_AGENT" ]]; then
+      /bin/launchctl bootstrap "gui/$console_uid" "$USER_LAUNCH_AGENT" 2>/dev/null \
+        || rollback_failed=true
+      /bin/launchctl enable "gui/$console_uid/$LABEL" 2>/dev/null \
+        || rollback_failed=true
+    elif [[ -n "$console_uid" && -f "$SYSTEM_LAUNCH_AGENT" ]]; then
       /bin/launchctl bootstrap "gui/$console_uid" "$SYSTEM_LAUNCH_AGENT" 2>/dev/null \
         || rollback_failed=true
       /bin/launchctl enable "gui/$console_uid/$LABEL" 2>/dev/null \
@@ -148,6 +154,8 @@ cleanup() {
 
   [[ -n "$sudoers_tmp" ]] && /bin/rm -f "$sudoers_tmp"
   [[ -n "$sudoers_backup" ]] && /bin/rm -f "$sudoers_backup"
+  [[ -n "$USER_LAUNCH_AGENT_BACKUP" ]] && /bin/rm -f "$USER_LAUNCH_AGENT_BACKUP"
+  [[ -n "$USER_LAUNCH_AGENT_TEMPLATE" ]] && /bin/rm -f "$USER_LAUNCH_AGENT_TEMPLATE"
 
   exit "$status"
 }
@@ -165,13 +173,18 @@ fi
 
 console_uid="$(/usr/bin/id -u "$console_user")"
 console_home="$(/usr/bin/dscl . -read "/Users/$console_user" NFSHomeDirectory 2>/dev/null | /usr/bin/awk '{print $2}')"
+if [[ -z "$console_home" || "$console_home" != /* || ! -d "$console_home" ]]; then
+  /usr/bin/printf 'Capsomnia 无法确认当前账户的主目录。\n' >&2
+  exit 1
+fi
+USER_LAUNCH_AGENT="$console_home/Library/LaunchAgents/$LABEL.plist"
+USER_LOG_DIR="$console_home/Library/Logs/$APP_NAME"
 
 /bin/mkdir -p "$(/usr/bin/dirname "$HELPER_PATH")" "$(/usr/bin/dirname "$SUDOERS_PATH")"
 /usr/sbin/chown root:wheel "$(/usr/bin/dirname "$HELPER_PATH")" "$(/usr/bin/dirname "$SUDOERS_PATH")"
 /bin/chmod 0755 "$(/usr/bin/dirname "$HELPER_PATH")" "$(/usr/bin/dirname "$SUDOERS_PATH")"
-/usr/sbin/chown root:wheel "$HELPER_PATH" "$SYSTEM_LAUNCH_AGENT"
+/usr/sbin/chown root:wheel "$HELPER_PATH"
 /bin/chmod 0755 "$HELPER_PATH"
-/bin/chmod 0644 "$SYSTEM_LAUNCH_AGENT"
 /usr/sbin/chown -R root:wheel "/Applications/$APP_NAME.app"
 /bin/chmod -R go-w "/Applications/$APP_NAME.app"
 
@@ -182,8 +195,8 @@ if [[ -f "$SUDOERS_PATH" ]]; then
   /bin/cp -p "$SUDOERS_PATH" "$sudoers_backup"
 fi
 /bin/cat > "$sudoers_tmp" <<SUDOERS
-# Capsomnia 只能切换睡眠状态或关闭显示器，不能以 root 执行其他命令。
-$console_user ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off, $HELPER_PATH display-sleep
+# Capsomnia 只能切换睡眠状态、关闭显示器或立即睡眠，不能以 root 执行其他命令。
+$console_user ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off, $HELPER_PATH display-sleep, $HELPER_PATH sleep-now
 SUDOERS
 
 /usr/sbin/visudo -cf "$sudoers_tmp"
@@ -191,17 +204,67 @@ SUDOERS
 
 if [[ -n "$console_home" ]]; then
   legacy_user_agent="$console_home/Library/LaunchAgents/$LABEL.plist"
+  # These paths are user-controlled. Create them as the target user so a
+  # malicious symlink cannot make the root installer chown a system directory.
+  /bin/launchctl asuser "$console_uid" /usr/bin/sudo -u "$console_user" \
+    /bin/mkdir -p "$console_home/Library/LaunchAgents" "$USER_LOG_DIR"
+  if [[ -f "$USER_LAUNCH_AGENT" ]]; then
+    had_user_launch_agent=true
+    USER_LAUNCH_AGENT_BACKUP="$(/usr/bin/mktemp)"
+    /usr/sbin/chown "$console_user":staff "$USER_LAUNCH_AGENT_BACKUP"
+    /bin/launchctl asuser "$console_uid" /usr/bin/sudo -u "$console_user" \
+      /bin/cp "$USER_LAUNCH_AGENT" "$USER_LAUNCH_AGENT_BACKUP"
+    /usr/sbin/chown root:wheel "$USER_LAUNCH_AGENT_BACKUP"
+    /bin/chmod 0600 "$USER_LAUNCH_AGENT_BACKUP"
+  fi
   /bin/launchctl bootout "gui/$console_uid" "$legacy_user_agent" 2>/dev/null || true
-  /bin/rm -f "$legacy_user_agent"
 fi
 
 /bin/launchctl bootout "gui/$console_uid" "$SYSTEM_LAUNCH_AGENT" 2>/dev/null || true
 /bin/launchctl asuser "$console_uid" /usr/bin/sudo -u "$console_user" /usr/bin/pkill -x "$APP_NAME" 2>/dev/null || true
-/bin/sleep 1
-/usr/bin/plutil -lint "$SYSTEM_LAUNCH_AGENT" >/dev/null
-/bin/launchctl bootstrap "gui/$console_uid" "$SYSTEM_LAUNCH_AGENT"
+for _ in {1..40}; do
+  /usr/bin/pgrep -x "$APP_NAME" >/dev/null 2>&1 || break
+  /bin/sleep 0.1
+done
+if /usr/bin/pgrep -x "$APP_NAME" >/dev/null 2>&1; then
+  /bin/launchctl asuser "$console_uid" /usr/bin/sudo -u "$console_user" /usr/bin/pkill -KILL -x "$APP_NAME" 2>/dev/null || true
+fi
+USER_LAUNCH_AGENT_TEMPLATE="$(/usr/bin/mktemp)"
+/bin/cat > "$USER_LAUNCH_AGENT_TEMPLATE" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>$LABEL</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Applications/$APP_NAME.app/Contents/MacOS/$APP_NAME</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>$USER_LOG_DIR/stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>$USER_LOG_DIR/stderr.log</string>
+</dict>
+</plist>
+PLIST
+/bin/chmod 0644 "$USER_LAUNCH_AGENT_TEMPLATE"
+install_user_launch_agent_from "$USER_LAUNCH_AGENT_TEMPLATE"
+/usr/bin/plutil -lint "$USER_LAUNCH_AGENT" >/dev/null
+/bin/launchctl bootstrap "gui/$console_uid" "$USER_LAUNCH_AGENT"
 /bin/launchctl enable "gui/$console_uid/$LABEL"
 /bin/launchctl print "gui/$console_uid/$LABEL" >/dev/null
+/bin/rm -f "$SYSTEM_LAUNCH_AGENT"
 
 /bin/rm -f "$LEGACY_HELPER_PATH"
 install_completed=true

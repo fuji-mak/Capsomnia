@@ -5,6 +5,7 @@ let appName = "Capsomnia"
 let appLabel = "com.github.fuji-mak.capsomnia"
 let helperPath = "/Library/PrivilegedHelperTools/capsomnia-pmset"
 let displaySleepHelperMode = "display-sleep"
+let systemSleepHelperMode = "sleep-now"
 let logDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent("Library/Logs/Capsomnia")
 let logPath = logDirectoryURL
@@ -76,46 +77,58 @@ struct AppStrings {
     let enabled: String
     let openAtLogin: String
     let displaySleepOnLidClose: String
+    let autoSleepAfterAgentTask: String
+    let cancelPendingAutoSleep: (Int) -> String
     let quit: String
     let tooltipOn: String
     let tooltipOff: String
     let tooltipDisabled: String
     let tooltipError: String
+    let menuError: String
 
     static func current() -> AppStrings {
         switch Preferences.language {
         case .simplifiedChinese:
             AppStrings(
-                enabled: "启用",
-                openAtLogin: "登录后自动启动",
-                displaySleepOnLidClose: "合盖时关闭显示器",
+                enabled: "合盖时保持开机状态",
+                openAtLogin: "开机自动启动 Capsomnia",
+                displaySleepOnLidClose: "合盖自动关闭外接显示器",
+                autoSleepAfterAgentTask: "Codex/Claude任务完成后自动睡眠",
+                cancelPendingAutoSleep: { seconds in "取消本次自动睡眠（\(seconds)秒）" },
                 quit: "退出 Capsomnia",
                 tooltipOn: "当前状态：持续运行",
                 tooltipOff: "当前状态：正常休眠",
                 tooltipDisabled: "当前状态：已停用（正常休眠）",
-                tooltipError: "当前状态：设置失败，正在重试"
+                tooltipError: "当前状态：设置失败，正在重试",
+                menuError: "设置失败，正在自动重试"
             )
         case .english:
             AppStrings(
-                enabled: "Enabled",
-                openAtLogin: "Open at login",
-                displaySleepOnLidClose: "Turn display off when lid closes",
+                enabled: "Keep Mac Awake When Lid Closes",
+                openAtLogin: "Start Capsomnia at Login",
+                displaySleepOnLidClose: "Turn External Displays Off When Lid Closes",
+                autoSleepAfterAgentTask: "Sleep After Codex/Claude Tasks Finish",
+                cancelPendingAutoSleep: { seconds in "Cancel This Sleep (\(seconds)s)" },
                 quit: "Quit Capsomnia",
                 tooltipOn: "Current status: keep running",
                 tooltipOff: "Current status: normal sleep",
                 tooltipDisabled: "Current status: disabled (normal sleep)",
-                tooltipError: "Capsomnia could not update the sleep setting — retrying"
+                tooltipError: "Capsomnia could not update the sleep setting — retrying",
+                menuError: "Setting failed. Retrying automatically"
             )
         case .japanese:
             AppStrings(
-                enabled: "有効",
-                openAtLogin: "ログイン時に起動",
-                displaySleepOnLidClose: "蓋を閉じたら画面をオフ",
+                enabled: "蓋を閉じてもMacをスリープさせない",
+                openAtLogin: "ログイン時に Capsomnia を起動",
+                displaySleepOnLidClose: "蓋を閉じたら外部ディスプレイをオフ",
+                autoSleepAfterAgentTask: "Codex/Claudeのタスク完了後に自動スリープ",
+                cancelPendingAutoSleep: { seconds in "今回の自動スリープをキャンセル（\(seconds)秒）" },
                 quit: "Capsomniaを終了",
                 tooltipOn: "現在の状態：作業継続中",
                 tooltipOff: "現在の状態：通常のスリープ動作",
                 tooltipDisabled: "現在の状態：無効（通常のスリープ動作）",
-                tooltipError: "スリープ設定を更新できませんでした — 再試行中"
+                tooltipError: "スリープ設定を更新できませんでした — 再試行中",
+                menuError: "設定に失敗しました。自動で再試行しています"
             )
         }
     }
@@ -126,6 +139,7 @@ private enum PreferenceKey {
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
     static let displaySleepOnLidClose = "DisplaySleepOnLidClose"
+    static let autoSleepAfterAgentTask = "AutoSleepAfterAgentTask"
 }
 
 enum Preferences {
@@ -136,7 +150,8 @@ enum Preferences {
             PreferenceKey.enabled: false,
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
-            PreferenceKey.displaySleepOnLidClose: true
+            PreferenceKey.displaySleepOnLidClose: true,
+            PreferenceKey.autoSleepAfterAgentTask: true
         ])
     }
 
@@ -161,6 +176,11 @@ enum Preferences {
     static var displaySleepOnLidClose: Bool {
         get { defaults.bool(forKey: PreferenceKey.displaySleepOnLidClose) }
         set { defaults.set(newValue, forKey: PreferenceKey.displaySleepOnLidClose) }
+    }
+
+    static var autoSleepAfterAgentTask: Bool {
+        get { defaults.bool(forKey: PreferenceKey.autoSleepAfterAgentTask) }
+        set { defaults.set(newValue, forKey: PreferenceKey.autoSleepAfterAgentTask) }
     }
 
 }

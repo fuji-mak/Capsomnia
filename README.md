@@ -68,6 +68,7 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 
 - Caps Lock on: keeps AI agents and other work from being interrupted when the MacBook lid is closed. Remote operation through tools such as Codex Mobile remains possible. The Caps Lock light physically shows the current state.
 - Caps Lock off: restores normal sleep behavior.
+- Menu bar “Prevent sleep”: provides the same on/off control when Caps Lock is remapped to Control or another key. A physical Caps Lock transition returns control to the original hardware switch.
 - Lid closed while Caps Lock is on: puts only the display to sleep while work keeps running.
 - Quitting the app restores normal sleep behavior.
 

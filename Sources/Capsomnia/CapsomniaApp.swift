@@ -4,6 +4,7 @@ import Foundation
 
 final class Capsomnia: NSObject, NSApplicationDelegate {
     private var lastAppliedState: Bool?
+    private var sleepStateSelection = SleepStateSelection()
     private var failedSleepState: Bool?
     private var nextSleepStateRetryAt = Date.distantPast
     private var nextSleepStateVerificationAt = Date.distantPast
@@ -92,10 +93,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         showSettingsWindow(page: currentSettingsPage())
     }
 
-    /// The state Capsomnia is acting on: the last state it applied, falling
-    /// back to the live hardware Caps Lock state before the first apply.
+    /// The state Capsomnia is acting on. A menu choice takes precedence while
+    /// present; the existing applied/live fallbacks preserve startup behavior.
     private var currentCapsLockState: Bool {
-        lastAppliedState ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        sleepStateSelection.desiredState
+            ?? lastAppliedState
+            ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
     }
 
     private func syncStatusItemVisibility() {
@@ -130,6 +133,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         let strings = AppStrings.current()
         let menu = NSMenu()
+        let preventSleepItem = NSMenuItem(
+            title: strings.preventSleep,
+            action: #selector(toggleSleepPrevention),
+            keyEquivalent: ""
+        )
+        preventSleepItem.target = self
+        preventSleepItem.state = currentCapsLockState ? .on : .off
+        menu.addItem(preventSleepItem)
+        menu.addItem(NSMenuItem.separator())
+
         let showMenuBarItem = NSMenuItem(
             title: strings.showMenuBarIcon,
             action: #selector(toggleShowMenuBarIcon),
@@ -165,6 +178,25 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         menu.addItem(quitItem)
 
         item.menu = menu
+    }
+
+    @objc private func toggleSleepPrevention(_ sender: NSMenuItem) {
+        // Observe the live modifier at click time so a physical transition just
+        // before opening the menu wins over the previous 250 ms poll result.
+        let hardwareState = CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        let currentState = sleepStateSelection.observeHardwareState(hardwareState).sleepPreventionOn
+        let enabled = !currentState
+        sleepStateSelection.setManualOverride(enabled)
+        sender.state = enabled ? .on : .off
+        refreshStatus(capsLockOn: enabled)
+        log("menu manual_sleep_prevention=\(enabled ? "on" : "off")")
+
+        // `pmset` is intentionally deferred by one main-loop turn. The existing
+        // synchronous helper remains unchanged, but the menu can close before it
+        // runs instead of appearing stuck while the subprocess finishes.
+        DispatchQueue.main.async { [weak self] in
+            self?.apply(capsLockOn: enabled, reason: "menu")
+        }
     }
 
     @objc private func toggleShowMenuBarIcon() {
@@ -270,7 +302,17 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
     private func applyCurrentCapsLockState(reason: String) {
         let flags = CGEventSource.flagsState(.hidSystemState)
-        apply(capsLockOn: flags.contains(.maskAlphaShift), reason: reason)
+        let resolution = sleepStateSelection.observeHardwareState(flags.contains(.maskAlphaShift))
+        // The menu checkmark mirrors both the original physical switch and a
+        // manual override. Assigning the existing item is cheaper than rebuilding
+        // the localized menu on every 250 ms poll.
+        statusItem?.menu?.items
+            .first(where: { $0.action == #selector(toggleSleepPrevention) })?
+            .state = resolution.sleepPreventionOn ? .on : .off
+        if resolution.clearedManualOverride {
+            log("\(reason) hardware_capslock_changed manual_override=cleared")
+        }
+        apply(capsLockOn: resolution.sleepPreventionOn, reason: reason)
     }
 
     private func apply(capsLockOn: Bool, reason: String) {

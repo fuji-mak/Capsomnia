@@ -8,11 +8,10 @@ Security fixes are provided only for the latest release. Older releases are not 
 
 Please do not open a public issue for sensitive security reports.
 
-Report sensitive vulnerabilities by contacting the project maintainer on X:
+Report sensitive vulnerabilities through GitHub's private vulnerability reporting for:
 
-- X: https://x.com/tf_makimaki
-- Repository: https://github.com/fuji-mak/Capsomnia
-- Maintainer: https://github.com/fuji-mak
+- Repository: https://github.com/tarushvkodes/Capsomnia-OBS
+- Maintainer: https://github.com/tarushvkodes
 
 For non-sensitive bugs or documentation issues, opening a public GitHub issue is fine.
 
@@ -42,10 +41,11 @@ The sudoers rule only permits the current user to run:
 ```text
 /Library/PrivilegedHelperTools/capsomnia-pmset on
 /Library/PrivilegedHelperTools/capsomnia-pmset off
-/Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
 ```
 
-The helper is a compiled executable. It does not invoke a shell or load shell startup files. It only accepts `on`, `off`, and `display-sleep`, and only executes `/usr/bin/pmset -a disablesleep` or `/usr/bin/pmset displaysleepnow`.
+The helper is a compiled executable. It does not invoke a shell or load shell startup files. It accepts only `on` and `off`, which map directly to `/usr/bin/pmset -a disablesleep 1` and `/usr/bin/pmset -a disablesleep 0`.
+
+Brightness control runs as the signed-in user. It dynamically accesses macOS's private `DisplayServices` framework and does not require root privileges.
 
 Package installs keep `/Applications/Capsomnia.app`, the helper, and the system LaunchAgent owned by `root:wheel`. The packaged helper and app are signed with the same Developer ID. The app process still runs as the signed-in user. Capsomnia verifies the actual `SleepDisabled` state after each change and every ten seconds afterward. If the helper cannot apply a sleep-state change, the actual state cannot be verified, or the setting drifts, Capsomnia shows a red status indicator and retries instead of reporting the requested state as active.
 

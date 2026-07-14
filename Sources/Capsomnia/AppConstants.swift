@@ -4,7 +4,6 @@ import Foundation
 let appName = "Capsomnia"
 let appLabel = "com.github.fuji-mak.capsomnia"
 let helperPath = "/Library/PrivilegedHelperTools/capsomnia-pmset"
-let displaySleepHelperMode = "display-sleep"
 let logDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent("Library/Logs/Capsomnia")
 let logPath = logDirectoryURL
@@ -95,8 +94,8 @@ struct AppStrings {
                 language: "Language",
                 openAtLogin: "Open at login",
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
-                displaySleepOnLidClose: "Turn display off when lid closes",
-                displaySleepOnLidCloseDesc: "When Caps Lock is on, keep work running but let the display sleep after closing the lid.",
+                displaySleepOnLidClose: "Set brightness to 0% when lid closes",
+                displaySleepOnLidCloseDesc: "When Caps Lock is on, keep the display session active for recording and dim the built-in panel to 0% instead of requesting display sleep.",
                 openCapsomnia: "Open Capsomnia",
                 quit: "Quit",
                 settingsTitle: "Settings",

@@ -134,7 +134,7 @@ trap cleanup EXIT
 
 cat > "$sudoers_tmp" <<SUDOERS
 # Allow Capsomnia to toggle only its fixed pmset helper.
-$console_user ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off, $HELPER_PATH display-sleep
+$console_user ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off
 SUDOERS
 
 /usr/sbin/visudo -cf "$sudoers_tmp"

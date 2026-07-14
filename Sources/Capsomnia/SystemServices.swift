@@ -1,5 +1,8 @@
 import Foundation
 import IOKit
+import IOKit.pwr_mgt
+import CoreGraphics
+import Darwin
 
 struct LaunchAgentError: LocalizedError {
     let message: String
@@ -109,5 +112,143 @@ enum ClamshellStateReader {
         }
 
         return (value as? NSNumber)?.boolValue
+    }
+}
+
+final class ActiveSessionController {
+    private var displayAssertion = IOPMAssertionID(kIOPMNullAssertionID)
+    private var userActivityAssertion = IOPMAssertionID(kIOPMNullAssertionID)
+    private var lastUserActivityRefresh = Date.distantPast
+
+    func setActive(_ active: Bool) {
+        if active {
+            if displayAssertion == kIOPMNullAssertionID {
+                IOPMAssertionCreateWithName(
+                    kIOPMAssertionTypeNoDisplaySleep as CFString,
+                    IOPMAssertionLevel(kIOPMAssertionLevelOn),
+                    "Capsomnia active session" as CFString,
+                    &displayAssertion
+                )
+            }
+            refreshUserActivity()
+        } else {
+            releaseAssertions()
+        }
+    }
+
+    func refreshUserActivity() {
+        guard Date().timeIntervalSince(lastUserActivityRefresh) >= 30 else { return }
+        IOPMAssertionDeclareUserActivity(
+            "Capsomnia active session" as CFString,
+            kIOPMUserActiveLocal,
+            &userActivityAssertion
+        )
+        lastUserActivityRefresh = Date()
+    }
+
+    func releaseAssertions() {
+        if displayAssertion != kIOPMNullAssertionID {
+            IOPMAssertionRelease(displayAssertion)
+            displayAssertion = IOPMAssertionID(kIOPMNullAssertionID)
+        }
+        if userActivityAssertion != kIOPMNullAssertionID {
+            IOPMAssertionRelease(userActivityAssertion)
+            userActivityAssertion = IOPMAssertionID(kIOPMNullAssertionID)
+        }
+        lastUserActivityRefresh = .distantPast
+    }
+}
+
+final class BuiltInDisplayBrightnessController {
+    private typealias GetBrightness = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
+    private typealias SetBrightness = @convention(c) (CGDirectDisplayID, Float) -> Int32
+
+    private var displayID: CGDirectDisplayID?
+    private var savedBrightness: Float?
+    private var isDimmed = false
+    private let frameworkHandle: UnsafeMutableRawPointer?
+    private let getBrightness: GetBrightness?
+    private let setBrightness: SetBrightness?
+
+    init() {
+        let handle = dlopen(
+            "/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices",
+            RTLD_LAZY
+        )
+        frameworkHandle = handle
+        if let symbol = handle.flatMap({ dlsym($0, "DisplayServicesGetBrightness") }) {
+            getBrightness = unsafeBitCast(symbol, to: GetBrightness.self)
+        } else {
+            getBrightness = nil
+        }
+        if let symbol = handle.flatMap({ dlsym($0, "DisplayServicesSetBrightness") }) {
+            setBrightness = unsafeBitCast(symbol, to: SetBrightness.self)
+        } else {
+            setBrightness = nil
+        }
+    }
+
+    deinit {
+        if let frameworkHandle {
+            dlclose(frameworkHandle)
+        }
+    }
+
+    func prepare() {
+        guard !isDimmed else { return }
+        if displayID == nil {
+            displayID = builtInDisplayID()
+        }
+        guard savedBrightness == nil, let id = displayID, let getBrightness else { return }
+        var brightness: Float = 1
+        if getBrightness(id, &brightness) == 0 {
+            // Session-start fallback in case macOS makes the panel unavailable
+            // before delivering the binary closed-lid state.
+            savedBrightness = brightness
+        }
+    }
+
+    private func captureBrightnessImmediatelyBeforeDimming() {
+        guard let id = displayID, let getBrightness else { return }
+        var brightness: Float = 1
+        if getBrightness(id, &brightness) == 0 {
+            savedBrightness = brightness
+        }
+    }
+
+    @discardableResult
+    func dimToZero() -> Bool {
+        prepare()
+        guard let id = displayID, let setBrightness else { return false }
+        captureBrightnessImmediatelyBeforeDimming()
+        let result = setBrightness(id, 0)
+        isDimmed = result == 0
+        return isDimmed
+    }
+
+    @discardableResult
+    func restore() -> Bool {
+        guard isDimmed, let id = displayID, let brightness = savedBrightness, let setBrightness else {
+            isDimmed = false
+            savedBrightness = nil
+            displayID = nil
+            return true
+        }
+        let result = setBrightness(id, brightness)
+        if result == 0 {
+            isDimmed = false
+            savedBrightness = nil
+            displayID = nil
+            return true
+        }
+        return false
+    }
+
+    private func builtInDisplayID() -> CGDirectDisplayID? {
+        var count: UInt32 = 0
+        guard CGGetActiveDisplayList(0, nil, &count) == .success, count > 0 else { return nil }
+        var displays = [CGDirectDisplayID](repeating: 0, count: Int(count))
+        guard CGGetActiveDisplayList(count, &displays, &count) == .success else { return nil }
+        return displays.prefix(Int(count)).first { CGDisplayIsBuiltin($0) != 0 }
     }
 }

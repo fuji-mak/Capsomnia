@@ -4,6 +4,16 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 1.1.0 - 2026-07-14
+
+- Keep the graphical session active with display-sleep and user-activity power assertions while Caps Lock is on.
+- Replace the closed-lid `displaysleepnow` request with built-in panel brightness control for OBS and screen-capture continuity.
+- Capture brightness immediately before dimming to 0% and restore that exact value when the lid opens.
+- Use adaptive 40 ms clamshell polling only while the lid is closed; retain 250 ms polling during normal operation.
+- Preserve macOS automatic-brightness behavior after restoration.
+- Remove the obsolete privileged `display-sleep` helper command and narrow the sudoers rule to `on` and `off`.
+- Ad-hoc sign locally assembled source builds so their resource seals verify on current macOS versions.
+
 ## 1.0.0 - 2026-07-12
 
 First stable release of Capsomnia.

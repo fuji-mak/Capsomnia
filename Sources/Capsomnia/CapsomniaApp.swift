@@ -7,15 +7,17 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var failedSleepState: Bool?
     private var nextSleepStateRetryAt = Date.distantPast
     private var nextSleepStateVerificationAt = Date.distantPast
-    private var nextDisplaySleepRetryAt = Date.distantPast
-    private var didRequestDisplaySleepForClosedLid = false
+    private var lastClamshellClosed = false
     private var hasLoggedMissingClamshellState = false
     private var hasLoggedMissingSleepState = false
     private var shouldRestoreSleepOnTerminate = true
     private var pollingTimer: Timer?
+    private var closedLidPollingTimer: Timer?
     private var signalSources: [DispatchSourceSignal] = []
     private var statusItem: NSStatusItem?
     private var settingsWindowController: SettingsWindowController?
+    private let activeSessionController = ActiveSessionController()
+    private let brightnessController = BuiltInDisplayBrightnessController()
     private let onImage = DotImage.make(color: brandLEDColor)
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
     private let errorImage = DotImage.make(color: .systemRed)
@@ -58,6 +60,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         guard shouldRestoreSleepOnTerminate else { return }
 
+        stopClosedLidPolling()
+        activeSessionController.releaseAssertions()
+        brightnessController.restore()
         let result = runHelper("off")
         log("terminate restore_off helper_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)")
     }
@@ -252,7 +257,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
             evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: "preference")
         } else {
-            didRequestDisplaySleepForClosedLid = false
+            stopClosedLidPolling()
+            brightnessController.restore()
+            lastClamshellClosed = false
         }
         log("preference display_sleep_on_lid_close=\(enabled ? "on" : "off")")
     }
@@ -281,6 +288,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         if lastAppliedState == capsLockOn {
             if failedSleepState == nil, now < nextSleepStateVerificationAt {
+                activeSessionController.setActive(capsLockOn)
                 evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
                 return
             }
@@ -303,6 +311,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 nextSleepStateRetryAt = .distantPast
                 nextSleepStateVerificationAt = now.addingTimeInterval(sleepStateVerificationInterval)
                 syncStatusItemVisibility()
+                activeSessionController.setActive(capsLockOn)
                 evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
                 return
             }
@@ -338,24 +347,31 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         nextSleepStateRetryAt = .distantPast
         nextSleepStateVerificationAt = now.addingTimeInterval(sleepStateVerificationInterval)
         syncStatusItemVisibility()
+        activeSessionController.setActive(capsLockOn)
+        if capsLockOn {
+            brightnessController.prepare()
+        } else {
+            brightnessController.restore()
+        }
         evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
     }
 
     private func evaluateDisplaySleepForClosedLid(capsLockOn: Bool, reason: String) {
         guard Preferences.displaySleepOnLidClose else {
-            didRequestDisplaySleepForClosedLid = false
-            nextDisplaySleepRetryAt = .distantPast
+            stopClosedLidPolling()
+            brightnessController.restore()
+            lastClamshellClosed = false
             return
         }
 
         guard capsLockOn else {
-            didRequestDisplaySleepForClosedLid = false
-            nextDisplaySleepRetryAt = .distantPast
+            stopClosedLidPolling()
+            brightnessController.restore()
+            lastClamshellClosed = false
             return
         }
 
         guard let clamshellClosed = ClamshellStateReader.isClosed() else {
-            didRequestDisplaySleepForClosedLid = false
             if !hasLoggedMissingClamshellState {
                 log("\(reason) clamshell_state_unavailable")
                 hasLoggedMissingClamshellState = true
@@ -365,23 +381,39 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         hasLoggedMissingClamshellState = false
 
         guard clamshellClosed else {
-            didRequestDisplaySleepForClosedLid = false
-            nextDisplaySleepRetryAt = .distantPast
+            stopClosedLidPolling()
+            if lastClamshellClosed {
+                let restored = brightnessController.restore()
+                log("\(reason) clamshell=open brightness_restore=\(restored ? "ok" : "failed")")
+            }
+            brightnessController.prepare()
+            lastClamshellClosed = false
             return
         }
 
-        guard !didRequestDisplaySleepForClosedLid else { return }
-        let now = Date()
-        guard now >= nextDisplaySleepRetryAt else { return }
+        guard !lastClamshellClosed else { return }
+        let dimmed = brightnessController.dimToZero()
+        lastClamshellClosed = true
+        startClosedLidPolling()
+        log("\(reason) clamshell=closed brightness_zero=\(dimmed ? "ok" : "failed") display_sleep_request=skipped")
+    }
 
-        let result = runHelper(displaySleepHelperMode)
-        log("\(reason) clamshell=closed display_sleep_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)")
-        if result.status == 0 {
-            didRequestDisplaySleepForClosedLid = true
-            nextDisplaySleepRetryAt = .distantPast
-        } else {
-            nextDisplaySleepRetryAt = now.addingTimeInterval(helperRetryInterval)
+    private func startClosedLidPolling() {
+        guard closedLidPollingTimer == nil else { return }
+        let timer = Timer(timeInterval: 0.04, repeats: true) { [weak self] _ in
+            self?.evaluateDisplaySleepForClosedLid(capsLockOn: true, reason: "closed_lid_poll")
         }
+        timer.tolerance = 0.004
+        closedLidPollingTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+        log("closed_lid_polling_started interval_ms=40 tolerance_ms=4")
+    }
+
+    private func stopClosedLidPolling() {
+        guard let timer = closedLidPollingTimer else { return }
+        timer.invalidate()
+        closedLidPollingTimer = nil
+        log("closed_lid_polling_stopped")
     }
 
     private func updateStatus(capsLockOn: Bool) {
@@ -444,6 +476,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         for signalNumber in [SIGINT, SIGTERM] {
             let source = DispatchSource.makeSignalSource(signal: signalNumber, queue: .main)
             source.setEventHandler { [weak self] in
+                self?.stopClosedLidPolling()
+                self?.activeSessionController.releaseAssertions()
+                self?.brightnessController.restore()
                 let result = self?.runHelper("off")
                 self?.log(
                     "signal=\(signalNumber) restore_off helper_status=\(result?.status ?? -1) "

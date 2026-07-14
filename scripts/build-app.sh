@@ -34,5 +34,6 @@ cd "$ROOT_DIR"
 /usr/bin/install -m 0644 "resources/Info.plist" "$CONTENTS_DIR/Info.plist"
 /usr/bin/install -m 0644 "resources/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
 /usr/bin/install -m 0755 "scripts/uninstall.sh" "$RESOURCES_DIR/uninstall.sh"
+/usr/bin/codesign --force --deep --sign - "$APP_BUNDLE"
 
 echo "$APP_BUNDLE"

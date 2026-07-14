@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT_DIR="$(cd "$(/usr/bin/dirname "$0")/.." && /bin/pwd)"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT_DIR/resources/Info.plist")"
 PKG_PATH="${1:-$ROOT_DIR/dist/Capsomnia-$VERSION.pkg}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-capsomnia-notary}"
@@ -14,7 +14,7 @@ case "$PKG_PATH" in
 esac
 
 if [[ ! -f "$PKG_PATH" ]]; then
-  echo "Package not found: $PKG_PATH" >&2
+  /usr/bin/printf '找不到安装包：%s\n' "$PKG_PATH" >&2
   exit 66
 fi
 
@@ -29,5 +29,5 @@ fi
   /usr/bin/shasum -a 256 "$(/usr/bin/basename "$PKG_PATH")" "$(/usr/bin/basename "$STABLE_PKG")" > "$CHECKSUMS_PATH"
 )
 
-echo "$PKG_PATH"
-echo "$STABLE_PKG"
+/usr/bin/printf '%s\n' "$PKG_PATH"
+/usr/bin/printf '%s\n' "$STABLE_PKG"

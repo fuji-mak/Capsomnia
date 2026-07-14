@@ -1,5 +1,4 @@
 import AppKit
-import CoreGraphics
 import Foundation
 
 final class Capsomnia: NSObject, NSApplicationDelegate {
@@ -15,12 +14,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var pollingTimer: Timer?
     private var signalSources: [DispatchSourceSignal] = []
     private var statusItem: NSStatusItem?
-    private var settingsWindowController: SettingsWindowController?
-    private let onImage = DotImage.make(color: Brand.led)
-    private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
-    private let errorImage = DotImage.make(color: .systemRed)
+    private var statusMenuController: StatusMenuController?
+    private let onImage = DotImage.makeRing(color: NSColor(calibratedWhite: 0.60, alpha: 1.0))
+    private let offImage = DotImage.makeFilled(color: NSColor(calibratedWhite: 0.60, alpha: 1.0))
+    private let errorImage = DotImage.makeFilled(color: .systemRed)
     private let helperRetryInterval: TimeInterval = 5
     private let sleepStateVerificationInterval: TimeInterval = 10
+    private let displaySleepRefreshInterval: TimeInterval = 2
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if terminateIfNewerInteractiveDuplicate() {
@@ -28,30 +28,25 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         Preferences.registerDefaults()
-        let shouldShowInitialSetup = Preferences.consumeForceWelcomeOnNextLaunch()
-            || !Preferences.didCompleteInitialSetup
 
         DistributedNotificationCenter.default().addObserver(
             self,
-            selector: #selector(handleOpenSettingsNotification),
-            name: openSettingsNotificationName,
+            selector: #selector(handleOpenMenuNotification),
+            name: openMenuNotificationName,
             object: appLabel
         )
 
         NSApp.setActivationPolicy(.accessory)
-        syncStatusItemVisibility()
+        ensureStatusItem()
         installSignalHandlers()
         installPollingMonitor()
         log("start")
-        applyCurrentCapsLockState(reason: "startup")
+        applyCurrentControlState(reason: "startup")
 
-        if shouldShowInitialSetup {
-            showSettingsWindow(page: .initialPreferences)
-        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        showSettingsWindow(page: currentSettingsPage())
+        statusItem?.button?.performClick(nil)
         return true
     }
 
@@ -78,7 +73,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         shouldRestoreSleepOnTerminate = false
         DistributedNotificationCenter.default().post(
-            name: openSettingsNotificationName,
+            name: openMenuNotificationName,
             object: appLabel,
             userInfo: nil
         )
@@ -88,150 +83,71 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         return true
     }
 
-    @objc private func handleOpenSettingsNotification(_ notification: Notification) {
-        showSettingsWindow(page: currentSettingsPage())
+    @objc private func handleOpenMenuNotification(_ notification: Notification) {
+        statusItem?.button?.performClick(nil)
     }
 
-    /// The state Capsomnia is acting on: the last state it applied, falling
-    /// back to the live hardware Caps Lock state before the first apply.
-    private var currentCapsLockState: Bool {
-        lastAppliedState ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
-    }
-
-    private func syncStatusItemVisibility() {
-        if Preferences.showMenuBarIcon {
-            if statusItem == nil {
-                installStatusItem()
-            }
-
-            refreshStatus(capsLockOn: currentCapsLockState)
-        } else if let item = statusItem {
-            NSStatusBar.system.removeStatusItem(item)
-            statusItem = nil
+    private func ensureStatusItem() {
+        if statusItem == nil {
+            installStatusItem()
         }
+
+        let isKeepRunning = lastAppliedState ?? Preferences.enabled
+        refreshStatus(isKeepRunning: isKeepRunning)
     }
 
     private func installStatusItem() {
-        let item = NSStatusBar.system.statusItem(withLength: 24)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem = item
+
+        let menuController = StatusMenuController(
+            onEnabledChange: { [weak self] enabled in
+                self?.setEnabled(enabled)
+            },
+            onDisplaySleepChange: { [weak self] enabled in
+                self?.setDisplaySleepOnLidClose(enabled)
+            },
+            onLaunchAtLoginChange: { [weak self] enabled in
+                self?.setLaunchAtLogin(enabled)
+            },
+            onLanguageChange: { [weak self] language in
+                self?.setLanguage(language)
+            },
+            onQuit: {
+                NSApp.terminate(nil)
+            }
+        )
+        statusMenuController = menuController
+        item.menu = menuController.menu
 
         if let button = item.button {
             button.title = ""
             button.imagePosition = .imageOnly
-            button.toolTip = appName
+            button.contentTintColor = nil
+            button.appearsDisabled = false
         }
 
-        rebuildStatusMenu()
-        updateStatus(capsLockOn: false)
+        updateStatus(isKeepRunning: false)
     }
 
-    private func rebuildStatusMenu() {
-        guard let item = statusItem else { return }
-
-        let strings = AppStrings.current()
-        let menu = NSMenu()
-        let showMenuBarItem = NSMenuItem(
-            title: strings.showMenuBarIcon,
-            action: #selector(toggleShowMenuBarIcon),
-            keyEquivalent: ""
-        )
-        showMenuBarItem.target = self
-        showMenuBarItem.state = Preferences.showMenuBarIcon ? .on : .off
-        menu.addItem(showMenuBarItem)
-
-        let languageItem = NSMenuItem(title: strings.language, action: nil, keyEquivalent: "")
-        let languageMenu = NSMenu(title: strings.language)
-        for language in AppLanguage.allCases {
-            let item = NSMenuItem(
-                title: language.displayName,
-                action: #selector(selectLanguage),
-                keyEquivalent: ""
-            )
-            item.target = self
-            item.representedObject = language.rawValue
-            item.state = Preferences.language == language ? .on : .off
-            languageMenu.addItem(item)
+    private func setEnabled(_ enabled: Bool) {
+        Preferences.enabled = enabled
+        if !enabled {
+            didRequestDisplaySleepForClosedLid = false
+            nextDisplaySleepRetryAt = .distantPast
         }
-        menu.setSubmenu(languageMenu, for: languageItem)
-        menu.addItem(languageItem)
-
-        let openItem = NSMenuItem(title: strings.openCapsomnia, action: #selector(openCapsomnia), keyEquivalent: "o")
-        openItem.target = self
-        menu.addItem(openItem)
-        menu.addItem(NSMenuItem.separator())
-
-        let quitItem = NSMenuItem(title: strings.quit, action: #selector(quit), keyEquivalent: "q")
-        quitItem.target = self
-        menu.addItem(quitItem)
-
-        item.menu = menu
-    }
-
-    @objc private func toggleShowMenuBarIcon() {
-        setShowMenuBarIcon(!Preferences.showMenuBarIcon)
-    }
-
-    @objc private func selectLanguage(_ sender: NSMenuItem) {
-        guard let rawValue = sender.representedObject as? String,
-              let language = AppLanguage(rawValue: rawValue) else {
-            return
-        }
-
-        setLanguage(language)
-    }
-
-    @objc private func openCapsomnia() {
-        showSettingsWindow(page: currentSettingsPage())
-    }
-
-    @objc private func quit() {
-        log("menu_quit")
-        NSApp.terminate(nil)
-    }
-
-    private func showSettingsWindow(page: SettingsPage) {
-        if settingsWindowController == nil {
-            settingsWindowController = SettingsWindowController(
-                onShowMenuBarIconChange: { [weak self] enabled in
-                    self?.setShowMenuBarIcon(enabled)
-                },
-                onLanguageChange: { [weak self] language in
-                    self?.setLanguage(language)
-                },
-                onLaunchAtLoginChange: { [weak self] enabled in
-                    self?.setLaunchAtLogin(enabled)
-                },
-                onDisplaySleepOnLidCloseChange: { [weak self] enabled in
-                    self?.setDisplaySleepOnLidClose(enabled)
-                },
-                onFinishInitialSetup: { [weak self] in
-                    Preferences.didCompleteInitialSetup = true
-                    self?.log("initial_setup_complete")
-                }
-            )
-        }
-
-        settingsWindowController?.show(page: page)
-    }
-
-    private func currentSettingsPage() -> SettingsPage {
-        Preferences.didCompleteInitialSetup ? .settings : .initialPreferences
-    }
-
-    private func setShowMenuBarIcon(_ enabled: Bool) {
-        Preferences.showMenuBarIcon = enabled
-        syncStatusItemVisibility()
-        rebuildStatusMenu()
-        log("preference show_menu_bar_icon=\(enabled ? "on" : "off")")
+        applyCurrentControlState(reason: "preference_enabled")
+        statusMenuController?.refreshControls()
+        log("preference enabled=\(enabled ? "on" : "off")")
     }
 
     private func setLanguage(_ language: AppLanguage) {
         guard Preferences.language != language else { return }
         Preferences.language = language
-        rebuildStatusMenu()
 
-        refreshStatus(capsLockOn: currentCapsLockState)
-        settingsWindowController?.reloadText()
+        let isKeepRunning = lastAppliedState ?? Preferences.enabled
+        refreshStatus(isKeepRunning: isKeepRunning)
+        statusMenuController?.reloadText()
         log("preference language=\(language.rawValue)")
     }
 
@@ -239,28 +155,30 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         do {
             try LaunchAgentManager.setEnabled(enabled)
             Preferences.launchAtLogin = enabled
-            rebuildStatusMenu()
             log("preference launch_at_login=\(enabled ? "on" : "off")")
         } catch {
-            rebuildStatusMenu()
             log("preference launch_at_login_error=\(error.localizedDescription)")
         }
+        statusMenuController?.refreshControls()
     }
 
     private func setDisplaySleepOnLidClose(_ enabled: Bool) {
         Preferences.displaySleepOnLidClose = enabled
         if enabled {
-            evaluateDisplaySleepForClosedLid(capsLockOn: currentCapsLockState, reason: "preference")
+            let isKeepRunning = lastAppliedState ?? Preferences.enabled
+            evaluateDisplaySleepForClosedLid(isKeepRunning: isKeepRunning, reason: "preference")
         } else {
             didRequestDisplaySleepForClosedLid = false
+            nextDisplaySleepRetryAt = .distantPast
         }
+        statusMenuController?.refreshControls()
         log("preference display_sleep_on_lid_close=\(enabled ? "on" : "off")")
     }
 
     private func installPollingMonitor() {
         pollingTimer?.invalidate()
         let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
-            self?.applyCurrentCapsLockState(reason: "poll")
+            self?.applyCurrentControlState(reason: "poll")
         }
         timer.tolerance = 0.05
         pollingTimer = timer
@@ -268,20 +186,20 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         log("polling_ready interval_ms=250 tolerance_ms=50")
     }
 
-    private func applyCurrentCapsLockState(reason: String) {
-        let flags = CGEventSource.flagsState(.hidSystemState)
-        apply(capsLockOn: flags.contains(.maskAlphaShift), reason: reason)
+    private func applyCurrentControlState(reason: String) {
+        apply(reason: reason)
     }
 
-    private func apply(capsLockOn: Bool, reason: String) {
+    private func apply(reason: String) {
+        let shouldDisableSleep = SleepControlPolicy.shouldDisableSleep(enabled: Preferences.enabled)
         let now = Date()
-        if failedSleepState == capsLockOn, now < nextSleepStateRetryAt {
+        if failedSleepState == shouldDisableSleep, now < nextSleepStateRetryAt {
             return
         }
 
-        if lastAppliedState == capsLockOn {
+        if lastAppliedState == shouldDisableSleep {
             if failedSleepState == nil, now < nextSleepStateVerificationAt {
-                evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
+                evaluateDisplaySleepForClosedLid(isKeepRunning: shouldDisableSleep, reason: reason)
                 return
             }
 
@@ -290,66 +208,65 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                     log("\(reason) sleep_state_unavailable")
                     hasLoggedMissingSleepState = true
                 }
-                markSleepStateFailed(capsLockOn, at: now)
+                failedSleepState = shouldDisableSleep
+                nextSleepStateRetryAt = now.addingTimeInterval(helperRetryInterval)
+                nextSleepStateVerificationAt = nextSleepStateRetryAt
+                updateStatusError()
                 return
             }
 
             hasLoggedMissingSleepState = false
-            if actualState == capsLockOn {
-                markSleepStateConfirmed(capsLockOn, at: now, reason: reason)
+            if actualState == shouldDisableSleep {
+                failedSleepState = nil
+                nextSleepStateRetryAt = .distantPast
+                nextSleepStateVerificationAt = now.addingTimeInterval(sleepStateVerificationInterval)
+                ensureStatusItem()
+                evaluateDisplaySleepForClosedLid(isKeepRunning: shouldDisableSleep, reason: reason)
                 return
             }
 
-            log("\(reason) sleep_state_drift expected=\(capsLockOn ? "on" : "off") actual=\(actualState ? "on" : "off")")
+            log("\(reason) sleep_state_drift expected=\(shouldDisableSleep ? "on" : "off") actual=\(actualState ? "on" : "off")")
         }
 
-        let mode = capsLockOn ? "on" : "off"
+        let mode = shouldDisableSleep ? "on" : "off"
         let result = runHelper(mode)
-        log("\(reason) capslock=\(mode) helper_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)")
+        log("\(reason) keep_running=\(mode) helper_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)")
 
         guard result.status == 0 else {
-            markSleepStateFailed(capsLockOn, at: now, resetVerification: false)
+            failedSleepState = shouldDisableSleep
+            nextSleepStateRetryAt = now.addingTimeInterval(helperRetryInterval)
+            updateStatusError()
             return
         }
 
-        lastAppliedState = capsLockOn
+        lastAppliedState = shouldDisableSleep
         let confirmedState = SleepStateReader.isDisabled()
-        guard confirmedState == Optional(capsLockOn) else {
+        guard confirmedState == Optional(shouldDisableSleep) else {
             hasLoggedMissingSleepState = confirmedState == nil
+            failedSleepState = shouldDisableSleep
+            nextSleepStateRetryAt = now.addingTimeInterval(helperRetryInterval)
+            nextSleepStateVerificationAt = nextSleepStateRetryAt
             log("\(reason) sleep_state_confirmation_failed expected=\(mode) actual=\(confirmedState.map { $0 ? "on" : "off" } ?? "unknown")")
-            markSleepStateFailed(capsLockOn, at: now)
+            updateStatusError()
             return
         }
 
-        markSleepStateConfirmed(capsLockOn, at: now, reason: reason)
-    }
-
-    private func markSleepStateFailed(_ capsLockOn: Bool, at now: Date, resetVerification: Bool = true) {
-        failedSleepState = capsLockOn
-        nextSleepStateRetryAt = now.addingTimeInterval(helperRetryInterval)
-        if resetVerification {
-            nextSleepStateVerificationAt = nextSleepStateRetryAt
-        }
-        updateStatusError()
-    }
-
-    private func markSleepStateConfirmed(_ capsLockOn: Bool, at now: Date, reason: String) {
         hasLoggedMissingSleepState = false
         failedSleepState = nil
         nextSleepStateRetryAt = .distantPast
         nextSleepStateVerificationAt = now.addingTimeInterval(sleepStateVerificationInterval)
-        syncStatusItemVisibility()
-        evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
+        ensureStatusItem()
+        evaluateDisplaySleepForClosedLid(isKeepRunning: shouldDisableSleep, reason: reason)
     }
 
-    private func evaluateDisplaySleepForClosedLid(capsLockOn: Bool, reason: String) {
+    private func evaluateDisplaySleepForClosedLid(isKeepRunning: Bool, reason: String) {
         guard Preferences.displaySleepOnLidClose else {
             didRequestDisplaySleepForClosedLid = false
             nextDisplaySleepRetryAt = .distantPast
             return
         }
 
-        guard capsLockOn else {
+        guard isKeepRunning else {
             didRequestDisplaySleepForClosedLid = false
             nextDisplaySleepRetryAt = .distantPast
             return
@@ -371,30 +288,36 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             return
         }
 
-        guard !didRequestDisplaySleepForClosedLid else { return }
         let now = Date()
         guard now >= nextDisplaySleepRetryAt else { return }
 
         let result = runHelper(displaySleepHelperMode)
-        log("\(reason) clamshell=closed display_sleep_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)")
+        if !didRequestDisplaySleepForClosedLid || result.status != 0 {
+            log("\(reason) clamshell=closed display_sleep_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)")
+        }
         if result.status == 0 {
             didRequestDisplaySleepForClosedLid = true
-            nextDisplaySleepRetryAt = .distantPast
+            nextDisplaySleepRetryAt = now.addingTimeInterval(displaySleepRefreshInterval)
         } else {
             nextDisplaySleepRetryAt = now.addingTimeInterval(helperRetryInterval)
         }
     }
 
-    private func updateStatus(capsLockOn: Bool) {
+    private func updateStatus(isKeepRunning: Bool) {
         guard let button = statusItem?.button else { return }
         let strings = AppStrings.current()
-        button.image = capsLockOn ? onImage : offImage
-        button.toolTip = capsLockOn ? strings.tooltipOn : strings.tooltipOff
+        if !Preferences.enabled {
+            button.image = offImage
+            button.toolTip = strings.tooltipDisabled
+        } else {
+            button.image = isKeepRunning ? onImage : offImage
+            button.toolTip = isKeepRunning ? strings.tooltipOn : strings.tooltipOff
+        }
     }
 
-    private func refreshStatus(capsLockOn: Bool) {
+    private func refreshStatus(isKeepRunning: Bool) {
         if failedSleepState == nil {
-            updateStatus(capsLockOn: capsLockOn)
+            updateStatus(isKeepRunning: isKeepRunning)
         } else {
             updateStatusError()
         }
@@ -402,7 +325,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
     private func updateStatusError() {
         if statusItem == nil {
-            installStatusItem()
+            ensureStatusItem()
         }
         guard let button = statusItem?.button else { return }
         button.image = errorImage
@@ -410,7 +333,32 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func runHelper(_ mode: String) -> (status: Int32, stdout: String, stderr: String) {
-        CommandRunner.run("/usr/bin/sudo", ["-n", helperPath, mode])
+        let process = Process()
+        let stdoutPipe = Pipe()
+        let stderrPipe = Pipe()
+
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
+        process.arguments = ["-n", helperPath, mode]
+        process.standardOutput = stdoutPipe
+        process.standardError = stderrPipe
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+            return (
+                process.terminationStatus,
+                read(stdoutPipe.fileHandleForReading),
+                read(stderrPipe.fileHandleForReading)
+            )
+        } catch {
+            return (-1, "", "\(error)")
+        }
+    }
+
+    private func read(_ handle: FileHandle) -> String {
+        let data = handle.readDataToEndOfFile()
+        return String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
     private func installSignalHandlers() {
@@ -442,6 +390,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         )
 
         guard let data = line.data(using: .utf8) else { return }
+
+        LogFileRotation.rotateIfNeeded(logURL: url, incomingDataSize: data.count)
 
         if FileManager.default.fileExists(atPath: logPath),
            let handle = try? FileHandle(forWritingTo: url) {

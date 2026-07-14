@@ -57,8 +57,8 @@ The brightness feature dynamically uses macOS's private `DisplayServices` framew
 There is currently no signed release package for this fork. Build and install the reviewed source locally:
 
 ```sh
-git clone https://github.com/tarushvkodes/Capsomnia-OBS.git
-cd Capsomnia-OBS
+git clone https://github.com/tarushvkodes/Capsomnia.git
+cd Capsomnia
 ./scripts/install.sh
 ```
 
@@ -76,7 +76,7 @@ The administrator password is used only for the helper and sudoers installation 
 ## Update
 
 ```sh
-cd Capsomnia-OBS
+cd Capsomnia
 git pull
 ./scripts/install.sh
 ```

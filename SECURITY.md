@@ -10,7 +10,7 @@ Please do not open a public issue for sensitive security reports.
 
 Report sensitive vulnerabilities through GitHub's private vulnerability reporting for:
 
-- Repository: https://github.com/tarushvkodes/Capsomnia-OBS
+- Repository: https://github.com/tarushvkodes/Capsomnia
 - Maintainer: https://github.com/tarushvkodes
 
 For non-sensitive bugs or documentation issues, opening a public GitHub issue is fine.

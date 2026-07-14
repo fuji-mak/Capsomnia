@@ -9,34 +9,29 @@ struct LaunchAgentError: LocalizedError {
     }
 }
 
-enum LaunchAgentManager {
-    static func setEnabled(_ enabled: Bool) throws {
-        try runLaunchctl([
-            enabled ? "enable" : "disable",
-            "gui/\(getuid())/\(appLabel)"
-        ])
-    }
-
-    private static func runLaunchctl(_ arguments: [String]) throws {
+enum CommandRunner {
+    static func run(_ executablePath: String, _ arguments: [String]) -> (status: Int32, stdout: String, stderr: String) {
         let process = Process()
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
 
-        process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        process.executableURL = URL(fileURLWithPath: executablePath)
         process.arguments = arguments
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
 
-        try process.run()
-        process.waitUntilExit()
-
-        guard process.terminationStatus == 0 else {
-            let stderr = read(stderrPipe.fileHandleForReading)
-            let stdout = read(stdoutPipe.fileHandleForReading)
-            throw LaunchAgentError(
-                message: "launchctl \(arguments.joined(separator: " ")) failed: \(stderr.isEmpty ? stdout : stderr)"
-            )
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            return (-1, "", "\(error)")
         }
+
+        return (
+            process.terminationStatus,
+            read(stdoutPipe.fileHandleForReading),
+            read(stderrPipe.fileHandleForReading)
+        )
     }
 
     private static func read(_ handle: FileHandle) -> String {
@@ -46,28 +41,26 @@ enum LaunchAgentManager {
     }
 }
 
+enum LaunchAgentManager {
+    static func setEnabled(_ enabled: Bool) throws {
+        let arguments = [
+            enabled ? "enable" : "disable",
+            "gui/\(getuid())/\(appLabel)"
+        ]
+        let result = CommandRunner.run("/bin/launchctl", arguments)
+        guard result.status == 0 else {
+            throw LaunchAgentError(
+                message: "launchctl \(arguments.joined(separator: " ")) failed: \(result.stderr.isEmpty ? result.stdout : result.stderr)"
+            )
+        }
+    }
+}
+
 enum SleepStateReader {
     static func isDisabled() -> Bool? {
-        let process = Process()
-        let stdoutPipe = Pipe()
-
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
-        process.arguments = ["-g"]
-        process.standardOutput = stdoutPipe
-        process.standardError = FileHandle.nullDevice
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-        } catch {
-            return nil
-        }
-
-        guard process.terminationStatus == 0 else { return nil }
-
-        let data = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-        guard let output = String(data: data, encoding: .utf8) else { return nil }
-        return parse(output)
+        let result = CommandRunner.run("/usr/bin/pmset", ["-g"])
+        guard result.status == 0 else { return nil }
+        return parse(result.stdout)
     }
 
     static func parse(_ output: String) -> Bool? {

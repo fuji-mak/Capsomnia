@@ -11,12 +11,6 @@ let logPath = logDirectoryURL
     .appendingPathComponent("capsomnia.log")
     .path
 let openSettingsNotificationName = Notification.Name("\(appLabel).openSettings")
-let brandLEDColor = NSColor(
-    srgbRed: 184.0 / 255.0,
-    green: 255.0 / 255.0,
-    blue: 31.0 / 255.0,
-    alpha: 1.0
-)
 
 /// Colors lifted straight from the landing page (docs/styles.css :root).
 enum Brand {
@@ -37,9 +31,8 @@ enum Brand {
     static let text = srgb(0xF2F4EC)
     static let textDim = srgb(0xA7AD9C)
     static let textFaint = srgb(0x6F7466)
-    static let led = brandLEDColor
+    static let led = srgb(0xB8FF1F)
     static let ledBright = srgb(0xD8FF63)
-    static let ledDeep = srgb(0x92F21D)
     static let offDot = srgb(0x2C2C2C)
     static let offDotBorder = srgb(0x3A3A3A)
 }

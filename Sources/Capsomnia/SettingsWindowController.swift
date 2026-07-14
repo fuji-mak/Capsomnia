@@ -26,14 +26,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let openAtLoginTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
     private let openAtLoginDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
     private let openAtLoginToggle = LEDToggle(isOn: Preferences.launchAtLogin)
-    private var openAtLoginRow = NSView()
-    private var openAtLoginDivider = brandDivider()
 
     private let displaySleepOnLidCloseTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
     private let displaySleepOnLidCloseDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
     private let displaySleepOnLidCloseToggle = LEDToggle(isOn: Preferences.displaySleepOnLidClose)
-    private var displaySleepOnLidCloseRow = NSView()
-    private var displaySleepOnLidCloseDivider = brandDivider()
 
     private let languageTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
     private let languageSegment = SegmentedPill(
@@ -90,7 +86,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         window.delegate = self
         buildContent()
-        updateValues()
     }
 
     required init?(coder: NSCoder) {
@@ -123,10 +118,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
 
         explainerCard.isHidden = page != .initialPreferences
-        displaySleepOnLidCloseRow.isHidden = false
-        displaySleepOnLidCloseDivider.isHidden = false
-        openAtLoginRow.isHidden = false
-        openAtLoginDivider.isHidden = false
         noteLabel.isHidden = page != .initialPreferences
 
         updateValues()
@@ -181,11 +172,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         doneButton.onClick = { [weak self] in self?.done() }
 
         configureColumn(rootStack)
+        configureColumn(bodyStack)
+        bodyStack.distribution = .fill
         rootStack.addArrangedSubview(header)
         rootStack.addArrangedSubview(bodyStack)
         rootStack.setCustomSpacing(20, after: header)
-        rootStack.translatesAutoresizingMaskIntoConstraints = false
-        bodyStack.translatesAutoresizingMaskIntoConstraints = false
 
         contentView.addSubview(rootStack)
         window?.contentView = contentView
@@ -220,30 +211,20 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         )
         clearArrangedSubviews(bodyStack)
 
-        switch page {
-        case .initialPreferences:
-            bodyStack.orientation = .vertical
-            bodyStack.alignment = .leading
-            bodyStack.distribution = .fill
-            bodyStack.spacing = 16
+        let isInitialSetup = page == .initialPreferences
+        if isInitialSetup {
             bodyStack.addArrangedSubview(explainerCard)
-            bodyStack.addArrangedSubview(preferencesHeading)
-            bodyStack.addArrangedSubview(preferencesCard)
-            bodyStack.addArrangedSubview(noteLabel)
-            bodyStack.addArrangedSubview(doneButton)
-            bodyStack.setCustomSpacing(8, after: preferencesHeading)
-            NSLayoutConstraint.activate(initialPreferencesLayoutConstraints)
-        case .settings:
-            bodyStack.orientation = .vertical
-            bodyStack.alignment = .leading
-            bodyStack.distribution = .fill
-            bodyStack.spacing = 16
-            bodyStack.addArrangedSubview(preferencesHeading)
-            bodyStack.addArrangedSubview(preferencesCard)
-            bodyStack.addArrangedSubview(doneButton)
-            bodyStack.setCustomSpacing(8, after: preferencesHeading)
-            NSLayoutConstraint.activate(settingsLayoutConstraints)
         }
+        bodyStack.addArrangedSubview(preferencesHeading)
+        bodyStack.addArrangedSubview(preferencesCard)
+        if isInitialSetup {
+            bodyStack.addArrangedSubview(noteLabel)
+        }
+        bodyStack.addArrangedSubview(doneButton)
+        bodyStack.setCustomSpacing(8, after: preferencesHeading)
+        NSLayoutConstraint.activate(
+            isInitialSetup ? initialPreferencesLayoutConstraints : settingsLayoutConstraints
+        )
     }
 
     private func configureColumn(_ stack: NSStackView) {
@@ -299,16 +280,16 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         }
 
         let menuBarRow = settingRow(title: menuBarTitle, desc: menuBarDesc, accessory: menuBarToggle)
-        displaySleepOnLidCloseRow = settingRow(
+        let displaySleepOnLidCloseRow = settingRow(
             title: displaySleepOnLidCloseTitle,
             desc: displaySleepOnLidCloseDesc,
             accessory: displaySleepOnLidCloseToggle
         )
-        openAtLoginRow = settingRow(title: openAtLoginTitle, desc: openAtLoginDesc, accessory: openAtLoginToggle)
+        let openAtLoginRow = settingRow(title: openAtLoginTitle, desc: openAtLoginDesc, accessory: openAtLoginToggle)
         let languageRow = settingRow(title: languageTitle, desc: nil, accessory: languageSegment)
 
-        let divider1 = displaySleepOnLidCloseDivider
-        let divider2 = openAtLoginDivider
+        let divider1 = brandDivider()
+        let divider2 = brandDivider()
         let divider3 = brandDivider()
 
         let inner = NSStackView(views: [
@@ -323,7 +304,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         inner.orientation = .vertical
         inner.alignment = .leading
         inner.spacing = 14
-        inner.setCustomSpacing(14, after: menuBarRow)
         inner.translatesAutoresizingMaskIntoConstraints = false
 
         card.addSubview(inner)

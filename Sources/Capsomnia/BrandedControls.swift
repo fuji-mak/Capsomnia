@@ -204,65 +204,6 @@ final class LEDButton: NSView {
     }
 }
 
-/// Secondary outline button for lower-emphasis actions.
-final class OutlineButton: NSView {
-    private let label = NSTextField(labelWithString: "")
-    var onClick: (() -> Void)?
-
-    var title: String {
-        get { label.stringValue }
-        set { label.stringValue = newValue }
-    }
-
-    init() {
-        super.init(frame: .zero)
-        wantsLayer = true
-        layer?.cornerRadius = 10
-        layer?.backgroundColor = Brand.surface2.cgColor
-        layer?.borderWidth = 1
-        layer?.borderColor = Brand.borderStrong.cgColor
-        translatesAutoresizingMaskIntoConstraints = false
-
-        label.font = .systemFont(ofSize: 12, weight: .semibold)
-        label.textColor = Brand.text
-        label.alignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(label)
-
-        NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: 34),
-            label.centerXAnchor.constraint(equalTo: centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: centerYAnchor),
-            label.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 12),
-            label.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -12)
-        ])
-
-        addTrackingArea(NSTrackingArea(
-            rect: .zero,
-            options: [.activeInActiveApp, .inVisibleRect, .mouseEnteredAndExited],
-            owner: self
-        ))
-    }
-
-    required init?(coder: NSCoder) { nil }
-
-    override func mouseDown(with event: NSEvent) {
-        onClick?()
-    }
-
-    override func mouseEntered(with event: NSEvent) {
-        layer?.borderColor = Brand.led.cgColor
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        layer?.borderColor = Brand.borderStrong.cgColor
-    }
-
-    override func resetCursorRects() {
-        addCursorRect(bounds, cursor: .pointingHand)
-    }
-}
-
 /// A plain view that forwards a click as a closure.
 final class ClickableView: NSView {
     var onClick: (() -> Void)?

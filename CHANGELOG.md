@@ -4,6 +4,14 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 1.3.1 - 2026-07-14
+
+- Rebuild the app around one native menu-bar menu; no separate settings window.
+- Make **Enabled** the direct keep-running switch and keep secondary options as checkmark items.
+- Add natural Simplified Chinese alongside Japanese and English.
+- Reapply display sleep while the lid stays closed, including external-display use.
+- Tighten install, uninstall, helper, logging, and CI checks.
+
 ## 1.0.0 - 2026-07-12
 
 First stable release of Capsomnia.

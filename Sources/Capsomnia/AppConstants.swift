@@ -10,7 +10,13 @@ let logDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
 let logPath = logDirectoryURL
     .appendingPathComponent("capsomnia.log")
     .path
-let openSettingsNotificationName = Notification.Name("\(appLabel).openSettings")
+let openMenuNotificationName = Notification.Name("\(appLabel).openMenu")
+let brandLEDColor = NSColor(
+    srgbRed: 184.0 / 255.0,
+    green: 255.0 / 255.0,
+    blue: 31.0 / 255.0,
+    alpha: 1.0
+)
 
 /// Colors lifted straight from the landing page (docs/styles.css :root).
 enum Brand {
@@ -31,22 +37,33 @@ enum Brand {
     static let text = srgb(0xF2F4EC)
     static let textDim = srgb(0xA7AD9C)
     static let textFaint = srgb(0x6F7466)
-    static let led = srgb(0xB8FF1F)
+    static let led = brandLEDColor
     static let ledBright = srgb(0xD8FF63)
+    static let ledDeep = srgb(0x92F21D)
     static let offDot = srgb(0x2C2C2C)
     static let offDotBorder = srgb(0x3A3A3A)
 }
 
 enum AppLanguage: String, CaseIterable {
+    case simplifiedChinese = "zh-Hans"
     case english = "en"
     case japanese = "ja"
 
     static var defaultLanguage: AppLanguage {
-        Locale.preferredLanguages.first?.hasPrefix("ja") == true ? .japanese : .english
+        let preferredLanguage = Locale.preferredLanguages.first?.lowercased() ?? ""
+        if preferredLanguage.hasPrefix("zh") {
+            return .simplifiedChinese
+        }
+        if preferredLanguage.hasPrefix("ja") {
+            return .japanese
+        }
+        return .english
     }
 
     var displayName: String {
         switch self {
+        case .simplifiedChinese:
+            "简体中文"
         case .english:
             "English"
         case .japanese:
@@ -56,79 +73,48 @@ enum AppLanguage: String, CaseIterable {
 }
 
 struct AppStrings {
-    let showMenuBarIcon: String
-    let showMenuBarIconDesc: String
-    let language: String
+    let enabled: String
     let openAtLogin: String
-    let openAtLoginDesc: String
     let displaySleepOnLidClose: String
-    let displaySleepOnLidCloseDesc: String
-    let openCapsomnia: String
     let quit: String
-    let settingsTitle: String
-    let initialSettingsNote: String
-    let welcomeTitle: String
-    let explainerOnTitle: String
-    let explainerOnDesc: String
-    let explainerOffTitle: String
-    let explainerOffDesc: String
-    let preferencesHeading: String
-    let done: String
-    let getStarted: String
     let tooltipOn: String
     let tooltipOff: String
+    let tooltipDisabled: String
     let tooltipError: String
 
     static func current() -> AppStrings {
         switch Preferences.language {
+        case .simplifiedChinese:
+            AppStrings(
+                enabled: "启用",
+                openAtLogin: "登录后自动启动",
+                displaySleepOnLidClose: "合盖时关闭显示器",
+                quit: "退出 Capsomnia",
+                tooltipOn: "当前状态：持续运行",
+                tooltipOff: "当前状态：正常休眠",
+                tooltipDisabled: "当前状态：已停用（正常休眠）",
+                tooltipError: "当前状态：设置失败，正在重试"
+            )
         case .english:
             AppStrings(
-                showMenuBarIcon: "Show menu bar icon",
-                showMenuBarIconDesc: "Display the LED status dot in the menu bar.",
-                language: "Language",
+                enabled: "Enabled",
                 openAtLogin: "Open at login",
-                openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
                 displaySleepOnLidClose: "Turn display off when lid closes",
-                displaySleepOnLidCloseDesc: "When Caps Lock is on, keep work running but let the display sleep after closing the lid.",
-                openCapsomnia: "Open Capsomnia",
-                quit: "Quit",
-                settingsTitle: "Settings",
-                initialSettingsNote: "macOS may show “Taketo Fujimaki” as a background item. Open Capsomnia again any time to change these settings.",
-                welcomeTitle: "Welcome to Capsomnia",
-                explainerOnTitle: "Caps Lock on",
-                explainerOnDesc: "System sleep is disabled — work keeps running, lid open or closed.",
-                explainerOffTitle: "Caps Lock off",
-                explainerOffDesc: "Normal sleep behavior resumes.",
-                preferencesHeading: "Preferences",
-                done: "Done",
-                getStarted: "Get started",
-                tooltipOn: "Caps Lock ON: processes stay awake",
-                tooltipOff: "Caps Lock OFF: normal sleep",
+                quit: "Quit Capsomnia",
+                tooltipOn: "Current status: keep running",
+                tooltipOff: "Current status: normal sleep",
+                tooltipDisabled: "Current status: disabled (normal sleep)",
                 tooltipError: "Capsomnia could not update the sleep setting — retrying"
             )
         case .japanese:
             AppStrings(
-                showMenuBarIcon: "メニューバーに表示",
-                showMenuBarIconDesc: "メニューバーにLEDステータスを表示します。",
-                language: "言語",
+                enabled: "有効",
                 openAtLogin: "ログイン時に起動",
-                openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
                 displaySleepOnLidClose: "蓋を閉じたら画面をオフ",
-                displaySleepOnLidCloseDesc: "Caps Lock ON中は作業を走らせたまま、蓋を閉じたら画面だけ暗くします。",
-                openCapsomnia: "Capsomniaを開く",
-                quit: "終了",
-                settingsTitle: "設定",
-                initialSettingsNote: "macOSに「Taketo Fujimakiのバックグラウンド項目」と表示される場合があります。設定はあとからいつでも変更できます。",
-                welcomeTitle: "Capsomniaへようこそ",
-                explainerOnTitle: "Caps Lock ON",
-                explainerOnDesc: "システムスリープを無効化。蓋を閉じても作業が走り続けます。",
-                explainerOffTitle: "Caps Lock OFF",
-                explainerOffDesc: "通常のスリープ動作に戻ります。",
-                preferencesHeading: "環境設定",
-                done: "完了",
-                getStarted: "はじめる",
-                tooltipOn: "Caps Lock ON: スリープ抑止中",
-                tooltipOff: "Caps Lock OFF: 通常のスリープ動作",
+                quit: "Capsomniaを終了",
+                tooltipOn: "現在の状態：作業継続中",
+                tooltipOff: "現在の状態：通常のスリープ動作",
+                tooltipDisabled: "現在の状態：無効（通常のスリープ動作）",
                 tooltipError: "スリープ設定を更新できませんでした — 再試行中"
             )
         }
@@ -136,12 +122,10 @@ struct AppStrings {
 }
 
 private enum PreferenceKey {
-    static let showMenuBarIcon = "ShowMenuBarIcon"
+    static let enabled = "Enabled"
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
     static let displaySleepOnLidClose = "DisplaySleepOnLidClose"
-    static let didCompleteInitialSetup = "DidCompleteInitialSetup"
-    static let forceWelcomeOnNextLaunch = "ForceWelcomeOnNextLaunch"
 }
 
 enum Preferences {
@@ -149,18 +133,16 @@ enum Preferences {
 
     static func registerDefaults() {
         defaults.register(defaults: [
-            PreferenceKey.showMenuBarIcon: true,
+            PreferenceKey.enabled: false,
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
-            PreferenceKey.displaySleepOnLidClose: true,
-            PreferenceKey.didCompleteInitialSetup: false,
-            PreferenceKey.forceWelcomeOnNextLaunch: false
+            PreferenceKey.displaySleepOnLidClose: true
         ])
     }
 
-    static var showMenuBarIcon: Bool {
-        get { defaults.bool(forKey: PreferenceKey.showMenuBarIcon) }
-        set { defaults.set(newValue, forKey: PreferenceKey.showMenuBarIcon) }
+    static var enabled: Bool {
+        get { defaults.bool(forKey: PreferenceKey.enabled) }
+        set { defaults.set(newValue, forKey: PreferenceKey.enabled) }
     }
 
     static var language: AppLanguage {
@@ -179,19 +161,6 @@ enum Preferences {
     static var displaySleepOnLidClose: Bool {
         get { defaults.bool(forKey: PreferenceKey.displaySleepOnLidClose) }
         set { defaults.set(newValue, forKey: PreferenceKey.displaySleepOnLidClose) }
-    }
-
-    static var didCompleteInitialSetup: Bool {
-        get { defaults.bool(forKey: PreferenceKey.didCompleteInitialSetup) }
-        set { defaults.set(newValue, forKey: PreferenceKey.didCompleteInitialSetup) }
-    }
-
-    static func consumeForceWelcomeOnNextLaunch() -> Bool {
-        let shouldShowWelcome = defaults.bool(forKey: PreferenceKey.forceWelcomeOnNextLaunch)
-        if shouldShowWelcome {
-            defaults.set(false, forKey: PreferenceKey.forceWelcomeOnNextLaunch)
-        }
-        return shouldShowWelcome
     }
 
 }

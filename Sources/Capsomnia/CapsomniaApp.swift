@@ -130,6 +130,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         let strings = AppStrings.current()
         let menu = NSMenu()
+
+        let toggleCapsLockItem = NSMenuItem(
+            title: strings.toggleCapsLock,
+            action: #selector(toggleCapsLock),
+            keyEquivalent: ""
+        )
+        toggleCapsLockItem.target = self
+        menu.addItem(toggleCapsLockItem)
+        menu.addItem(NSMenuItem.separator())
+
         let showMenuBarItem = NSMenuItem(
             title: strings.showMenuBarIcon,
             action: #selector(toggleShowMenuBarIcon),
@@ -169,6 +179,18 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
     @objc private func toggleShowMenuBarIcon() {
         setShowMenuBarIcon(!Preferences.showMenuBarIcon)
+    }
+
+    /// Flips the real Caps Lock state from the menu, for keyboards where the
+    /// physical key is remapped and can no longer toggle it directly.
+    @objc private func toggleCapsLock() {
+        let current = CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        let target = CapsLockController.toggledState(current: current)
+        let succeeded = CapsLockController.set(target)
+        log("menu_toggle_capslock target=\(target ? "on" : "off") succeeded=\(succeeded)")
+        if succeeded {
+            applyCurrentCapsLockState(reason: "menu_toggle")
+        }
     }
 
     @objc private func selectLanguage(_ sender: NSMenuItem) {

@@ -36,7 +36,10 @@ jobs:
           done
       - name: Build and verify unsigned package payload
         run: |
-          package_path="$(SKIP_SIGNING=true ./scripts/build-pkg.sh "$RUNNER_TEMP/capsomnia-pkg")"
+          SKIP_SIGNING=true ./scripts/build-pkg.sh "$RUNNER_TEMP/capsomnia-pkg"
+          package_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' resources/Info.plist)"
+          package_path="$RUNNER_TEMP/capsomnia-pkg/Capsomnia-$package_version-cn-unsigned.pkg"
+          test -f "$package_path"
           pkgutil --expand-full "$package_path" "$RUNNER_TEMP/capsomnia-expanded"
           zsh -n "$RUNNER_TEMP/capsomnia-expanded/Scripts/postinstall"
           grep -F '/bin/launchctl bootstrap "gui/$console_uid" "$USER_LAUNCH_AGENT"' \

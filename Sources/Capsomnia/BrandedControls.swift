@@ -60,7 +60,7 @@ final class LEDToggle: NSView {
     }
 }
 
-/// Segmented control matching the landing-page EN/JA language switch.
+/// Segmented control matching the landing-page EN/KO/JA language switch.
 final class SegmentedPill: NSView {
     private struct Segment {
         let value: String

@@ -39,16 +39,26 @@ enum Brand {
 
 enum AppLanguage: String, CaseIterable {
     case english = "en"
+    case korean = "ko"
     case japanese = "ja"
 
     static var defaultLanguage: AppLanguage {
-        Locale.preferredLanguages.first?.hasPrefix("ja") == true ? .japanese : .english
+        preferredLanguage(from: Locale.preferredLanguages)
+    }
+
+    static func preferredLanguage(from preferredLanguages: [String]) -> AppLanguage {
+        guard let language = preferredLanguages.first else { return .english }
+        if language == "ko" || language.hasPrefix("ko-") { return .korean }
+        if language == "ja" || language.hasPrefix("ja-") { return .japanese }
+        return .english
     }
 
     var displayName: String {
         switch self {
         case .english:
             "English"
+        case .korean:
+            "한국어"
         case .japanese:
             "日本語"
         }
@@ -80,7 +90,11 @@ struct AppStrings {
     let tooltipError: String
 
     static func current() -> AppStrings {
-        switch Preferences.language {
+        localized(for: Preferences.language)
+    }
+
+    static func localized(for language: AppLanguage) -> AppStrings {
+        switch language {
         case .english:
             AppStrings(
                 showMenuBarIcon: "Show menu bar icon",
@@ -105,6 +119,31 @@ struct AppStrings {
                 tooltipOn: "Caps Lock ON: processes stay awake",
                 tooltipOff: "Caps Lock OFF: normal sleep",
                 tooltipError: "Capsomnia could not update the sleep setting — retrying"
+            )
+        case .korean:
+            AppStrings(
+                showMenuBarIcon: "메뉴 막대에 표시",
+                showMenuBarIconDesc: "메뉴 막대에 LED 상태 표시를 보여 줍니다.",
+                language: "언어",
+                openAtLogin: "로그인할 때 열기",
+                openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
+                displaySleepOnLidClose: "덮개를 닫을 때 화면 끄기",
+                displaySleepOnLidCloseDesc: "Caps Lock이 켜져 있으면 작업은 계속 실행하고, 덮개를 닫을 때 화면만 끕니다.",
+                openCapsomnia: "Capsomnia 열기",
+                quit: "종료",
+                settingsTitle: "설정",
+                initialSettingsNote: "macOS에 ‘Taketo Fujimaki’ 백그라운드 항목이 표시될 수 있습니다. 이 설정은 나중에 언제든 바꿀 수 있습니다.",
+                welcomeTitle: "Capsomnia 시작하기",
+                explainerOnTitle: "Caps Lock 켜기",
+                explainerOnDesc: "시스템 잠자기를 막습니다. 덮개를 닫아도 작업은 계속됩니다.",
+                explainerOffTitle: "Caps Lock 끄기",
+                explainerOffDesc: "평소 잠자기 동작으로 돌아갑니다.",
+                preferencesHeading: "기본 설정",
+                done: "완료",
+                getStarted: "시작하기",
+                tooltipOn: "Caps Lock 켜짐: 잠자기 방지 중",
+                tooltipOff: "Caps Lock 꺼짐: 평소 잠자기",
+                tooltipError: "잠자기 설정을 바꾸지 못했습니다. 다시 시도 중입니다."
             )
         case .japanese:
             AppStrings(

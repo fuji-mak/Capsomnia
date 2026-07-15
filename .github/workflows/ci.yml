@@ -44,7 +44,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:site
-      - run: node --check docs/capsomnia.js
       - run: node --test Tests/site-language.test.mjs
       - name: Check generated site CSS
         run: git diff --exit-code -- docs/styles.css
@@ -53,10 +52,15 @@ jobs:
           test -f docs/robots.txt
           test -f docs/sitemap.xml
           test -f docs/googlee5de8ad27617297a.html
+          test -f docs/en/index.html
+          test -f docs/zh-hans/index.html
           grep -q 'https://fuji-mak.github.io/Capsomnia/' docs/sitemap.xml
+          grep -q 'https://fuji-mak.github.io/Capsomnia/en/' docs/sitemap.xml
+          grep -q 'https://fuji-mak.github.io/Capsomnia/zh-hans/' docs/sitemap.xml
           grep -q 'Sitemap: https://fuji-mak.github.io/Capsomnia/sitemap.xml' docs/robots.txt
           grep -q 'google-site-verification: googlee5de8ad27617297a.html' docs/googlee5de8ad27617297a.html
           grep -q '"@type": "SoftwareApplication"' docs/index.html
           grep -q '"inLanguage": "ja"' docs/index.html
-          grep -q 'return "ja";' docs/capsomnia.js
-          ! grep -q 'Intl.DateTimeFormat' docs/capsomnia.js
+          grep -q '"inLanguage": "en"' docs/en/index.html
+          grep -q '"inLanguage": "zh-Hans"' docs/zh-hans/index.html
+          grep -q 'hreflang="x-default"' docs/index.html

@@ -23,7 +23,7 @@ if [[ -x "$RESOURCE_DIR/capsomnia-ai-hook" ]]; then
     exit 1
   fi
 else
-  for config_path in "$HOME/.codex/config.toml" "$HOME/.claude/settings.json"; do
+  for config_path in "$HOME/.codex/config.toml" "$HOME/.codex/hooks.json" "$HOME/.claude/settings.json"; do
     if [[ -L "$config_path" && ! -e "$config_path" ]]; then
       /usr/bin/printf '卸载已停止：配置文件是失效的符号链接，无法确认是否需要恢复：%s\n' "$config_path" >&2
       exit 1

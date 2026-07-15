@@ -17,7 +17,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `1.4.0`
+Current version: `1.5.0`
 
 [简体中文 README](README.zh-CN.md) · [日本語 README](README.ja.md) · [Security](SECURITY.md)
 
@@ -27,9 +27,9 @@ This is a community edition of [fuji-mak/Capsomnia](https://github.com/fuji-mak/
 
 Main changes: a native menu-bar UI, a direct “Keep Mac Awake When Lid Closes” switch, Chinese/English/Japanese, reliable display sleep while the lid is closed, and automatic sleep after Codex or Claude finishes a task. The main switch stays prominent; secondary options use native checkmarks. Filled and hollow circles show state, while red is reserved for errors.
 
-**Close the Mac. Let AI keep working. When the task is done, the Mac sleeps itself.** Automatic sleep is enabled by default and includes a 30-second cancel window.
+**Close the Mac. Let AI keep working. When every task is done, the Mac sleeps itself.** Automatic sleep is enabled by default. After the lid is confirmed closed and every recognized Codex/Claude session and subagent has stopped, Capsomnia waits for a five-minute quiet period before sleeping.
 
-Customization note: this 1.4.0 variant is delivered only as source or a locally built unsigned package with ad-hoc-signed payloads. It does not use the original author's Developer ID or Apple notarization; the official 1.0.0 release's signing and notarization do not apply to this variant.
+Customization note: this 1.5.0 variant is delivered only as source or a locally built unsigned package with ad-hoc-signed payloads. It does not use the original author's Developer ID or Apple notarization; the official 1.0.0 release's signing and notarization do not apply to this variant.
 
 Capsomnia is a small macOS menu bar app that keeps local work running while a MacBook lid is closed.
 
@@ -54,7 +54,7 @@ Requirements:
 
 Install a locally built package:
 
-1. Build the package locally or obtain `Capsomnia-1.4.0-cn-unsigned.pkg` delivered with this customized source.
+1. Build the package locally or obtain `Capsomnia-1.5.0-cn-unsigned.pkg` delivered with this customized source.
 2. Open the package and follow the installer, confirming its source according to your security policy.
 
 This customization's package is unsigned and uses ad-hoc signatures for its payload. It installs `Capsomnia.app` in `/Applications`, the native privileged sleep-control helper, a narrow sudoers rule, and the LaunchAgent. The original official 1.0.0 package was Developer ID-signed and Apple-notarized; those assurances do not apply to this customization.
@@ -78,7 +78,9 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 - Enabled on: keeps AI agents and other work from being interrupted when the MacBook lid is closed.
 - Enabled off: restores normal sleep behavior.
 - Lid closed while enabled: keeps work running and, when selected, repeatedly keeps displays asleep so external input cannot leave them awake.
-- Codex or Claude task finished: waits 30 seconds, then puts the Mac to sleep. The temporary Cancel command cancels only that sleep.
+- Codex or Claude tasks finished: only after the lid is confirmed closed and every recognized session and subagent has stopped, waits five minutes and then puts the Mac to sleep. Cancel affects only that pending sleep.
+- Permission or incomplete lifecycle state: stays awake unless the hooks can reliably prove that work has ended. It never guesses from a timeout while a task may still be running.
+- Low-battery protection: while unplugged, enabled, and confirmed closed, a battery level of 10% or lower restores normal sleep and sleeps the Mac to avoid draining it completely.
 - Quitting the app restores normal sleep behavior.
 
 Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions, builds, downloads, and unattended scripts.
@@ -96,6 +98,8 @@ Capsomnia has no standalone settings window. Click its permanent status item to 
 The same native menu includes a bottom Quit command. The status item remains visible because it is the app's only entry point.
 
 No Input Monitoring permission is required. Capsomnia does not read keyboard events. If you enabled Input Monitoring for an earlier version, you can disable it in System Settings.
+
+Codex lifecycle hooks remain subject to Codex's normal review and trust flow. After enabling the integration, use `/hooks` in Codex to review and trust Capsomnia's command. Until trustworthy lifecycle events arrive, Capsomnia fails closed and does not initiate task-completion sleep.
 
 Launch Capsomnia from `/Applications/Capsomnia.app` after package installation or from `~/Applications/Capsomnia.app` after source installation. Use its permanent menu bar item for everyday settings.
 

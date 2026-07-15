@@ -65,6 +65,29 @@ if source == "remove-integrations" {
 }
 
 guard source == "codex" || source == "claude" else {
+    guard source == "codex-hook" || source == "claude-hook" else { exit(0) }
+    let payload = readStandardInput()
+    let activitySource = source == "codex-hook" ? "codex" : "claude"
+    let manager = AIIntegrationManager(
+        bridgeExecutableURL: URL(fileURLWithPath: CommandLine.arguments[0])
+    )
+    if let event = AIActivityPayload.event(source: activitySource, payload: payload),
+       manager.activityStore.record(event) != nil {
+        DistributedNotificationCenter.default().post(
+            name: Notification.Name(AIIntegrationManager.activityNotificationName),
+            object: AIIntegrationManager.appLabel,
+            userInfo: ["source": activitySource]
+        )
+    } else {
+        // A malformed lifecycle payload is not evidence that work ended. Persist
+        // an explicit fail-safe state without retaining the payload itself.
+        _ = manager.activityStore.markUncertain()
+        DistributedNotificationCenter.default().post(
+            name: Notification.Name(AIIntegrationManager.activityNotificationName),
+            object: AIIntegrationManager.appLabel,
+            userInfo: ["source": activitySource, "uncertain": true]
+        )
+    }
     exit(0)
 }
 
@@ -75,18 +98,9 @@ if source == "codex" {
     payload = readStandardInput()
 }
 
-guard AICompletionPayload.shouldEmitCompletion(source: source, payload: payload) else {
-    exit(0)
-}
-
-DistributedNotificationCenter.default().post(
-    name: Notification.Name(AIIntegrationManager.completionNotificationName),
-    object: AIIntegrationManager.appLabel,
-    userInfo: [
-        "source": source,
-        "eventID": AICompletionPayload.eventIdentifier(source: source, payload: payload)
-    ]
-)
+// `notify` is only a turn-completion signal. Lifecycle state, when trusted by
+// the user, is the sole input to automatic sleep; keep this path for Codex
+// notifier forwarding compatibility without treating it as task completion.
 if source == "codex" {
     forwardExistingCodexNotification(payload: payload)
 }

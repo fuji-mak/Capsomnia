@@ -4,6 +4,16 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 1.5.0 - 2026-07-15
+
+- Sleep only after the MacBook lid is confirmed closed; an open or unknown lid state never triggers AI-completion sleep.
+- Track Codex and Claude lifecycle events across concurrent sessions and subagents; any confirmed running work blocks sleep without an age-based timeout.
+- Keep permission requests and incomplete lifecycle states awake until correlated completion evidence arrives; never sleep from a waiting timeout alone.
+- Persist identifier-only activity state with locking, atomic replacement, deduplication, and fail-safe recovery after malformed or incomplete events.
+- Add closed-lid battery protection: on battery power at 10% or below, restore normal sleep and sleep the Mac even if AI work remains active.
+- Add exact Codex lifecycle-hook installation and removal while preserving unrelated hooks and the user's previous notifier.
+- Keep lifecycle hooks subject to Codex's normal `/hooks` review and trust flow.
+
 ## 1.4.0 - 2026-07-15
 
 - Add the persistent, default-on “Sleep After Codex/Claude Tasks Finish” menu item.

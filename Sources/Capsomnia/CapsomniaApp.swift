@@ -18,9 +18,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var displaySleepRetryTimer: Timer?
     private var autoSleepCountdownTimer: Timer?
     private var automaticSleepRecoveryTimer: Timer?
+    private var batteryProtectionTimer: Timer?
     private var autoSleepDeadline: Date?
+    private var trustedActivityEpoch: String?
+    private var trustedActivitySources: Set<String> = []
+    private var scheduledActivitySequence: UInt64?
     private var isPreparingAutomaticSleep = false
-    private var lastAgentEventID: String?
     private var signalSources: [DispatchSourceSignal] = []
     private var instanceLock: SingleInstanceLock?
     private var statusItem: NSStatusItem?
@@ -31,8 +34,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let helperRetryInterval: TimeInterval = 5
     private let sleepStateVerificationInterval: TimeInterval = 60
     private let clamshellPollingInterval: TimeInterval = 5
-    private let automaticSleepDelay: TimeInterval = 30
+    private let automaticSleepDelay: TimeInterval = 5 * 60
     private let automaticSleepRecoveryInterval: TimeInterval = 60
+    private let batteryProtectionPollingInterval: TimeInterval = 60
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if terminateIfDuplicate() {
@@ -41,6 +45,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         Preferences.registerDefaults()
         synchronizeLaunchAtLoginPreference()
+        establishActivitySafetyBarrier(reason: "startup")
 
         DistributedNotificationCenter.default().addObserver(
             self,
@@ -50,8 +55,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         )
         DistributedNotificationCenter.default().addObserver(
             self,
-            selector: #selector(handleAgentTaskFinishedNotification),
-            name: Notification.Name(AIIntegrationManager.completionNotificationName),
+            selector: #selector(handleAIActivityChangedNotification),
+            name: Notification.Name(AIIntegrationManager.activityNotificationName),
             object: AIIntegrationManager.appLabel
         )
 
@@ -60,6 +65,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         installSignalHandlers()
         installWorkspaceObservers()
         installMonitoring()
+        updateBatteryProtectionPolling()
         if Preferences.autoSleepAfterAgentTask {
             synchronizeAIIntegrations(reason: "startup")
         } else {
@@ -197,6 +203,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         applyCurrentControlState(reason: "preference_enabled")
         updateSleepVerificationTimer()
         updateClamshellPolling()
+        updateBatteryProtectionPolling()
         statusMenuController?.refreshControls()
         log("preference enabled=\(enabled ? "on" : "off")")
     }
@@ -214,13 +221,17 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private func setAutoSleepAfterAgentTask(_ enabled: Bool) {
         Preferences.autoSleepAfterAgentTask = enabled
         if enabled {
+            establishActivitySafetyBarrier(reason: "preference_enabled")
             synchronizeAIIntegrations(reason: "preference_enabled")
         } else {
+            trustedActivityEpoch = nil
+            trustedActivitySources.removeAll()
             cancelPendingAutomaticSleep(reason: "preference_disabled")
             if !removeAIIntegrations(reason: "preference_disabled") {
                 Preferences.autoSleepAfterAgentTask = true
             }
         }
+        updateBatteryProtectionPolling()
         statusMenuController?.refreshControls()
         log("preference auto_sleep_after_agent_task=\(enabled ? "on" : "off")")
     }
@@ -270,6 +281,36 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         log("monitoring_ready sleep_verification_seconds=60 clamshell_poll_seconds=5")
     }
 
+    private func updateBatteryProtectionPolling() {
+        // Low-battery protection belongs to closed-lid keep-awake itself, not
+        // to the optional AI-completion preference.
+        let shouldPoll = Preferences.enabled
+        guard shouldPoll else {
+            batteryProtectionTimer?.invalidate()
+            batteryProtectionTimer = nil
+            return
+        }
+        evaluateLowBatteryProtection(reason: "battery_start")
+        guard batteryProtectionTimer == nil else { return }
+        let timer = Timer(timeInterval: batteryProtectionPollingInterval, repeats: true) { [weak self] _ in
+            self?.evaluateLowBatteryProtection(reason: "battery_poll")
+        }
+        timer.tolerance = 10
+        batteryProtectionTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func evaluateLowBatteryProtection(reason: String) {
+        guard Preferences.enabled,
+              ClamshellStateReader.isClosed() == true,
+              let status = PowerSourceReader.status(),
+              BatteryProtectionPolicy.shouldForceSleep(status) else {
+            return
+        }
+        log("low_battery_protection trigger=\(reason) percent=\(status.percent)")
+        performAutomaticSleep(trigger: "low_battery")
+    }
+
     private func updateSleepVerificationTimer() {
         guard Preferences.enabled, !isPreparingAutomaticSleep else {
             sleepVerificationTimer?.invalidate()
@@ -288,9 +329,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func updateClamshellPolling() {
-        let shouldPoll = Preferences.enabled
-            && Preferences.displaySleepOnLidClose
-            && !observedClamshellClosed
+        // Lid state drives display sleep, AI completion sleep, and low-battery
+        // protection. Keep detecting closure even when display sleep is off.
+        let shouldPoll = Preferences.enabled && !observedClamshellClosed
 
         guard shouldPoll else {
             clamshellPollingTimer?.invalidate()
@@ -356,6 +397,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         let status = AIIntegrationManager(bridgeExecutableURL: bridgeURL).ensureInstalled()
+        trustedActivitySources.removeAll()
+        if status.codexDetected, status.codexConfigured, status.codexHooksConfigured {
+            trustedActivitySources.insert("codex")
+        }
+        if status.claudeDetected, status.claudeConfigured, status.claudeHooksConfigured {
+            trustedActivitySources.insert("claude")
+        }
         log(
             "\(reason) ai_integrations codex_detected=\(status.codexDetected) "
                 + "codex_configured=\(status.codexConfigured) "
@@ -392,30 +440,80 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc private func handleAgentTaskFinishedNotification(_ notification: Notification) {
+    @objc private func handleAIActivityChangedNotification(_ notification: Notification) {
         guard Preferences.autoSleepAfterAgentTask else {
-            log("ai_task_finished ignored=preference_disabled")
+            log("ai_activity ignored=preference_disabled")
             return
         }
-
+        if notification.userInfo?["uncertain"] as? Bool == true {
+            cancelPendingAutomaticSleep(reason: "activity_uncertain")
+            establishActivitySafetyBarrier(reason: "activity_uncertain")
+            return
+        }
         let source = notification.userInfo?["source"] as? String ?? "unknown"
-        let eventID = notification.userInfo?["eventID"] as? String
-        if let eventID, eventID == lastAgentEventID {
-            log("ai_task_finished ignored=duplicate source=\(source) event_id=\(eventID)")
-            return
-        }
-        lastAgentEventID = eventID
-        scheduleAutomaticSleep(source: source)
+        evaluateAutomaticSleepFromActivity(reason: "activity_\(source)")
     }
 
-    private func scheduleAutomaticSleep(source: String) {
+    private func establishActivitySafetyBarrier(reason: String) {
+        cancelPendingAutomaticSleep(reason: "\(reason)_barrier")
+        guard let state = activityStore().establishSafetyBarrier() else {
+            trustedActivityEpoch = nil
+            trustedActivitySources.removeAll()
+            log("\(reason) ai_safety_barrier=write_failed")
+            return
+        }
+        trustedActivityEpoch = state.safetyEpoch
+        scheduledActivitySequence = nil
+        log("\(reason) ai_safety_barrier=established")
+    }
+
+    private func activityStore() -> AIActivityStore {
+        AIIntegrationManager(
+            bridgeExecutableURL: AIIntegrationManager.bridgeURL(in: Bundle.main.bundleURL)
+        ).activityStore
+    }
+
+    private func evaluateAutomaticSleepFromActivity(reason: String) {
+        guard Preferences.enabled else {
+            cancelPendingAutomaticSleep(reason: "\(reason)_disabled")
+            return
+        }
+        guard ClamshellStateReader.isClosed() == true else {
+            cancelPendingAutomaticSleep(reason: "\(reason)_lid_not_confirmed_closed")
+            return
+        }
+        let now = Date()
+        guard let state = activityStore().loadIfWriteBarrierClear(), isTrustedActivityState(state, at: now) else {
+            cancelPendingAutomaticSleep(reason: "\(reason)_state_unavailable")
+            return
+        }
+        switch state.decision(at: now, quietPeriod: automaticSleepDelay) {
+        case .eligible:
+            scheduleAutomaticSleep(deadline: now, sequence: state.sequence, reason: reason)
+        case .waiting:
+            guard let lastProgressAt = state.lastProgressAt else {
+                cancelPendingAutomaticSleep(reason: "\(reason)_missing_progress")
+                return
+            }
+            scheduleAutomaticSleep(
+                deadline: lastProgressAt.addingTimeInterval(automaticSleepDelay),
+                sequence: state.sequence,
+                reason: reason
+            )
+        case .unsafe, .running:
+            cancelPendingAutomaticSleep(reason: "\(reason)_state_not_quiet")
+        }
+    }
+
+    private func scheduleAutomaticSleep(deadline: Date, sequence: UInt64, reason: String) {
         guard !isPreparingAutomaticSleep else {
-            log("ai_task_finished ignored=sleep_in_progress source=\(source)")
+            log("automatic_sleep ignored=sleep_in_progress reason=\(reason)")
             return
         }
 
         autoSleepCountdownTimer?.invalidate()
-        autoSleepDeadline = Date().addingTimeInterval(automaticSleepDelay)
+        autoSleepDeadline = deadline
+        scheduledActivitySequence = sequence
         updateAutomaticSleepCountdown()
 
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
@@ -424,7 +522,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         timer.tolerance = 0.1
         autoSleepCountdownTimer = timer
         RunLoop.main.add(timer, forMode: .common)
-        log("ai_task_finished source=\(source) automatic_sleep_in_seconds=\(Int(automaticSleepDelay))")
+        log("automatic_sleep scheduled reason=\(reason) deadline=\(deadline.timeIntervalSince1970)")
     }
 
     private func updateAutomaticSleepCountdown() {
@@ -436,7 +534,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         let remaining = max(0, Int(ceil(deadline.timeIntervalSinceNow)))
         statusMenuController?.setPendingAutoSleep(seconds: remaining)
         if remaining == 0 {
-            performAutomaticSleep()
+            performAutomaticSleep(trigger: "quiet_timeout")
         }
     }
 
@@ -452,12 +550,80 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         autoSleepCountdownTimer?.invalidate()
         autoSleepCountdownTimer = nil
         autoSleepDeadline = nil
+        scheduledActivitySequence = nil
         statusMenuController?.setPendingAutoSleep(seconds: nil)
     }
 
-    private func performAutomaticSleep() {
+    private func isTrustedActivityState(_ state: AIActivityState, at now: Date) -> Bool {
+        guard let trustedActivityEpoch,
+              state.safetyEpoch == trustedActivityEpoch,
+              let persistedAt = state.persistedAt,
+              persistedAt >= state.epochStartedAt,
+              persistedAt <= now,
+              now.timeIntervalSince(persistedAt) <= automaticSleepDelay + 30,
+              let source = state.lastCompletedSource,
+              trustedActivitySources.contains(source) else {
+            return false
+        }
+        return true
+    }
+
+    private func sourceHooksRemainTrusted(_ source: String) -> Bool {
+        let bridgeURL = AIIntegrationManager.bridgeURL(in: Bundle.main.bundleURL)
+        let status = AIIntegrationManager(bridgeExecutableURL: bridgeURL).inspectInstalled()
+        guard status.errors.isEmpty,
+              (!status.codexDetected || (status.codexConfigured && status.codexHooksConfigured)),
+              (!status.claudeDetected || (status.claudeConfigured && status.claudeHooksConfigured)) else {
+            return false
+        }
+        switch source {
+        case "codex":
+            return status.codexConfigured && status.codexHooksConfigured
+        case "claude":
+            return status.claudeConfigured && status.claudeHooksConfigured
+        default:
+            return false
+        }
+    }
+
+    private func performAutomaticSleep(trigger: String) {
+        let expectedSequence = scheduledActivitySequence
         clearPendingAutomaticSleep()
-        guard Preferences.autoSleepAfterAgentTask, !isPreparingAutomaticSleep else { return }
+        let isLowBatteryProtection = trigger == "low_battery"
+        guard (Preferences.autoSleepAfterAgentTask || isLowBatteryProtection),
+              !isPreparingAutomaticSleep else { return }
+        guard AutomaticSleepPhysicalPreflight.allowsSleep(
+            masterEnabled: Preferences.enabled,
+            lidClosed: ClamshellStateReader.isClosed(),
+            requiresLowBattery: false,
+            powerStatus: nil
+        ) else {
+            log("automatic_sleep skipped=lid_not_confirmed_closed trigger=\(trigger)")
+            return
+        }
+        if isLowBatteryProtection {
+            guard AutomaticSleepPhysicalPreflight.allowsSleep(
+                masterEnabled: Preferences.enabled,
+                lidClosed: true,
+                requiresLowBattery: true,
+                powerStatus: PowerSourceReader.status()
+            ) else {
+                log("automatic_sleep skipped=power_not_confirmed_low_battery trigger=\(trigger)")
+                return
+            }
+        } else {
+            let now = Date()
+            guard let state = activityStore().loadIfWriteBarrierClear(),
+                  state.sequence == expectedSequence,
+                  isTrustedActivityState(state, at: now),
+                  state.decision(at: now, quietPeriod: automaticSleepDelay) == .eligible,
+                  let source = state.lastCompletedSource,
+                  sourceHooksRemainTrusted(source) else {
+                log("automatic_sleep skipped=activity_not_eligible trigger=\(trigger)")
+                evaluateAutomaticSleepFromActivity(reason: "preflight")
+                return
+            }
+        }
 
         isPreparingAutomaticSleep = true
         sleepVerificationTimer?.invalidate()
@@ -466,35 +632,51 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         let restoreResult = runHelper("off")
         let confirmedNormalSleep = SleepStateReader.isDisabled() == false
         log(
-            "automatic_sleep restore_off_status=\(restoreResult.status) "
+            "automatic_sleep trigger=\(trigger) restore_off_status=\(restoreResult.status) "
                 + "confirmed_normal_sleep=\(confirmedNormalSleep) "
                 + "stdout=\(restoreResult.stdout) stderr=\(restoreResult.stderr)"
         )
         guard restoreResult.status == 0, confirmedNormalSleep else {
-            if Preferences.enabled {
-                let compensation = runHelper("on")
-                let compensated = compensation.status == 0 && SleepStateReader.isDisabled() == true
-                log(
-                    "automatic_sleep compensation_on_status=\(compensation.status) "
-                        + "confirmed=\(compensated) "
-                        + "stdout=\(compensation.stdout) stderr=\(compensation.stderr)"
-                )
-                if compensated {
-                    lastAppliedState = true
-                    failedSleepState = nil
-                    nextSleepStateRetryAt = .distantPast
-                    sleepRetryTimer?.invalidate()
-                    sleepRetryTimer = nil
-                    ensureStatusItem()
-                } else {
-                    markSleepStateFailure(true, now: Date())
-                }
-            } else {
-                markSleepStateFailure(false, now: Date())
-            }
-            isPreparingAutomaticSleep = false
-            updateSleepVerificationTimer()
+            compensateAutomaticSleepAbort(reason: "restore_off_failed")
             return
+        }
+
+        // The helper transition and sleep-now are separate privileged calls.
+        // Re-read every physical prerequisite in between and restore keep-awake
+        // immediately if the lid or power source changed in that window.
+        guard AutomaticSleepPhysicalPreflight.allowsSleep(
+            masterEnabled: Preferences.enabled,
+            lidClosed: ClamshellStateReader.isClosed(),
+            requiresLowBattery: false,
+            powerStatus: nil
+        ) else {
+            log("automatic_sleep aborted=lid_changed_after_restore trigger=\(trigger)")
+            compensateAutomaticSleepAbort(reason: "lid_changed_after_restore")
+            return
+        }
+        if isLowBatteryProtection {
+            guard AutomaticSleepPhysicalPreflight.allowsSleep(
+                masterEnabled: Preferences.enabled,
+                lidClosed: true,
+                requiresLowBattery: true,
+                powerStatus: PowerSourceReader.status()
+            ) else {
+                log("automatic_sleep aborted=power_changed_after_restore trigger=\(trigger)")
+                compensateAutomaticSleepAbort(reason: "power_changed_after_restore")
+                return
+            }
+        } else {
+            let now = Date()
+            guard let state = activityStore().loadIfWriteBarrierClear(),
+                  state.sequence == expectedSequence,
+                  isTrustedActivityState(state, at: now),
+                  state.decision(at: now, quietPeriod: automaticSleepDelay) == .eligible,
+                  let source = state.lastCompletedSource,
+                  sourceHooksRemainTrusted(source) else {
+                log("automatic_sleep aborted=activity_changed_after_restore trigger=\(trigger)")
+                compensateAutomaticSleepAbort(reason: "activity_changed_after_restore")
+                return
+            }
         }
 
         lastAppliedState = false
@@ -516,6 +698,31 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
         automaticSleepRecoveryTimer = timer
         RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func compensateAutomaticSleepAbort(reason: String) {
+        if Preferences.enabled {
+            let compensation = runHelper("on")
+            let compensated = compensation.status == 0 && SleepStateReader.isDisabled() == true
+            log(
+                "automatic_sleep compensation reason=\(reason) on_status=\(compensation.status) "
+                    + "confirmed=\(compensated) stdout=\(compensation.stdout) stderr=\(compensation.stderr)"
+            )
+            if compensated {
+                lastAppliedState = true
+                failedSleepState = nil
+                nextSleepStateRetryAt = .distantPast
+                sleepRetryTimer?.invalidate()
+                sleepRetryTimer = nil
+                ensureStatusItem()
+            } else {
+                markSleepStateFailure(true, now: Date())
+            }
+        } else {
+            markSleepStateFailure(false, now: Date())
+        }
+        isPreparingAutomaticSleep = false
+        updateSleepVerificationTimer()
     }
 
     private func finishAutomaticSleepCycle(reason: String) {
@@ -611,14 +818,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func evaluateDisplaySleepForClosedLid(isKeepRunning: Bool, reason: String) {
-        guard Preferences.displaySleepOnLidClose else {
-            didRequestDisplaySleepForClosedLid = false
-            nextDisplaySleepRetryAt = .distantPast
-            observedClamshellClosed = false
-            updateClamshellPolling()
-            return
-        }
-
         guard isKeepRunning else {
             didRequestDisplaySleepForClosedLid = false
             nextDisplaySleepRetryAt = .distantPast
@@ -651,8 +850,22 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             return
         }
 
+        let newlyClosed = !observedClamshellClosed
         observedClamshellClosed = true
         updateClamshellPolling()
+
+        if newlyClosed {
+            evaluateAutomaticSleepFromActivity(reason: "\(reason)_lid_closed")
+            evaluateLowBatteryProtection(reason: "\(reason)_lid_closed")
+        }
+
+        guard Preferences.displaySleepOnLidClose else {
+            didRequestDisplaySleepForClosedLid = false
+            nextDisplaySleepRetryAt = .distantPast
+            displaySleepRetryTimer?.invalidate()
+            displaySleepRetryTimer = nil
+            return
+        }
 
         let now = Date()
         guard now >= nextDisplaySleepRetryAt else { return }

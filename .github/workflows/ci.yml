@@ -15,6 +15,14 @@ jobs:
         run: swift build -c release -Xswiftc -warnings-as-errors
       - name: Run app and localization tests
         run: swift test
+      - name: Run AI auto-sleep safety smoke test
+        run: |
+          swiftc -D DEBUG \
+            Sources/CapsomniaIntegrationKit/AIActivityState.swift \
+            Sources/CapsomniaIntegrationKit/AIIntegrationManager.swift \
+            scripts/ai-safety-smoke.swift \
+            -o "$RUNNER_TEMP/capsomnia-ai-safety-smoke"
+          "$RUNNER_TEMP/capsomnia-ai-safety-smoke"
       - name: Verify native privileged helper
         run: |
           file .build/release/capsomnia-pmset | grep -q 'Mach-O'

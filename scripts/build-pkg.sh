@@ -72,6 +72,11 @@ fi
   <key>Label</key>
   <string>$LABEL</string>
 
+  <key>AssociatedBundleIdentifiers</key>
+  <array>
+    <string>$LABEL</string>
+  </array>
+
   <key>ProgramArguments</key>
   <array>
     <string>/Applications/$APP_NAME.app/Contents/MacOS/$APP_NAME</string>

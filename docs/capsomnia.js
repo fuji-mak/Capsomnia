@@ -7,6 +7,9 @@
       description:
         "Capsomnia turns Caps Lock into a physical keep-awake switch for closed-lid MacBook background work. Run Codex, Claude Code, SSH sessions, builds, and unattended scripts without sleep.",
       skipLink: "Skip to content",
+      mainNavigationLabel: "Main navigation",
+      languageLabel: "Language",
+      downloadSectionLabel: "Download Capsomnia",
       navUses: "Use cases",
       navFeatures: "Features",
       navSecurity: "Security",
@@ -84,6 +87,9 @@
       description:
         "CapsomniaはCaps Lockを、蓋を閉じたMacBookでも作業を止めないための物理スイッチに変えるmacOSアプリです。Codex、Claude Code、SSH、ビルド、ダウンロード、放置スクリプト向け。",
       skipLink: "本文へ移動",
+      mainNavigationLabel: "メインナビゲーション",
+      languageLabel: "言語",
+      downloadSectionLabel: "Capsomniaをダウンロード",
       navUses: "用途",
       navFeatures: "特徴",
       navSecurity: "安全性",
@@ -156,6 +162,85 @@
       linkSecurityTitle: "セキュリティポリシー",
       linkSecuritySub: "報告方法と安全性モデル",
       footerCatch: "Macの最も無駄なキーに最高の仕事を与える"
+    },
+    "zh-Hans": {
+      title: "Capsomnia — 把 Caps Lock 变成 macOS 实体防休眠开关",
+      description:
+        "Capsomnia 可将 Caps Lock 变成实体防休眠开关，让 MacBook 合盖后仍能继续运行后台任务。适用于 Codex、Claude Code、SSH 会话、构建、下载和无人值守脚本。",
+      skipLink: "跳转到正文",
+      mainNavigationLabel: "主导航",
+      languageLabel: "语言",
+      downloadSectionLabel: "下载 Capsomnia",
+      navUses: "使用场景",
+      navFeatures: "功能",
+      navSecurity: "安全性",
+      heroTitle: '让 Caps Lock<br><span class="catch-accent">真正派上用场</span>',
+      heroSub:
+        "<strong>把 Caps Lock 变成实体防休眠开关。</strong>开启它，合上屏幕，让后台任务继续运行。",
+      downloadCta: "下载",
+      stripLabel: "工作原理",
+      stripOnTitle: "Caps Lock 开启",
+      stripOnSub: "运行 <code>pmset -a disablesleep 1</code>，停用系统睡眠。",
+      stripOffTitle: "Caps Lock 关闭",
+      stripOffSub: "运行 <code>pmset -a disablesleep 0</code>，恢复正常睡眠。",
+      previewLabel: "Capsomnia 应用预览",
+      previewAlt: "Capsomnia 设置窗口",
+      previewSrc: "app-preview-en.png",
+      previewWidth: "800",
+      previewHeight: "1038",
+      usesTitle: "为 AI 智能体准备的实体开关",
+      usesLede:
+        "开启 Caps Lock，合上屏幕，让耗时较长的本地任务继续运行。Capsomnia 会让 MacBook 保持唤醒，直到你关闭 Caps Lock。键盘上的 Caps Lock 指示灯会直观显示防休眠状态。",
+      cardAgentsTitle: "AI 智能体",
+      cardAgentsBody: "合盖后继续运行耗时较长的 Codex 或 Claude Code 任务。",
+      cardSshTitle: "SSH 会话",
+      cardSshBody: "远程操作 Mac 时，避免设备在会话途中进入睡眠。",
+      cardBuildsTitle: "构建与下载",
+      cardBuildsBody: "让长时间编译和大型下载任务顺利完成。",
+      cardScriptsTitle: "移动端连接",
+      cardScriptsBody: "保持 Codex Mobile 等移动端会话连接，让任务不中断。",
+      featuresEyebrow: "功能",
+      featuresTitle: "合上屏幕，Mac 仍可继续工作",
+      featuresLede:
+        "Capsomnia 是一款小巧的 Mac 应用，专注于合盖后继续运行任务、通过实体指示灯显示状态，以及透明的开源设计。",
+      featureClosedKicker: "合盖运行",
+      featureClosedTitle: "合盖后任务继续运行",
+      featureClosedBody:
+        "开启 Caps Lock 并合上 MacBook，本地任务仍会继续运行。在已启用远程登录且网络可用时，你也可以继续通过 SSH 访问 Mac。",
+      featureLedKicker: "实体状态",
+      featureLedTitle: "Caps Lock 指示灯显示状态",
+      featureLedBody:
+        "指示灯亮起时，防休眠功能已开启。无需显示菜单栏图标，也能直接从键盘确认状态。",
+      featureOssKicker: "开源",
+      featureOssTitle: "完全免费，开源透明",
+      featureOssBody:
+        "项目采用 MIT 许可证。安装前，你可以检查源代码、软件包安装脚本、辅助程序命令和安全模型。",
+      securityTitle: "安全模型",
+      securityLede:
+        "菜单栏应用以当前用户身份运行，绝不会以 root 身份运行。更改系统睡眠设置需要提升权限，因此 Capsomnia 通过免密码 <code>sudo</code> 调用一个功能固定、由 root 所有的小型辅助程序。",
+      securityOfflineLabel: "隐私",
+      securityOfflineNetwork: "无网络请求",
+      securityOfflineTelemetry: "无遥测",
+      securityOfflineAccounts: "无需账户",
+      securityInvokeTitle: "应用只能调用",
+      securityInvokeBody: "软件包中的应用、辅助程序和系统 LaunchAgent 均由 root 所有。sudoers 规则仅允许执行以下三个完全匹配的命令。",
+      securityHelperTitle: "辅助程序只会运行",
+      securityHelperBody: "仅接受 <code>on</code>、<code>off</code> 和 <code>display-sleep</code>，不会接受其他参数。",
+      securityInputTitle: "无需输入监控权限",
+      securityInputBody: "Capsomnia 不会读取键盘事件，只会每 250 毫秒检查一次本机 Caps Lock 状态。",
+      securityBackgroundTitle: "后台项目提示",
+      securityBackgroundBody:
+        "macOS 可能会将“Taketo Fujimaki”显示为后台项目。这是用于在登录时启动 Capsomnia，并在崩溃后重新启动应用的 LaunchAgent。",
+      securityReq:
+        "退出应用会恢复正常睡眠。停用睡眠并合盖使用可能会增加发热和耗电量，请留意通风、电源和运行时长。",
+      linksTitle: "链接",
+      linkRepoTitle: "GitHub 仓库",
+      linkRepoSub: "源代码、Issue 和 Release",
+      linkReadmeSub: "英文文档",
+      linkReadmeJaSub: "日文文档",
+      linkSecurityTitle: "安全策略",
+      linkSecuritySub: "报告方式与安全模型",
+      footerCatch: "让 Caps Lock 真正派上用场"
     }
   };
 
@@ -176,7 +261,7 @@
   }
 
   function normalizeLanguage(lang) {
-    return lang === "ja" || lang === "en" ? lang : null;
+    return lang === "ja" || lang === "en" || lang === "zh-Hans" ? lang : null;
   }
 
   function detectInitialLanguage() {

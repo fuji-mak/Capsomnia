@@ -79,7 +79,7 @@
       }
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=20260712-polling" />
+    <link rel="stylesheet" href="styles.css?v=20260715-zh-hans" />
   </head>
   <body class="bg-[var(--bg)] text-[var(--text)] antialiased [text-rendering:optimizeLegibility]">
     <a
@@ -95,12 +95,17 @@
       <a
         class="inline-flex items-center gap-2.5 text-base font-bold text-[var(--text)] no-underline sm:text-lg"
         href="#top"
+        aria-label="Capsomnia"
       >
         <img class="brand-led block h-6 w-6 rounded-md sm:h-7 sm:w-7" src="icon.svg" alt="" width="28" height="28" />
-        <span>Capsomnia</span>
+        <span class="hidden sm:inline">Capsomnia</span>
       </a>
 
-      <nav class="site-nav mr-auto hidden items-center gap-2.5 sm:flex lg:gap-6" aria-label="Main navigation">
+      <nav
+        class="site-nav mr-auto hidden items-center gap-2.5 md:flex lg:gap-6"
+        aria-label="Main navigation"
+        data-i18n-aria-label="mainNavigationLabel"
+      >
         <a
           class="text-sm font-medium text-[var(--text-dim)] no-underline hover:text-[var(--text)]"
           href="#uses"
@@ -125,12 +130,14 @@
         <div
           class="lang-switch inline-flex shrink-0 gap-0.5 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] p-1"
           aria-label="Language"
+          data-i18n-aria-label="languageLabel"
         >
           <button
             class="lang-btn min-w-8 rounded-full px-2 py-1 text-xs font-bold text-[var(--text-dim)] hover:text-[var(--text)] sm:min-w-[38px] sm:px-2.5"
             type="button"
             data-lang-option="en"
             aria-pressed="false"
+            aria-label="English"
           >
             EN
           </button>
@@ -139,8 +146,18 @@
             type="button"
             data-lang-option="ja"
             aria-pressed="true"
+            aria-label="日本語"
           >
             JA
+          </button>
+          <button
+            class="lang-btn min-w-8 rounded-full px-2 py-1 text-xs font-bold text-[var(--text-dim)] hover:text-[var(--text)] sm:min-w-[38px] sm:px-2.5"
+            type="button"
+            data-lang-option="zh-Hans"
+            aria-pressed="false"
+            aria-label="简体中文"
+          >
+            ZH
           </button>
         </div>
         <a
@@ -344,6 +361,7 @@
       <section
         class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-12 sm:px-10 sm:py-20"
         aria-label="Download Capsomnia"
+        data-i18n-aria-label="downloadSectionLabel"
       >
         <div class="flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
@@ -512,6 +530,6 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
       <p class="text-sm" data-i18n="footerCatch">Macの最も無駄なキーに最高の仕事を与える</p>
     </footer>
 
-    <script src="capsomnia.js?v=20260712-seo-ja"></script>
+    <script src="capsomnia.js?v=20260715-zh-hans"></script>
   </body>
 </html>

@@ -88,7 +88,7 @@ On first launch, Capsomnia explains how the Caps Lock switch works and lets you 
 - whether to show the menu bar dot
 - whether to turn the display off when the lid closes
 - whether to open Capsomnia at login
-- English or Japanese
+- English, Japanese, or Simplified Chinese
 
 Open Capsomnia again later to change the same settings.
 

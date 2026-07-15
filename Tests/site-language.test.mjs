@@ -4,6 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 
 const source = readFileSync(new URL("../docs/capsomnia.js", import.meta.url), "utf8");
+const html = readFileSync(new URL("../docs/index.html", import.meta.url), "utf8");
 
 function renderWithStoredLanguage(storedLanguage) {
   let savedLanguage = storedLanguage;
@@ -58,4 +59,17 @@ test("an explicit English choice remains available", () => {
 
   assert.equal(result.language, "en");
   assert.match(result.title, /physical keep-awake switch for macOS/);
+});
+
+test("an explicit Simplified Chinese choice remains available", () => {
+  const result = renderWithStoredLanguage("zh-Hans");
+
+  assert.equal(result.language, "zh-Hans");
+  assert.match(result.title, /实体防休眠开关/);
+  assert.match(result.description, /合盖后仍能继续运行后台任务/);
+});
+
+test("the page exposes a Simplified Chinese language control", () => {
+  assert.match(html, /data-lang-option="zh-Hans"/);
+  assert.match(html, /aria-label="简体中文"/);
 });

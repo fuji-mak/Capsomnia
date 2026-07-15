@@ -40,9 +40,20 @@ enum Brand {
 enum AppLanguage: String, CaseIterable {
     case english = "en"
     case japanese = "ja"
+    case simplifiedChinese = "zh-Hans"
 
     static var defaultLanguage: AppLanguage {
-        Locale.preferredLanguages.first?.hasPrefix("ja") == true ? .japanese : .english
+        defaultLanguage(for: Locale.preferredLanguages.first)
+    }
+
+    static func defaultLanguage(for preferredLanguage: String?) -> AppLanguage {
+        if preferredLanguage?.hasPrefix("ja") == true {
+            return .japanese
+        }
+        if preferredLanguage?.hasPrefix("zh") == true {
+            return .simplifiedChinese
+        }
+        return .english
     }
 
     var displayName: String {
@@ -51,6 +62,8 @@ enum AppLanguage: String, CaseIterable {
             "English"
         case .japanese:
             "日本語"
+        case .simplifiedChinese:
+            "简体中文"
         }
     }
 }
@@ -80,7 +93,11 @@ struct AppStrings {
     let tooltipError: String
 
     static func current() -> AppStrings {
-        switch Preferences.language {
+        localized(for: Preferences.language)
+    }
+
+    static func localized(for language: AppLanguage) -> AppStrings {
+        switch language {
         case .english:
             AppStrings(
                 showMenuBarIcon: "Show menu bar icon",
@@ -130,6 +147,31 @@ struct AppStrings {
                 tooltipOn: "Caps Lock ON: スリープ抑止中",
                 tooltipOff: "Caps Lock OFF: 通常のスリープ動作",
                 tooltipError: "スリープ設定を更新できませんでした — 再試行中"
+            )
+        case .simplifiedChinese:
+            AppStrings(
+                showMenuBarIcon: "显示菜单栏图标",
+                showMenuBarIconDesc: "在菜单栏中显示 LED 状态指示灯。",
+                language: "语言",
+                openAtLogin: "登录时启动",
+                openAtLoginDesc: "登录后自动启动 Capsomnia。",
+                displaySleepOnLidClose: "合盖时关闭显示屏",
+                displaySleepOnLidCloseDesc: "Caps Lock 开启时，合盖后保持任务运行并关闭显示屏。",
+                openCapsomnia: "打开 Capsomnia",
+                quit: "退出",
+                settingsTitle: "设置",
+                initialSettingsNote: "macOS 可能会将“Taketo Fujimaki”显示为后台项目。你可以随时重新打开 Capsomnia 更改这些设置。",
+                welcomeTitle: "欢迎使用 Capsomnia",
+                explainerOnTitle: "Caps Lock 已开启",
+                explainerOnDesc: "系统睡眠已停用——无论开盖还是合盖，任务都会继续运行。",
+                explainerOffTitle: "Caps Lock 已关闭",
+                explainerOffDesc: "已恢复正常睡眠。",
+                preferencesHeading: "偏好设置",
+                done: "完成",
+                getStarted: "开始使用",
+                tooltipOn: "Caps Lock 已开启：任务将保持运行",
+                tooltipOff: "Caps Lock 已关闭：正常睡眠",
+                tooltipError: "Capsomnia 无法更新睡眠设置——正在重试"
             )
         }
     }

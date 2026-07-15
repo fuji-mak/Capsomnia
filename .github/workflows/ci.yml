@@ -11,27 +11,48 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Build release executable
-        run: swift build -c release
-      - name: Test sleep-state parsing
+      - name: Build release executable with warnings as errors
+        run: swift build -c release -Xswiftc -warnings-as-errors
+      - name: Run app and localization tests
         run: swift test
+      - name: Run AI auto-sleep safety smoke test
+        run: |
+          swiftc -D DEBUG \
+            Sources/CapsomniaIntegrationKit/AIActivityState.swift \
+            Sources/CapsomniaIntegrationKit/AIIntegrationManager.swift \
+            scripts/ai-safety-smoke.swift \
+            -o "$RUNNER_TEMP/capsomnia-ai-safety-smoke"
+          "$RUNNER_TEMP/capsomnia-ai-safety-smoke"
       - name: Verify native privileged helper
         run: |
           file .build/release/capsomnia-pmset | grep -q 'Mach-O'
-          set +e
-          .build/release/capsomnia-pmset invalid-mode
-          helper_status=$?
-          set -e
-          test "$helper_status" -eq 64
+          for helper_args in "" "invalid-mode" "on extra" "OFF" "--help" "display-sleep extra" "sleep-now extra"; do
+            read -r -a argv <<< "$helper_args"
+            set +e
+            .build/release/capsomnia-pmset "${argv[@]}" >/dev/null 2>&1
+            helper_status=$?
+            set -e
+            test "$helper_status" -eq 64
+          done
       - name: Build and verify unsigned package payload
-        run: SKIP_SIGNING=true ./scripts/build-pkg.sh "$RUNNER_TEMP/capsomnia-pkg"
-      - name: Check shell scripts
         run: |
-          zsh -n scripts/build-app.sh
-          zsh -n scripts/build-pkg.sh
-          zsh -n scripts/install.sh
-          zsh -n scripts/notarize-pkg.sh
-          zsh -n scripts/uninstall.sh
+          SKIP_SIGNING=true ./scripts/build-pkg.sh "$RUNNER_TEMP/capsomnia-pkg"
+          package_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' resources/Info.plist)"
+          package_path="$RUNNER_TEMP/capsomnia-pkg/Capsomnia-$package_version-cn-unsigned.pkg"
+          test -f "$package_path"
+          pkgutil --expand-full "$package_path" "$RUNNER_TEMP/capsomnia-expanded"
+          zsh -n "$RUNNER_TEMP/capsomnia-expanded/Scripts/postinstall"
+          grep -F '/bin/launchctl bootstrap "gui/$console_uid" "$USER_LAUNCH_AGENT"' \
+            "$RUNNER_TEMP/capsomnia-expanded/Scripts/postinstall"
+          grep -F '/bin/launchctl print "gui/$console_uid/$LABEL"' \
+            "$RUNNER_TEMP/capsomnia-expanded/Scripts/postinstall"
+          test ! -e "$RUNNER_TEMP/capsomnia-expanded/Payload/Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist"
+      - name: Check scripts, plists, and Chinese coverage
+        run: |
+          zsh -n scripts/build-app.sh scripts/build-pkg.sh scripts/install.sh scripts/notarize-pkg.sh scripts/uninstall.sh
+          plutil -lint resources/Info.plist
+          grep -R -q '简体中文' Sources/Capsomnia docs README.zh-CN.md
+          grep -R -q 'Codex/Claude任务完成后自动睡眠' Sources/Capsomnia README.zh-CN.md
 
   site:
     name: GitHub Pages site

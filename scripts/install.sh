@@ -176,6 +176,11 @@ EOF
   <key>Label</key>
   <string>$LABEL</string>
 
+  <key>AssociatedBundleIdentifiers</key>
+  <array>
+    <string>$LABEL</string>
+  </array>
+
   <key>ProgramArguments</key>
   <array>
     <string>$APP_BUNDLE/Contents/MacOS/$APP_NAME</string>

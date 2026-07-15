@@ -10,6 +10,8 @@
 
 ## 合上 Mac，AI 继续跑。任务结束，Mac 自己睡。
 
+当前版本：`1.5.0`
+
 Codex、Claude Code 跑长任务，不该逼你守着电脑，也不该让 Mac 白白亮一整夜。
 
 Capsomnia 让 MacBook 合盖后继续工作；Codex 或 Claude 任务完成后，再让 Mac 自动睡眠。人可以先走，机器知道什么时候收工。

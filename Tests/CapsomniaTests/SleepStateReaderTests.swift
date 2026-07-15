@@ -502,7 +502,7 @@ final class SleepStateReaderTests: XCTestCase {
         var state = AIActivityState.failSafe
         XCTAssertEqual(state.decision(at: start, quietPeriod: 300), .unsafe)
         state.record(prompt, at: start)
-        XCTAssertEqual(state.decision(at: start.addingTimeInterval(1), quietPeriod: 300), .unsafe)
+        XCTAssertEqual(state.decision(at: start.addingTimeInterval(1), quietPeriod: 300), .running)
 
         state.record(
             AIActivityEvent(source: "codex", kind: .stop, sessionID: "s1", turnID: "t1", agentID: nil),

@@ -56,6 +56,7 @@ enum AppLanguage: String, CaseIterable {
 }
 
 struct AppStrings {
+    let toggleCapsLock: String
     let showMenuBarIcon: String
     let showMenuBarIconDesc: String
     let language: String
@@ -83,6 +84,7 @@ struct AppStrings {
         switch Preferences.language {
         case .english:
             AppStrings(
+                toggleCapsLock: "Toggle Caps Lock",
                 showMenuBarIcon: "Show menu bar icon",
                 showMenuBarIconDesc: "Display the LED status dot in the menu bar.",
                 language: "Language",
@@ -108,6 +110,7 @@ struct AppStrings {
             )
         case .japanese:
             AppStrings(
+                toggleCapsLock: "Caps Lockを切り替え",
                 showMenuBarIcon: "メニューバーに表示",
                 showMenuBarIconDesc: "メニューバーにLEDステータスを表示します。",
                 language: "言語",

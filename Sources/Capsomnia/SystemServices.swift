@@ -1,5 +1,6 @@
 import Foundation
 import IOKit
+import IOKit.hidsystem
 
 struct LaunchAgentError: LocalizedError {
     let message: String
@@ -79,6 +80,28 @@ enum SleepStateReader {
         }
 
         return nil
+    }
+}
+
+enum CapsLockController {
+    static func toggledState(current: Bool) -> Bool {
+        !current
+    }
+
+    /// Sets the real system Caps Lock modifier-lock state (LED included),
+    /// so Capsomnia's own hardware-state polling picks it up like a physical key press.
+    static func set(_ on: Bool) -> Bool {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching(kIOHIDSystemClass))
+        guard service != 0 else { return false }
+        defer { IOObjectRelease(service) }
+
+        var connect: io_connect_t = 0
+        guard IOServiceOpen(service, mach_task_self_, UInt32(kIOHIDParamConnectType), &connect) == KERN_SUCCESS else {
+            return false
+        }
+        defer { IOServiceClose(connect) }
+
+        return IOHIDSetModifierLockState(connect, Int32(kIOHIDCapsLockState), on) == KERN_SUCCESS
     }
 }
 

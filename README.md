@@ -70,6 +70,7 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 - Caps Lock off: restores normal sleep behavior.
 - Lid closed while Caps Lock is on: puts only the display to sleep while work keeps running.
 - Quitting the app restores normal sleep behavior.
+- The menu bar's "Toggle Caps Lock" item flips the real Caps Lock state directly, for keyboards where the physical Caps Lock key is remapped to something else (e.g. Control) and can no longer toggle it.
 
 Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions, builds, downloads, and unattended scripts.
 

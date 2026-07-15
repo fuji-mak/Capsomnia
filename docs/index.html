@@ -100,7 +100,11 @@
         <span>Capsomnia</span>
       </a>
 
-      <nav class="site-nav mr-auto hidden items-center gap-2.5 sm:flex lg:gap-6" aria-label="Main navigation">
+      <nav
+        class="site-nav mr-auto hidden items-center gap-2.5 sm:flex lg:gap-6"
+        aria-label="Main navigation"
+        data-i18n-aria-label="navLabel"
+      >
         <a
           class="text-sm font-medium text-[var(--text-dim)] no-underline hover:text-[var(--text)]"
           href="#uses"
@@ -125,6 +129,7 @@
         <div
           class="lang-switch inline-flex shrink-0 gap-0.5 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] p-1"
           aria-label="Language"
+          data-i18n-aria-label="languageLabel"
         >
           <button
             class="lang-btn min-w-8 rounded-full px-2 py-1 text-xs font-bold text-[var(--text-dim)] hover:text-[var(--text)] sm:min-w-[38px] sm:px-2.5"
@@ -133,6 +138,14 @@
             aria-pressed="false"
           >
             EN
+          </button>
+          <button
+            class="lang-btn min-w-8 rounded-full px-2 py-1 text-xs font-bold text-[var(--text-dim)] hover:text-[var(--text)] sm:min-w-[38px] sm:px-2.5"
+            type="button"
+            data-lang-option="ko"
+            aria-pressed="false"
+          >
+            KO
           </button>
           <button
             class="lang-btn min-w-8 rounded-full px-2 py-1 text-xs font-bold text-[var(--text-dim)] hover:text-[var(--text)] sm:min-w-[38px] sm:px-2.5"
@@ -161,6 +174,7 @@
             class="led-pulse h-auto w-[140px] rounded-[28px] drop-shadow-[0_0_60px_var(--led-glow)] sm:w-[220px] sm:rounded-[48px]"
             src="icon.svg"
             alt="Capsomnia LED icon"
+            data-i18n-alt="heroIconAlt"
             width="220"
             height="220"
           />
@@ -344,6 +358,7 @@
       <section
         class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-12 sm:px-10 sm:py-20"
         aria-label="Download Capsomnia"
+        data-i18n-aria-label="downloadLabel"
       >
         <div class="flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
@@ -486,6 +501,15 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
           >
             <span class="font-semibold text-[var(--text)]">README（日本語）</span>
             <span class="text-sm text-[var(--text-faint)]" data-i18n="linkReadmeJaSub">日本語ドキュメント</span>
+          </a>
+          <a
+            class="flex flex-col gap-1 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-5 py-5 no-underline transition hover:-translate-y-0.5 hover:border-[var(--led-deep)]"
+            href="https://github.com/fuji-mak/Capsomnia/blob/main/README.ko.md"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="font-semibold text-[var(--text)]">README（한국어）</span>
+            <span class="text-sm text-[var(--text-faint)]" data-i18n="linkReadmeKoSub">한국어 문서</span>
           </a>
           <a
             class="flex flex-col gap-1 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-5 py-5 no-underline transition hover:-translate-y-0.5 hover:border-[var(--led-deep)]"

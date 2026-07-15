@@ -7,13 +7,17 @@
       description:
         "Capsomnia turns Caps Lock into a physical keep-awake switch for closed-lid MacBook background work. Run Codex, Claude Code, SSH sessions, builds, and unattended scripts without sleep.",
       skipLink: "Skip to content",
+      navLabel: "Main navigation",
+      languageLabel: "Language",
       navUses: "Use cases",
       navFeatures: "Features",
       navSecurity: "Security",
+      heroIconAlt: "Capsomnia LED icon",
       heroTitle: 'Give Caps Lock<br><span class="catch-accent">a real job</span>',
       heroSub:
         "<strong>Caps Lock becomes a physical keep-awake switch.</strong> Flip it on, close the lid, and let your background work keep running.",
       downloadCta: "Download",
+      downloadLabel: "Download Capsomnia",
       stripLabel: "How it works",
       stripOnTitle: "Caps Lock on",
       stripOnSub: "Runs <code>pmset -a disablesleep 1</code> — sleep is disabled.",
@@ -75,6 +79,7 @@
       linkRepoSub: "Source, issues, releases",
       linkReadmeSub: "Full documentation",
       linkReadmeJaSub: "Japanese documentation",
+      linkReadmeKoSub: "Korean documentation",
       linkSecurityTitle: "Security policy",
       linkSecuritySub: "Reporting &amp; model",
       footerCatch: "Give Caps Lock a real job"
@@ -84,14 +89,18 @@
       description:
         "CapsomniaはCaps Lockを、蓋を閉じたMacBookでも作業を止めないための物理スイッチに変えるmacOSアプリです。Codex、Claude Code、SSH、ビルド、ダウンロード、放置スクリプト向け。",
       skipLink: "本文へ移動",
+      navLabel: "メインナビゲーション",
+      languageLabel: "言語",
       navUses: "用途",
       navFeatures: "特徴",
       navSecurity: "安全性",
+      heroIconAlt: "CapsomniaのLEDアイコン",
       heroTitle:
         'Macの<span class="catch-accent">最も無駄なキー</span>に<br><span class="catch-accent">最高の仕事</span>を与える',
       heroSub:
         "<strong>Caps Lockを物理的なスリープ防止スイッチに。</strong> オンにして蓋を閉じるだけで、バックグラウンド作業を走らせ続けます。",
       downloadCta: "ダウンロード",
+      downloadLabel: "Capsomniaをダウンロード",
       stripLabel: "仕組み",
       stripOnTitle: "Caps Lock オン",
       stripOnSub: "<code>pmset -a disablesleep 1</code> を実行し、スリープを無効化します。",
@@ -153,9 +162,92 @@
       linkRepoSub: "ソースコード、Issue、Release",
       linkReadmeSub: "英語ドキュメント",
       linkReadmeJaSub: "日本語ドキュメント",
+      linkReadmeKoSub: "韓国語ドキュメント",
       linkSecurityTitle: "セキュリティポリシー",
       linkSecuritySub: "報告方法と安全性モデル",
       footerCatch: "Macの最も無駄なキーに最高の仕事を与える"
+    },
+    ko: {
+      title: "Capsomnia — Caps Lock을 macOS 잠자기 방지 스위치로",
+      description:
+        "Capsomnia는 Caps Lock을 MacBook 덮개를 닫은 채 작업할 때 쓰는 물리적인 잠자기 방지 스위치로 바꿔 주는 macOS 앱입니다. Codex, Claude Code, SSH 세션, 빌드, 다운로드, 무인 스크립트에 유용합니다.",
+      skipLink: "본문으로 바로 가기",
+      navLabel: "주요 메뉴",
+      languageLabel: "언어",
+      navUses: "활용 예",
+      navFeatures: "기능",
+      navSecurity: "보안",
+      heroIconAlt: "Capsomnia LED 아이콘",
+      heroTitle: 'Caps Lock에<br><span class="catch-accent">제대로 된 일을 맡기세요</span>',
+      heroSub:
+        "<strong>Caps Lock이 물리적인 잠자기 방지 스위치가 됩니다.</strong> 켜고 덮개를 닫으면 백그라운드 작업은 그대로 이어집니다.",
+      downloadCta: "다운로드",
+      downloadLabel: "Capsomnia 다운로드",
+      stripLabel: "작동 방식",
+      stripOnTitle: "Caps Lock 켜기",
+      stripOnSub: "<code>pmset -a disablesleep 1</code>을 실행해 잠자기를 막습니다.",
+      stripOffTitle: "Caps Lock 끄기",
+      stripOffSub: "<code>pmset -a disablesleep 0</code>을 실행해 평소 잠자기 동작으로 돌아갑니다.",
+      previewLabel: "Capsomnia 앱 미리 보기",
+      previewAlt: "Capsomnia 설정 화면",
+      previewSrc: "app-preview-en.png",
+      previewWidth: "800",
+      previewHeight: "1038",
+      usesTitle: "AI 에이전트를 위한 물리 스위치",
+      usesLede:
+        "오래 걸리는 로컬 작업이 있다면 Caps Lock을 켜고 덮개를 닫으세요. 다시 끌 때까지 Capsomnia가 MacBook을 깨워 둡니다. 잠자기 방지 상태는 Caps Lock 표시등으로 바로 확인할 수 있습니다.",
+      cardAgentsTitle: "AI 에이전트",
+      cardAgentsBody: "덮개를 닫아도 Codex나 Claude Code의 긴 작업을 계속 돌립니다.",
+      cardSshTitle: "SSH 세션",
+      cardSshBody: "원격으로 Mac을 쓰는 도중 잠자기에 들어가 연결이 끊기는 일을 막습니다.",
+      cardBuildsTitle: "빌드와 다운로드",
+      cardBuildsBody: "오래 걸리는 컴파일과 큰 파일 다운로드가 끝까지 이어집니다.",
+      cardScriptsTitle: "모바일 연결",
+      cardScriptsBody: "Codex Mobile 같은 모바일 연결을 유지해 작업이 멈추지 않게 합니다.",
+      featuresEyebrow: "기능",
+      featuresTitle: "덮개를 닫아도 Mac은 계속 일합니다",
+      featuresLede:
+        "Capsomnia는 덮개를 닫아도 작업이 끊기지 않게 하고 Caps Lock 표시등으로 상태를 알려 주는 작은 Mac 앱입니다. 소스 코드도 모두 공개합니다.",
+      featureClosedKicker: "덮개 닫기",
+      featureClosedTitle: "덮개를 닫아도 작업은 계속됩니다",
+      featureClosedBody:
+        "Caps Lock을 켜고 MacBook 덮개를 닫아도 로컬 작업은 계속 실행됩니다. 원격 로그인과 네트워크가 켜져 있으면 SSH 접속도 유지됩니다.",
+      featureLedKicker: "물리 표시",
+      featureLedTitle: "Caps Lock 표시등으로 상태 확인",
+      featureLedBody:
+        "불이 켜져 있으면 잠자기 방지 기능도 켜진 상태입니다. 키보드만 보고 확인할 수 있어 메뉴 막대에 아이콘을 띄우지 않아도 됩니다.",
+      featureOssKicker: "오픈 소스",
+      featureOssTitle: "무료 오픈 소스",
+      featureOssBody:
+        "MIT 라이선스로 공개합니다. 설치 전에 소스 코드, 패키지 설치 스크립트, helper 명령, 보안 모델을 직접 살펴볼 수 있습니다.",
+      securityTitle: "보안 모델",
+      securityLede:
+        "메뉴 막대 앱은 root가 아닌 현재 사용자 권한으로 실행됩니다. 시스템 잠자기 설정을 바꿀 때만 root가 소유한 고정 기능 helper 하나를 비밀번호 없는 <code>sudo</code>로 호출합니다.",
+      securityOfflineLabel: "개인정보 보호",
+      securityOfflineNetwork: "네트워크 연결 없음",
+      securityOfflineTelemetry: "텔레메트리 없음",
+      securityOfflineAccounts: "계정 불필요",
+      securityInvokeTitle: "앱이 호출할 수 있는 명령",
+      securityInvokeBody:
+        "패키지로 설치한 앱, helper, 시스템 LaunchAgent의 소유자는 root입니다. sudoers 규칙은 정확히 이 세 명령만 허용합니다.",
+      securityHelperTitle: "helper가 실행하는 명령",
+      securityHelperBody: "<code>on</code>, <code>off</code>, <code>display-sleep</code> 외에는 받아들이지 않습니다.",
+      securityInputTitle: "입력 모니터링 불필요",
+      securityInputBody: "Capsomnia는 키보드 이벤트를 읽지 않습니다. 로컬 Caps Lock 상태만 250밀리초마다 확인합니다.",
+      securityBackgroundTitle: "백그라운드 항목 안내",
+      securityBackgroundBody:
+        "macOS에 ‘Taketo Fujimaki’ 백그라운드 항목이 표시될 수 있습니다. 로그인할 때 Capsomnia를 시작하고 충돌 후 다시 실행하는 LaunchAgent입니다.",
+      securityReq:
+        "앱을 종료하면 평소 잠자기 동작으로 돌아갑니다. 잠자기를 막은 채 덮개를 닫으면 발열과 배터리 소모가 늘 수 있으니 통풍, 전원, 실행 시간을 확인하세요.",
+      linksTitle: "링크",
+      linkRepoTitle: "GitHub 저장소",
+      linkRepoSub: "소스 코드, 이슈, 릴리스",
+      linkReadmeSub: "영문 문서",
+      linkReadmeJaSub: "일본어 문서",
+      linkReadmeKoSub: "한국어 문서",
+      linkSecurityTitle: "보안 정책",
+      linkSecuritySub: "신고 방법과 보안 모델",
+      footerCatch: "Caps Lock에 제대로 된 일을 맡기세요"
     }
   };
 
@@ -176,7 +268,7 @@
   }
 
   function normalizeLanguage(lang) {
-    return lang === "ja" || lang === "en" ? lang : null;
+    return lang === "ja" || lang === "en" || lang === "ko" ? lang : null;
   }
 
   function detectInitialLanguage() {

@@ -6,6 +6,7 @@
 
 <p align="center">
   <a href="README.md"><img alt="English README" src="https://img.shields.io/badge/README-EN-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="README.ko.md"><img alt="한국어 README" src="https://img.shields.io/badge/README-KO-b7ff3c?style=for-the-badge&labelColor=111111"></a>
   <a href="https://fuji-mak.github.io/Capsomnia/"><img alt="Website" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
 </p>
 
@@ -18,7 +19,7 @@
 
 現在のバージョン: `1.0.1`
 
-[English README](README.md) · [`Capsomnia.pkg` をダウンロード](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
+[English README](README.md) · [한국어 README](README.ko.md) · [`Capsomnia.pkg` をダウンロード](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
 
 **Capsomnia** は、Caps Lock を「閉じた MacBook でも作業を止めないための物理スイッチ」にする小さな macOS アプリです。
 
@@ -88,7 +89,7 @@ cd Capsomnia
 - メニューバーに丸を表示するか
 - 蓋を閉じたら画面をオフにするか
 - ログイン時に起動するか
-- 日本語・英語のどちらを使うか
+- 日本語・英語・韓国語のどれを使うか
 
 あとから Capsomnia をもう一度開くと、同じ項目を変更できます。
 

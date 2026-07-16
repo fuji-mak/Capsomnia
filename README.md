@@ -16,7 +16,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `1.0.1`
+Current version: `1.0.2`
 
 [日本語 README](README.ja.md) · [Download `Capsomnia.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
 
@@ -68,7 +68,7 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 
 - Caps Lock on: keeps AI agents and other work from being interrupted when the MacBook lid is closed. Remote operation through tools such as Codex Mobile remains possible. The Caps Lock light physically shows the current state.
 - Caps Lock off: restores normal sleep behavior.
-- Lid closed while Caps Lock is on: puts only the display to sleep while work keeps running.
+- Lid closed while Caps Lock is on: puts the display to sleep only when no external display is connected, while work keeps running.
 - Quitting the app restores normal sleep behavior.
 
 Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions, builds, downloads, and unattended scripts.
@@ -86,7 +86,7 @@ Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions,
 On first launch, Capsomnia explains how the Caps Lock switch works and lets you choose:
 
 - whether to show the menu bar dot
-- whether to turn the display off when the lid closes
+- whether to turn the display off when the lid closes and no external display is connected
 - whether to open Capsomnia at login
 - English or Japanese
 

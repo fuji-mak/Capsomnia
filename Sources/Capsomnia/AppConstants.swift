@@ -69,6 +69,7 @@ enum AppLanguage: String, CaseIterable {
 }
 
 struct AppStrings {
+    let preventSleep: String
     let showMenuBarIcon: String
     let showMenuBarIconDesc: String
     let language: String
@@ -100,6 +101,7 @@ struct AppStrings {
         switch language {
         case .english:
             AppStrings(
+                preventSleep: "Prevent sleep",
                 showMenuBarIcon: "Show menu bar icon",
                 showMenuBarIconDesc: "Display the LED status dot in the menu bar.",
                 language: "Language",
@@ -125,6 +127,7 @@ struct AppStrings {
             )
         case .japanese:
             AppStrings(
+                preventSleep: "スリープを防止",
                 showMenuBarIcon: "メニューバーに表示",
                 showMenuBarIconDesc: "メニューバーにLEDステータスを表示します。",
                 language: "言語",

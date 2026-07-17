@@ -4,6 +4,7 @@ import Foundation
 
 final class Capsomnia: NSObject, NSApplicationDelegate {
     private var lastAppliedState: Bool?
+    private var sleepStateSelection = SleepStateSelection()
     private var failedSleepState: Bool?
     private var nextSleepStateRetryAt = Date.distantPast
     private var nextSleepStateVerificationAt = Date.distantPast
@@ -12,6 +13,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var hasLoggedMissingClamshellState = false
     private var hasLoggedMissingDisplayState = false
     private var hasLoggedMissingSleepState = false
+    private var hasTouchedCapsLockLED = false
     private var shouldRestoreSleepOnTerminate = true
     private var pollingTimer: Timer?
     private var signalSources: [DispatchSourceSignal] = []
@@ -22,6 +24,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let errorImage = DotImage.make(color: .systemRed)
     private let helperRetryInterval: TimeInterval = 5
     private let sleepStateVerificationInterval: TimeInterval = 10
+    private lazy var capsLockLEDController = CapsLockLEDController { [weak self] message in
+        // HID writes run on their own serial queue. Bring diagnostics back to
+        // the main queue so the existing file logger is never used concurrently.
+        DispatchQueue.main.async {
+            self?.log(message)
+        }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if terminateIfNewerInteractiveDuplicate() {
@@ -59,6 +68,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         guard shouldRestoreSleepOnTerminate else { return }
 
+        restoreCapsLockLEDBeforeExit(reason: "terminate")
         let result = runHelper("off")
         log("terminate restore_off helper_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)")
     }
@@ -93,10 +103,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         showSettingsWindow(page: currentSettingsPage())
     }
 
-    /// The state Capsomnia is acting on: the last state it applied, falling
-    /// back to the live hardware Caps Lock state before the first apply.
+    /// The state Capsomnia is acting on. A menu choice takes precedence while
+    /// present; the existing applied/live fallbacks preserve startup behavior.
     private var currentCapsLockState: Bool {
-        lastAppliedState ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        sleepStateSelection.desiredState
+            ?? lastAppliedState
+            ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
     }
 
     private func syncStatusItemVisibility() {
@@ -131,6 +143,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         let strings = AppStrings.current()
         let menu = NSMenu()
+        let preventSleepItem = NSMenuItem(
+            title: strings.preventSleep,
+            action: #selector(toggleSleepPrevention),
+            keyEquivalent: ""
+        )
+        preventSleepItem.target = self
+        preventSleepItem.state = currentCapsLockState ? .on : .off
+        menu.addItem(preventSleepItem)
+        menu.addItem(NSMenuItem.separator())
+
         let showMenuBarItem = NSMenuItem(
             title: strings.showMenuBarIcon,
             action: #selector(toggleShowMenuBarIcon),
@@ -166,6 +188,31 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         menu.addItem(quitItem)
 
         item.menu = menu
+    }
+
+    @objc private func toggleSleepPrevention(_ sender: NSMenuItem) {
+        // Observe the live modifier at click time so a physical transition just
+        // before opening the menu wins over the previous 250 ms poll result.
+        let hardwareState = CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        let currentState = sleepStateSelection.observeHardwareState(hardwareState).sleepPreventionOn
+        let enabled = !currentState
+        sleepStateSelection.setManualOverride(enabled)
+        sender.state = enabled ? .on : .off
+        refreshStatus(capsLockOn: enabled)
+        log("menu manual_sleep_prevention=\(enabled ? "on" : "off")")
+
+        // `pmset` is intentionally deferred by one main-loop turn. The existing
+        // synchronous helper remains unchanged, but the menu can close before it
+        // runs instead of appearing stuck while the subprocess finishes.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.apply(capsLockOn: enabled, reason: "menu")
+
+            // `apply` can legitimately take its already-confirmed fast path.
+            // Synchronize here as well as after confirmation so that path still
+            // gets the physical indicator requested by the menu action.
+            self.synchronizeManualCapsLockLED(capsLockOn: enabled, reason: "menu")
+        }
     }
 
     @objc private func toggleShowMenuBarIcon() {
@@ -271,7 +318,19 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
     private func applyCurrentCapsLockState(reason: String) {
         let flags = CGEventSource.flagsState(.hidSystemState)
-        apply(capsLockOn: flags.contains(.maskAlphaShift), reason: reason)
+        let hardwareState = flags.contains(.maskAlphaShift)
+        let resolution = sleepStateSelection.observeHardwareState(hardwareState)
+        // The menu checkmark mirrors both the original physical switch and a
+        // manual override. Assigning the existing item is cheaper than rebuilding
+        // the localized menu on every 250 ms poll.
+        statusItem?.menu?.items
+            .first(where: { $0.action == #selector(toggleSleepPrevention) })?
+            .state = resolution.sleepPreventionOn ? .on : .off
+        if resolution.clearedManualOverride {
+            log("\(reason) hardware_capslock_changed manual_override=cleared")
+            restoreAutomaticCapsLockLED(reason: reason)
+        }
+        apply(capsLockOn: resolution.sleepPreventionOn, reason: reason)
     }
 
     private func apply(capsLockOn: Bool, reason: String) {
@@ -340,7 +399,39 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         nextSleepStateRetryAt = .distantPast
         nextSleepStateVerificationAt = now.addingTimeInterval(sleepStateVerificationInterval)
         syncStatusItemVisibility()
+        synchronizeManualCapsLockLED(capsLockOn: capsLockOn, reason: reason)
         evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
+    }
+
+    private func synchronizeManualCapsLockLED(capsLockOn: Bool, reason: String) {
+        // The LED must not claim that sleep prevention is active until the
+        // helper result is confirmed. A failed or superseded menu request keeps
+        // the software error state without publishing a misleading light.
+        guard sleepStateSelection.manualOverride == Optional(capsLockOn),
+              failedSleepState == nil,
+              lastAppliedState == capsLockOn else {
+            return
+        }
+
+        hasTouchedCapsLockLED = true
+        capsLockLEDController.synchronize(enabled: capsLockOn, reason: reason)
+    }
+
+    private func restoreAutomaticCapsLockLED(reason: String) {
+        guard hasTouchedCapsLockLED else { return }
+
+        // A real Caps Lock transition ends the menu override. Auto hands the
+        // shared event-system property back instead of pinning the sampled state.
+        capsLockLEDController.restoreAutomatic(reason: "\(reason)_manual_override_cleared")
+    }
+
+    private func restoreCapsLockLEDBeforeExit(reason: String) {
+        guard hasTouchedCapsLockLED else { return }
+
+        // Stop and drain maintenance before Auto; otherwise a queued repair could
+        // win after cleanup and leave the indicator pinned after Capsomnia exits.
+        capsLockLEDController.restoreAutomaticImmediately(reason: reason)
+        hasTouchedCapsLockLED = false
     }
 
     private func evaluateDisplaySleepForClosedLid(capsLockOn: Bool, reason: String) {
@@ -437,6 +528,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         for signalNumber in [SIGINT, SIGTERM] {
             let source = DispatchSource.makeSignalSource(signal: signalNumber, queue: .main)
             source.setEventHandler { [weak self] in
+                self?.restoreCapsLockLEDBeforeExit(reason: "signal_\(signalNumber)")
                 let result = self?.runHelper("off")
                 self?.log(
                     "signal=\(signalNumber) restore_off helper_status=\(result?.status ?? -1) "

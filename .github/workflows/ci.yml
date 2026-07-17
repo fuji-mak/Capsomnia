@@ -44,7 +44,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:site
-      - run: node --test Tests/site-language.test.mjs
+      - run: npm test
       - name: Check generated site CSS
         run: git diff --exit-code -- docs/styles.css
       - name: Validate SEO files

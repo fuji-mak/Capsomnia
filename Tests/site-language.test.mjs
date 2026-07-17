@@ -8,7 +8,7 @@ const pages = [
     code: "en",
     file: "../docs/index.html",
     path: "",
-    currentHref: "/",
+    currentHref: "/?lang=en",
     title: "Capsomnia — Caps Lock as a physical keep-awake switch for macOS",
     content: "Give Caps Lock"
   },
@@ -16,7 +16,7 @@ const pages = [
     code: "ja",
     file: "../docs/ja/index.html",
     path: "ja/",
-    currentHref: "/ja/",
+    currentHref: "/ja/?lang=ja",
     title: "Capsomnia — Caps LockをMacの物理スリープ防止スイッチに",
     content: "Macの<span class=\"catch-accent\">最も無駄なキー</span>"
   },
@@ -24,7 +24,7 @@ const pages = [
     code: "zh-Hans",
     file: "../docs/zh-hans/index.html",
     path: "zh-hans/",
-    currentHref: "/zh-hans/",
+    currentHref: "/zh-hans/?lang=zh-hans",
     title: "Capsomnia — 把 Caps Lock 变成 macOS 实体防休眠开关",
     content: "让 Caps Lock"
   }
@@ -55,6 +55,9 @@ for (const page of pages) {
     assert.doesNotMatch(html, /lang-switch|lang-btn|hidden sm:inline">Capsomnia/);
 
     for (const alternate of expectedAlternates) assert.ok(html.includes(alternate));
+    for (const localePage of pages) {
+      assert.ok(html.includes(`href="${localePage.currentHref}"`));
+    }
 
     const currentLink = [...html.matchAll(/<a\b[^>]*>/g)]
       .map((match) => match[0])

@@ -2,10 +2,17 @@
   "name": "capsomnia",
   "private": true,
   "scripts": {
-    "build:site": "tailwindcss -i docs/styles.input.css -o docs/styles.css --minify"
+    "build:site": "tailwindcss -i docs/styles.input.css -o docs/styles.css --minify",
+    "dev:site": "python3 -m http.server 3000 --directory docs",
+    "dev:worker": "wrangler dev --local-upstream 127.0.0.1:3000 --upstream-protocol http",
+    "test": "node --test Tests/site-language.test.mjs Tests/worker-language-router.test.mjs",
+    "test:site": "node --test Tests/site-language.test.mjs",
+    "test:worker": "node --test Tests/worker-language-router.test.mjs",
+    "deploy:worker": "wrangler deploy"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.0.0",
-    "tailwindcss": "^4.0.0"
+    "tailwindcss": "^4.0.0",
+    "wrangler": "4.112.0"
   }
 }

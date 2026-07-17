@@ -6,7 +6,8 @@
 
 <p align="center">
   <a href="README.ja.md"><img alt="日本語 README" src="https://img.shields.io/badge/README-JA-b7ff3c?style=for-the-badge&labelColor=111111"></a>
-  <a href="https://fuji-mak.github.io/Capsomnia/"><img alt="Website" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="README.zh-Hans.md"><img alt="简体中文 README" src="https://img.shields.io/badge/README-ZH-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://capsomnia.com/"><img alt="Website" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
 </p>
 
 <p align="center">
@@ -18,7 +19,7 @@
 
 Current version: `1.0.2`
 
-[日本語 README](README.ja.md) · [Download `Capsomnia.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
+[日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [Download `Capsomnia.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
 
 Capsomnia is a small macOS menu bar app that turns Caps Lock into a physical keep-awake switch for closed-lid MacBook work.
 
@@ -88,7 +89,7 @@ On first launch, Capsomnia explains how the Caps Lock switch works and lets you 
 - whether to show the menu bar dot
 - whether to turn the display off when the lid closes and no external display is connected
 - whether to open Capsomnia at login
-- English or Japanese
+- English, Japanese, or Simplified Chinese
 
 Open Capsomnia again later to change the same settings.
 
@@ -146,7 +147,7 @@ Package-installed app files, the helper, and the system LaunchAgent are owned by
 
 Capsomnia does not request Input Monitoring or read keyboard events. It checks only the local Caps Lock state every 250 milliseconds, with timer tolerance so macOS can coalesce wakeups.
 
-macOS may show a "Taketo Fujimaki" background item after installation. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
+macOS may show "Taketo Fujimaki" instead of "Capsomnia" for an existing cached background-item registration. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
 
 If Capsomnia is force-killed while crash recovery is disabled or unavailable, the last system sleep setting can remain active. Use the manual recovery command below to restore normal sleep behavior.
 

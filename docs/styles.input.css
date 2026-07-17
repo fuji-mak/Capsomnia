@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
-@source "./*.html";
-@source "./*.js";
+@source "./**/*.html";
 
 :root {
   color-scheme: dark;
@@ -49,7 +48,7 @@ code {
   color: var(--led-deep);
 }
 
-.lang-btn[aria-pressed="true"] {
+.lang-btn[aria-current="page"] {
   background: var(--led);
   color: #000;
 }

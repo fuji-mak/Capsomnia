@@ -49,6 +49,10 @@ for (const page of pages) {
     assert.ok(html.includes(`property="og:url" content="${pageUrl}"`));
     assert.ok(html.includes(page.content));
     assert.doesNotMatch(html, /data-i18n|capsomnia\.js/);
+    assert.ok(html.includes('<details class="language-menu relative shrink-0">'));
+    assert.ok(html.includes("<span>Capsomnia</span>"));
+    assert.equal((html.match(/class="language-option /g) ?? []).length, pages.length);
+    assert.doesNotMatch(html, /lang-switch|lang-btn|hidden sm:inline">Capsomnia/);
 
     for (const alternate of expectedAlternates) assert.ok(html.includes(alternate));
 
@@ -77,6 +81,21 @@ for (const page of pages) {
       const resolvedTarget = path.endsWith("/") ? new URL("index.html", target) : target;
       assert.ok(existsSync(resolvedTarget), `${page.code} references missing asset ${reference}`);
     }
+  });
+}
+
+const readmes = [
+  "../README.md",
+  "../README.ja.md",
+  "../README.zh-Hans.md"
+];
+
+for (const readme of readmes) {
+  test(`${readme} keeps download prominent and language links secondary`, () => {
+    const markdown = readFileSync(new URL(readme, import.meta.url), "utf8");
+
+    assert.ok(markdown.includes("img.shields.io/badge/Download-Capsomnia.pkg-"));
+    assert.doesNotMatch(markdown, /img\.shields\.io\/badge\/README-(?:EN|JA|ZH)-/);
   });
 }
 

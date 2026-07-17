@@ -94,15 +94,15 @@
     >
 
     <header
-      class="sticky top-0 z-50 flex items-center gap-4 border-b border-[var(--border)] bg-[var(--header-bg)] px-4 py-3 backdrop-blur-xl backdrop-saturate-150 sm:px-10"
+      class="sticky top-0 z-50 flex items-center gap-2 border-b border-[var(--border)] bg-[var(--header-bg)] px-3 py-3 backdrop-blur-xl backdrop-saturate-150 sm:gap-4 sm:px-10"
     >
       <a
-        class="inline-flex items-center gap-2.5 text-base font-bold text-[var(--text)] no-underline sm:text-lg"
+        class="inline-flex shrink-0 items-center gap-1.5 text-sm font-bold text-[var(--text)] no-underline sm:gap-2.5 sm:text-lg"
         href="#top"
         aria-label="Capsomnia"
       >
         <img class="brand-led block h-6 w-6 rounded-md sm:h-7 sm:w-7" src="/icon.svg" alt="" width="28" height="28" />
-        <span class="hidden sm:inline">Capsomnia</span>
+        <span>Capsomnia</span>
       </a>
 
       <nav
@@ -126,39 +126,52 @@
         >
       </nav>
 
-      <div class="ml-auto flex shrink-0 items-center justify-end gap-2 lg:gap-3">
-        <nav
-          class="lang-switch inline-flex shrink-0 gap-0.5 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] p-1"
-          aria-label="言語"
-        >
-          <a
-            class="lang-btn min-w-8 rounded-full px-2 py-1 text-xs font-bold text-[var(--text-dim)] hover:text-[var(--text)] sm:min-w-[38px] sm:px-2.5"
-            href="/"
-            hreflang="en"
-            aria-label="English"
+      <div class="ml-auto flex shrink-0 items-center justify-end gap-1.5 sm:gap-2 lg:gap-3">
+        <details class="language-menu relative shrink-0">
+          <summary
+            class="inline-flex min-h-[44px] min-w-[68px] cursor-pointer list-none items-center justify-center gap-1.5 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-2 text-xs font-bold text-[var(--text)] transition-colors hover:border-[var(--led)] hover:text-[var(--led)]"
+            aria-label="言語を選択"
           >
-            EN
-          </a>
-          <a
-            class="lang-btn min-w-8 rounded-full px-2 py-1 text-xs font-bold text-[var(--text-dim)] hover:text-[var(--text)] sm:min-w-[38px] sm:px-2.5"
-            href="/ja/"
-            hreflang="ja"
-            aria-label="日本語"
-            aria-current="page"
+            <span>JA</span>
+            <svg
+              class="language-chevron h-3.5 w-3.5 text-[var(--text-dim)]"
+              viewBox="0 0 20 20"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </summary>
+          <nav
+            class="language-popover absolute right-0 top-[calc(100%+8px)] z-[60] min-w-[160px] rounded-[14px] border border-[var(--border-strong)] bg-[var(--surface)] p-1.5"
+            aria-label="言語"
           >
-            JA
-          </a>
-          <a
-            class="lang-btn min-w-8 rounded-full px-2 py-1 text-xs font-bold text-[var(--text-dim)] hover:text-[var(--text)] sm:min-w-[38px] sm:px-2.5"
-            href="/zh-hans/"
-            hreflang="zh-Hans"
-            aria-label="简体中文"
-          >
-            ZH
-          </a>
-        </nav>
+            <a
+              class="language-option flex min-h-[44px] items-center rounded-[10px] px-3 py-2 text-sm font-medium text-[var(--text-dim)] no-underline transition-colors hover:bg-[var(--border)] hover:text-[var(--text)]"
+              href="/"
+              hreflang="en"
+              lang="en"
+              >English</a
+            >
+            <a
+              class="language-option flex min-h-[44px] items-center rounded-[10px] px-3 py-2 text-sm font-medium text-[var(--text-dim)] no-underline transition-colors hover:bg-[var(--border)] hover:text-[var(--text)]"
+              href="/ja/"
+              hreflang="ja"
+              lang="ja"
+              aria-current="page"
+              >日本語</a
+            >
+            <a
+              class="language-option flex min-h-[44px] items-center rounded-[10px] px-3 py-2 text-sm font-medium text-[var(--text-dim)] no-underline transition-colors hover:bg-[var(--border)] hover:text-[var(--text)]"
+              href="/zh-hans/"
+              hreflang="zh-Hans"
+              lang="zh-Hans"
+              >简体中文</a
+            >
+          </nav>
+        </details>
         <a
-          class="rounded-full bg-[var(--led)] px-3.5 py-2 text-sm font-semibold text-black no-underline hover:bg-[var(--led-bright)] sm:px-4"
+          class="inline-flex min-h-[44px] min-w-[80px] items-center justify-center rounded-full bg-[var(--led)] px-3 py-2 text-xs font-semibold text-black no-underline hover:bg-[var(--led-bright)] sm:px-4 sm:text-sm"
           href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"
           target="_blank"
           rel="noopener noreferrer"

@@ -5,9 +5,8 @@
 </p>
 
 <p align="center">
-  <a href="README.md"><img alt="English README" src="https://img.shields.io/badge/README-EN-b7ff3c?style=for-the-badge&labelColor=111111"></a>
-  <a href="README.ja.md"><img alt="日本語 README" src="https://img.shields.io/badge/README-JA-b7ff3c?style=for-the-badge&labelColor=111111"></a>
-  <a href="https://fuji-mak.github.io/Capsomnia/"><img alt="웹사이트" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"><img alt="Capsomnia.pkg 다운로드" src="https://img.shields.io/badge/Download-Capsomnia.pkg-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://capsomnia.com/ko/"><img alt="웹사이트" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
 </p>
 
 <p align="center">
@@ -17,9 +16,9 @@
   <a href="LICENSE"><img alt="MIT 라이선스" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-현재 버전: `1.0.1`
+현재 버전: `1.0.2`
 
-[English README](README.md) · [日本語 README](README.ja.md) · [`Capsomnia.pkg` 다운로드](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
+[English README](README.md) · [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md)
 
 Capsomnia는 Caps Lock을 MacBook 덮개를 닫은 채 작업할 때 쓰는 물리 잠자기 방지 스위치로 바꿔 주는 작은 macOS 메뉴 막대 앱입니다.
 
@@ -69,7 +68,7 @@ cd Capsomnia
 
 - Caps Lock 켜기: MacBook 덮개를 닫아도 AI 에이전트와 다른 작업이 중단되지 않게 합니다. Codex Mobile 같은 도구로 원격 조작도 계속할 수 있습니다. 현재 상태는 Caps Lock 표시등으로 바로 확인할 수 있습니다.
 - Caps Lock 끄기: 평소 잠자기 동작으로 돌아갑니다.
-- Caps Lock을 켠 채 덮개 닫기: 작업은 계속 돌리고 디스플레이만 끕니다.
+- Caps Lock을 켠 채 덮개 닫기: 외부 디스플레이가 연결되어 있지 않을 때만 디스플레이를 끄고 작업은 계속 돌립니다.
 - 앱 종료: 평소 잠자기 동작으로 돌아갑니다.
 
 오래 걸리는 로컬 작업, AI 코딩 에이전트, SSH 세션, 빌드, 다운로드, 무인 스크립트를 실행할 때 유용합니다.
@@ -87,9 +86,9 @@ cd Capsomnia
 Capsomnia를 처음 실행하면 Caps Lock 스위치의 작동 방식을 안내하고 다음 항목을 선택할 수 있습니다.
 
 - 메뉴 막대에 점을 표시할지 여부
-- 덮개를 닫을 때 디스플레이를 끌지 여부
+- 외부 디스플레이가 연결되어 있지 않을 때 덮개를 닫으면 디스플레이를 끌지 여부
 - 로그인할 때 Capsomnia를 열지 여부
-- 영어, 일본어 또는 한국어
+- 영어, 일본어, 중국어(간체) 또는 한국어
 
 나중에 Capsomnia를 다시 열어 같은 설정을 바꿀 수 있습니다.
 

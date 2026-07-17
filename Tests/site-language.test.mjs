@@ -2,21 +2,21 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
-const siteUrl = "https://fuji-mak.github.io/Capsomnia/";
+const siteUrl = "https://capsomnia.com/";
 const pages = [
   {
     code: "en",
-    file: "../docs/en/index.html",
-    path: "en/",
-    currentHref: "/Capsomnia/en/",
+    file: "../docs/index.html",
+    path: "",
+    currentHref: "/",
     title: "Capsomnia — Caps Lock as a physical keep-awake switch for macOS",
     content: "Give Caps Lock"
   },
   {
     code: "ja",
-    file: "../docs/index.html",
-    path: "",
-    currentHref: "/Capsomnia/",
+    file: "../docs/ja/index.html",
+    path: "ja/",
+    currentHref: "/ja/",
     title: "Capsomnia — Caps LockをMacの物理スリープ防止スイッチに",
     content: "Macの<span class=\"catch-accent\">最も無駄なキー</span>"
   },
@@ -24,17 +24,17 @@ const pages = [
     code: "zh-Hans",
     file: "../docs/zh-hans/index.html",
     path: "zh-hans/",
-    currentHref: "/Capsomnia/zh-hans/",
+    currentHref: "/zh-hans/",
     title: "Capsomnia — 把 Caps Lock 变成 macOS 实体防休眠开关",
     content: "让 Caps Lock"
   }
 ];
 
 const expectedAlternates = [
-  '<link rel="alternate" hreflang="en" href="https://fuji-mak.github.io/Capsomnia/en/" />',
-  '<link rel="alternate" hreflang="ja" href="https://fuji-mak.github.io/Capsomnia/" />',
-  '<link rel="alternate" hreflang="zh-Hans" href="https://fuji-mak.github.io/Capsomnia/zh-hans/" />',
-  '<link rel="alternate" hreflang="x-default" href="https://fuji-mak.github.io/Capsomnia/en/" />'
+  '<link rel="alternate" hreflang="en" href="https://capsomnia.com/" />',
+  '<link rel="alternate" hreflang="ja" href="https://capsomnia.com/ja/" />',
+  '<link rel="alternate" hreflang="zh-Hans" href="https://capsomnia.com/zh-hans/" />',
+  '<link rel="alternate" hreflang="x-default" href="https://capsomnia.com/" />'
 ];
 
 for (const page of pages) {
@@ -71,8 +71,8 @@ for (const page of pages) {
       if (reference.startsWith("#") || /^https?:/.test(reference)) continue;
 
       const path = reference.split("?")[0];
-      const target = path.startsWith("/Capsomnia/")
-        ? new URL(`../docs/${path.slice("/Capsomnia/".length)}`, import.meta.url)
+      const target = path.startsWith("/")
+        ? new URL(`../docs${path}`, import.meta.url)
         : new URL(path, pageFileUrl);
       const resolvedTarget = path.endsWith("/") ? new URL("index.html", target) : target;
       assert.ok(existsSync(resolvedTarget), `${page.code} references missing asset ${reference}`);
@@ -87,5 +87,5 @@ test("the sitemap lists every localized URL and alternate", () => {
     assert.ok(sitemap.includes(`<loc>${siteUrl}${page.path}</loc>`));
     assert.ok(sitemap.includes(`hreflang="${page.code}" href="${siteUrl}${page.path}"`));
   }
-  assert.ok(sitemap.includes(`hreflang="x-default" href="${siteUrl}en/"`));
+  assert.ok(sitemap.includes(`hreflang="x-default" href="${siteUrl}"`));
 });

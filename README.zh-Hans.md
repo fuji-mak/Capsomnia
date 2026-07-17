@@ -7,7 +7,7 @@
 <p align="center">
   <a href="README.md"><img alt="English README" src="https://img.shields.io/badge/README-EN-b7ff3c?style=for-the-badge&labelColor=111111"></a>
   <a href="README.ja.md"><img alt="日本語 README" src="https://img.shields.io/badge/README-JA-b7ff3c?style=for-the-badge&labelColor=111111"></a>
-  <a href="https://fuji-mak.github.io/Capsomnia/zh-hans/"><img alt="网站" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://capsomnia.com/zh-hans/"><img alt="网站" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
   <a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-当前版本：`1.0.1`
+当前版本：`1.0.2`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [下载 `Capsomnia.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
 
@@ -71,7 +71,7 @@ cd Capsomnia
 
 - Caps Lock开启：MacBook合盖后，AI智能体和其他任务仍可继续运行。也可以继续通过Codex Mobile等工具远程操作。Caps Lock指示灯会直观显示当前状态。
 - Caps Lock关闭：恢复正常睡眠行为。
-- Caps Lock开启时合盖：仅关闭显示屏，后台任务继续运行。
+- Caps Lock开启时合盖：仅在未连接外接显示器时关闭显示屏，后台任务继续运行。
 - 退出应用：恢复正常睡眠行为。
 
 Capsomnia适合长时间运行的本地任务、AI编程智能体、SSH会话、构建、下载和无人值守脚本。
@@ -89,7 +89,7 @@ Capsomnia适合长时间运行的本地任务、AI编程智能体、SSH会话、
 首次启动时，Capsomnia会说明Caps Lock开关的工作方式，并允许你选择：
 
 - 是否显示菜单栏状态圆点
-- 合盖时是否关闭显示屏
+- 未连接外接显示器时，合盖后是否关闭显示屏
 - 是否在登录时启动Capsomnia
 - 使用英语、日语或简体中文
 

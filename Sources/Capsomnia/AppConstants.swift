@@ -156,7 +156,7 @@ struct AppStrings {
                 openAtLogin: "登录时启动",
                 openAtLoginDesc: "登录后自动启动 Capsomnia。",
                 displaySleepOnLidClose: "合盖时关闭显示屏",
-                displaySleepOnLidCloseDesc: "Caps Lock 开启时，合盖后保持任务运行并关闭显示屏。",
+                displaySleepOnLidCloseDesc: "Caps Lock 开启时，仅在未连接外接显示器的情况下，合盖后让显示屏进入睡眠。",
                 openCapsomnia: "打开 Capsomnia",
                 quit: "退出",
                 settingsTitle: "设置",

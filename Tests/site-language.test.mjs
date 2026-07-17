@@ -54,6 +54,18 @@ for (const page of pages) {
     assert.equal((html.match(/class="language-option /g) ?? []).length, pages.length);
     assert.doesNotMatch(html, /lang-switch|lang-btn|hidden sm:inline">Capsomnia/);
 
+    const languageSummaryClasses = html.match(
+      /<summary\s+class="([^"]+)"/
+    )?.[1];
+    assert.ok(languageSummaryClasses);
+    assert.match(languageSummaryClasses, /min-h-\[44px\]/);
+    assert.match(languageSummaryClasses, /min-w-\[68px\]/);
+    assert.match(languageSummaryClasses, /px-3/);
+    assert.doesNotMatch(
+      languageSummaryClasses,
+      /rounded-full|border-\[var\(--border-strong\)\]|bg-\[var\(--surface\)\]/
+    );
+
     for (const alternate of expectedAlternates) assert.ok(html.includes(alternate));
     for (const localePage of pages) {
       assert.ok(html.includes(`href="${localePage.currentHref}"`));
@@ -110,4 +122,17 @@ test("the sitemap lists every localized URL and alternate", () => {
     assert.ok(sitemap.includes(`hreflang="${page.code}" href="${siteUrl}${page.path}"`));
   }
   assert.ok(sitemap.includes(`hreflang="x-default" href="${siteUrl}"`));
+});
+
+test("the Chinese page links to English and Simplified Chinese READMEs", () => {
+  const html = readFileSync(
+    new URL("../docs/zh-hans/index.html", import.meta.url),
+    "utf8"
+  );
+
+  assert.ok(html.includes("/blob/main/README.md"));
+  assert.ok(html.includes("/blob/main/README.zh-Hans.md"));
+  assert.ok(html.includes("README（简体中文）"));
+  assert.ok(html.includes("简体中文文档"));
+  assert.doesNotMatch(html, /\/blob\/main\/README\.ja\.md/);
 });

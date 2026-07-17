@@ -18,7 +18,7 @@
 
 当前版本：`1.0.2`
 
-[English README](README.md) · [日本語 README](README.ja.md)
+[English README](README.md) · [日本語 README](README.ja.md) · [한국어 README](README.ko.md)
 
 本文是英文README的简体中文翻译。如有差异，请以[英文README](README.md)为准。
 
@@ -90,7 +90,7 @@ Capsomnia适合长时间运行的本地任务、AI编程智能体、SSH会话、
 - 是否显示菜单栏状态圆点
 - 未连接外接显示器时，合盖后是否关闭显示屏
 - 是否在登录时启动Capsomnia
-- 使用英语、日语或简体中文
+- 使用英语、日语、简体中文或韩语
 
 之后可以再次打开Capsomnia修改相同设置。
 

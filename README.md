@@ -18,7 +18,7 @@
 
 Current version: `1.0.2`
 
-[日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md)
+[日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
 Capsomnia is a small macOS menu bar app that turns Caps Lock into a physical keep-awake switch for closed-lid MacBook work.
 
@@ -88,7 +88,7 @@ On first launch, Capsomnia explains how the Caps Lock switch works and lets you 
 - whether to show the menu bar dot
 - whether to turn the display off when the lid closes and no external display is connected
 - whether to open Capsomnia at login
-- English, Japanese, or Simplified Chinese
+- English, Japanese, Simplified Chinese, or Korean
 
 Open Capsomnia again later to change the same settings.
 

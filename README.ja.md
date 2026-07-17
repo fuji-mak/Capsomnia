@@ -18,7 +18,7 @@
 
 現在のバージョン: `1.0.2`
 
-[English README](README.md) · [简体中文 README](README.zh-Hans.md)
+[English README](README.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
 **Capsomnia** は、Caps Lock を「閉じた MacBook でも作業を止めないための物理スイッチ」にする小さな macOS アプリです。
 
@@ -88,7 +88,7 @@ cd Capsomnia
 - メニューバーに丸を表示するか
 - 外部ディスプレイが接続されていない場合に、蓋を閉じたら画面をオフにするか
 - ログイン時に起動するか
-- 日本語・英語・簡体字中国語から使用言語を選択
+- 日本語・英語・簡体字中国語・韓国語から使用言語を選択
 
 あとから Capsomnia をもう一度開くと、同じ項目を変更できます。
 

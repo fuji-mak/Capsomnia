@@ -102,7 +102,8 @@ for (const page of pages) {
 const readmes = [
   "../README.md",
   "../README.ja.md",
-  "../README.zh-Hans.md"
+  "../README.zh-Hans.md",
+  "../README.ko.md"
 ];
 
 for (const readme of readmes) {
@@ -110,7 +111,7 @@ for (const readme of readmes) {
     const markdown = readFileSync(new URL(readme, import.meta.url), "utf8");
 
     assert.ok(markdown.includes("img.shields.io/badge/Download-Capsomnia.pkg-"));
-    assert.doesNotMatch(markdown, /img\.shields\.io\/badge\/README-(?:EN|JA|ZH)-/);
+    assert.doesNotMatch(markdown, /img\.shields\.io\/badge\/README-(?:EN|JA|ZH|KO)-/);
   });
 }
 

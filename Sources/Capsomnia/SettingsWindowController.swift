@@ -32,7 +32,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let displaySleepOnLidCloseToggle = LEDToggle(isOn: Preferences.displaySleepOnLidClose)
 
     private let languageTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
-    private let languageSegment = SegmentedPill(
+    private let languagePopUp = LanguagePopUpButton(
         items: AppLanguage.allCases.map { (title: $0.displayName, value: $0.rawValue) },
         selected: Preferences.language.rawValue
     )
@@ -112,7 +112,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         displaySleepOnLidCloseDesc.stringValue = strings.displaySleepOnLidCloseDesc
         openAtLoginTitle.stringValue = strings.openAtLogin
         openAtLoginDesc.stringValue = strings.openAtLoginDesc
-        languageTitle.stringValue = strings.language
+        languageTitle.stringValue = "Language"
+        languagePopUp.setAccessibilityLabel(strings.language)
 
         noteLabel.stringValue = strings.initialSettingsNote
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
@@ -274,7 +275,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onDisplaySleepOnLidCloseChange(enabled)
             self?.updateValues()
         }
-        languageSegment.onSelect = { [weak self] rawValue in
+        languagePopUp.onSelect = { [weak self] rawValue in
             guard let language = AppLanguage(rawValue: rawValue) else { return }
             self?.onLanguageChange(language)
         }
@@ -286,7 +287,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             accessory: displaySleepOnLidCloseToggle
         )
         let openAtLoginRow = settingRow(title: openAtLoginTitle, desc: openAtLoginDesc, accessory: openAtLoginToggle)
-        let languageRow = settingRow(title: languageTitle, desc: nil, accessory: languageSegment)
+        let languageRow = settingRow(title: languageTitle, desc: nil, accessory: languagePopUp)
 
         let divider1 = brandDivider()
         let divider2 = brandDivider()
@@ -375,13 +376,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         menuBarToggle.setOn(Preferences.showMenuBarIcon)
         displaySleepOnLidCloseToggle.setOn(Preferences.displaySleepOnLidClose)
         openAtLoginToggle.setOn(Preferences.launchAtLogin)
-        languageSegment.setSelected(Preferences.language.rawValue)
+        languagePopUp.setSelected(Preferences.language.rawValue)
     }
 
     private func finishInitialSetup() {
         page = .settings
         onShowMenuBarIconChange(menuBarToggle.isOn)
-        if let language = AppLanguage(rawValue: languageSegment.selectedValue) {
+        if let language = AppLanguage(rawValue: languagePopUp.selectedValue) {
             onLanguageChange(language)
         }
         onFinishInitialSetup()

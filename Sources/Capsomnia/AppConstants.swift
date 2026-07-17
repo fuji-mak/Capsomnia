@@ -39,17 +39,29 @@ enum Brand {
 
 enum AppLanguage: String, CaseIterable {
     case english = "en"
-    case korean = "ko"
     case japanese = "ja"
+    case simplifiedChinese = "zh-Hans"
+    case korean = "ko"
 
     static var defaultLanguage: AppLanguage {
-        preferredLanguage(from: Locale.preferredLanguages)
+        defaultLanguage(for: Locale.preferredLanguages.first)
     }
 
-    static func preferredLanguage(from preferredLanguages: [String]) -> AppLanguage {
-        guard let language = preferredLanguages.first else { return .english }
-        if language == "ko" || language.hasPrefix("ko-") { return .korean }
-        if language == "ja" || language.hasPrefix("ja-") { return .japanese }
+    static func defaultLanguage(for preferredLanguage: String?) -> AppLanguage {
+        let languageCode = preferredLanguage?
+            .split(whereSeparator: { $0 == "-" || $0 == "_" })
+            .first?
+            .lowercased()
+
+        if languageCode == "ja" {
+            return .japanese
+        }
+        if languageCode == "zh" {
+            return .simplifiedChinese
+        }
+        if languageCode == "ko" {
+            return .korean
+        }
         return .english
     }
 
@@ -57,10 +69,12 @@ enum AppLanguage: String, CaseIterable {
         switch self {
         case .english:
             "English"
-        case .korean:
-            "한국어"
         case .japanese:
             "日本語"
+        case .simplifiedChinese:
+            "简体中文"
+        case .korean:
+            "한국어"
         }
     }
 }
@@ -103,7 +117,7 @@ struct AppStrings {
                 openAtLogin: "Open at login",
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
                 displaySleepOnLidClose: "Turn display off when lid closes",
-                displaySleepOnLidCloseDesc: "When Caps Lock is on, keep work running but let the display sleep after closing the lid.",
+                displaySleepOnLidCloseDesc: "When Caps Lock is on, let the display sleep after closing the lid only if no external display is connected.",
                 openCapsomnia: "Open Capsomnia",
                 quit: "Quit",
                 settingsTitle: "Settings",
@@ -128,7 +142,7 @@ struct AppStrings {
                 openAtLogin: "로그인할 때 열기",
                 openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
                 displaySleepOnLidClose: "덮개를 닫을 때 화면 끄기",
-                displaySleepOnLidCloseDesc: "Caps Lock이 켜져 있으면 작업은 계속 실행하고, 덮개를 닫을 때 화면만 끕니다.",
+                displaySleepOnLidCloseDesc: "Caps Lock이 켜져 있으면 외부 디스플레이가 연결되지 않은 경우에만 덮개를 닫을 때 화면을 끕니다.",
                 openCapsomnia: "Capsomnia 열기",
                 quit: "종료",
                 settingsTitle: "설정",
@@ -153,7 +167,7 @@ struct AppStrings {
                 openAtLogin: "ログイン時に起動",
                 openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
                 displaySleepOnLidClose: "蓋を閉じたら画面をオフ",
-                displaySleepOnLidCloseDesc: "Caps Lock ON中は作業を走らせたまま、蓋を閉じたら画面だけ暗くします。",
+                displaySleepOnLidCloseDesc: "Caps Lock ON中は、外部ディスプレイが接続されていない場合のみ、蓋を閉じたら画面を暗くします。",
                 openCapsomnia: "Capsomniaを開く",
                 quit: "終了",
                 settingsTitle: "設定",
@@ -169,6 +183,31 @@ struct AppStrings {
                 tooltipOn: "Caps Lock ON: スリープ抑止中",
                 tooltipOff: "Caps Lock OFF: 通常のスリープ動作",
                 tooltipError: "スリープ設定を更新できませんでした — 再試行中"
+            )
+        case .simplifiedChinese:
+            AppStrings(
+                showMenuBarIcon: "显示菜单栏图标",
+                showMenuBarIconDesc: "在菜单栏中显示 LED 状态指示灯。",
+                language: "语言",
+                openAtLogin: "登录时启动",
+                openAtLoginDesc: "登录后自动启动 Capsomnia。",
+                displaySleepOnLidClose: "合盖时关闭显示屏",
+                displaySleepOnLidCloseDesc: "Caps Lock 开启时，仅在未连接外接显示器的情况下，合盖后让显示屏进入睡眠。",
+                openCapsomnia: "打开 Capsomnia",
+                quit: "退出",
+                settingsTitle: "设置",
+                initialSettingsNote: "macOS 可能会将“Taketo Fujimaki”显示为后台项目。你可以随时重新打开 Capsomnia 更改这些设置。",
+                welcomeTitle: "欢迎使用 Capsomnia",
+                explainerOnTitle: "Caps Lock 已开启",
+                explainerOnDesc: "系统睡眠已停用——无论开盖还是合盖，任务都会继续运行。",
+                explainerOffTitle: "Caps Lock 已关闭",
+                explainerOffDesc: "已恢复正常睡眠。",
+                preferencesHeading: "偏好设置",
+                done: "完成",
+                getStarted: "开始使用",
+                tooltipOn: "Caps Lock 已开启：任务将保持运行",
+                tooltipOff: "Caps Lock 已关闭：正常睡眠",
+                tooltipError: "Capsomnia 无法更新睡眠设置——正在重试"
             )
         }
     }

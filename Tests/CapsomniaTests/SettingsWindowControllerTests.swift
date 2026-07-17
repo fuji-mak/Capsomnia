@@ -21,12 +21,16 @@ final class SettingsWindowControllerTests: XCTestCase {
             "메뉴 막대에 표시",
             "덮개를 닫을 때 화면 끄기",
             "로그인할 때 열기",
-            "언어",
-            "한국어",
+            "Language",
             "완료"
         ] {
             XCTAssertTrue(renderedText.contains(expected), "Missing rendered text: \(expected)")
         }
+
+        let languagePopUp: LanguagePopUpButton = try XCTUnwrap(descendants(of: contentView).first)
+        XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.korean.rawValue)
+        XCTAssertEqual(languagePopUp.titleOfSelectedItem, AppLanguage.korean.displayName)
+        XCTAssertEqual(languagePopUp.accessibilityLabel(), "언어")
 
         for label in labels where !label.stringValue.isEmpty {
             let frame = label.convert(label.bounds, to: contentView)
@@ -40,7 +44,7 @@ final class SettingsWindowControllerTests: XCTestCase {
 
     }
 
-    func testKoreanLanguageSegmentHandlesASelection() throws {
+    func testKoreanLanguageIsAvailableInThePopUp() throws {
         let previousLanguage = Preferences.language
         Preferences.language = .english
         defer { Preferences.language = previousLanguage }
@@ -48,20 +52,15 @@ final class SettingsWindowControllerTests: XCTestCase {
         _ = NSApplication.shared
         let controller = makeController()
         let contentView = try XCTUnwrap(controller.window?.contentView)
-        let languageSegment: SegmentedPill = try XCTUnwrap(descendants(of: contentView).first)
-        let koreanButton: ClickableView = try XCTUnwrap(
-            descendants(of: languageSegment).first { button in
-                let labels: [NSTextField] = descendants(of: button)
-                return labels.contains { $0.stringValue == "한국어" }
-            }
-        )
-        var selectedLanguage: String?
-        languageSegment.onSelect = { selectedLanguage = $0 }
+        let languagePopUp: LanguagePopUpButton = try XCTUnwrap(descendants(of: contentView).first)
 
-        koreanButton.onClick?()
+        XCTAssertEqual(languagePopUp.itemTitles, ["English", "日本語", "简体中文", "한국어"])
+        XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.english.rawValue)
 
-        XCTAssertEqual(languageSegment.selectedValue, "ko")
-        XCTAssertEqual(selectedLanguage, "ko")
+        languagePopUp.setSelected(AppLanguage.korean.rawValue)
+
+        XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.korean.rawValue)
+        XCTAssertEqual(languagePopUp.titleOfSelectedItem, AppLanguage.korean.displayName)
     }
 
     private func makeController() -> SettingsWindowController {

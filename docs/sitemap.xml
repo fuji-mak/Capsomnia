@@ -1,9 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://fuji-mak.github.io/Capsomnia/</loc>
-    <lastmod>2026-07-12</lastmod>
+    <loc>https://capsomnia.com/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://capsomnia.com/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://capsomnia.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://capsomnia.com/zh-hans/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://capsomnia.com/" />
+    <lastmod>2026-07-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://capsomnia.com/ja/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://capsomnia.com/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://capsomnia.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://capsomnia.com/zh-hans/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://capsomnia.com/" />
+    <lastmod>2026-07-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://capsomnia.com/zh-hans/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://capsomnia.com/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://capsomnia.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://capsomnia.com/zh-hans/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://capsomnia.com/" />
+    <lastmod>2026-07-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
   </url>
 </urlset>

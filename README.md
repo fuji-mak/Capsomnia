@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <a href="README.ja.md"><img alt="日本語 README" src="https://img.shields.io/badge/README-JA-b7ff3c?style=for-the-badge&labelColor=111111"></a>
-  <a href="https://fuji-mak.github.io/Capsomnia/"><img alt="Website" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"><img alt="Download Capsomnia.pkg" src="https://img.shields.io/badge/Download-Capsomnia.pkg-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://capsomnia.com/"><img alt="Website" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
 </p>
 
 <p align="center">
@@ -16,9 +16,9 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `1.0.1`
+Current version: `1.0.2`
 
-[日本語 README](README.ja.md) · [Download `Capsomnia.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
+[日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md)
 
 Capsomnia is a small macOS menu bar app that turns Caps Lock into a physical keep-awake switch for closed-lid MacBook work.
 
@@ -68,7 +68,7 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 
 - Caps Lock on: keeps AI agents and other work from being interrupted when the MacBook lid is closed. Remote operation through tools such as Codex Mobile remains possible. The Caps Lock light physically shows the current state.
 - Caps Lock off: restores normal sleep behavior.
-- Lid closed while Caps Lock is on: puts only the display to sleep while work keeps running.
+- Lid closed while Caps Lock is on: puts the display to sleep only when no external display is connected, while work keeps running.
 - Quitting the app restores normal sleep behavior.
 
 Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions, builds, downloads, and unattended scripts.
@@ -86,9 +86,9 @@ Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions,
 On first launch, Capsomnia explains how the Caps Lock switch works and lets you choose:
 
 - whether to show the menu bar dot
-- whether to turn the display off when the lid closes
+- whether to turn the display off when the lid closes and no external display is connected
 - whether to open Capsomnia at login
-- English or Japanese
+- English, Japanese, or Simplified Chinese
 
 Open Capsomnia again later to change the same settings.
 
@@ -146,7 +146,7 @@ Package-installed app files, the helper, and the system LaunchAgent are owned by
 
 Capsomnia does not request Input Monitoring or read keyboard events. It checks only the local Caps Lock state every 250 milliseconds, with timer tolerance so macOS can coalesce wakeups.
 
-macOS may show a "Taketo Fujimaki" background item after installation. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
+macOS may show "Taketo Fujimaki" instead of "Capsomnia" for an existing cached background-item registration. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
 
 If Capsomnia is force-killed while crash recovery is disabled or unavailable, the last system sleep setting can remain active. Use the manual recovery command below to restore normal sleep behavior.
 

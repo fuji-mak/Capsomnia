@@ -6,6 +6,28 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(AppLanguage.defaultLanguage(for: "en-US"), .english)
         XCTAssertEqual(AppLanguage.defaultLanguage(for: "ja-JP"), .japanese)
         XCTAssertEqual(AppLanguage.defaultLanguage(for: "zh-Hans-CN"), .simplifiedChinese)
+        XCTAssertEqual(AppLanguage.defaultLanguage(for: "ko-KR"), .korean)
+        XCTAssertEqual(AppLanguage.defaultLanguage(for: "ko_KR"), .korean)
+    }
+
+    func testPreferredLanguageFallsBackToEnglish() {
+        XCTAssertEqual(AppLanguage.defaultLanguage(for: "fr-FR"), .english)
+        XCTAssertEqual(AppLanguage.defaultLanguage(for: "kok-IN"), .english)
+        XCTAssertEqual(AppLanguage.defaultLanguage(for: "jav-ID"), .english)
+        XCTAssertEqual(AppLanguage.defaultLanguage(for: nil), .english)
+    }
+
+    func testEveryLanguageHasSettingsStrings() {
+        for language in AppLanguage.allCases {
+            let strings = AppStrings.localized(for: language)
+
+            XCTAssertFalse(strings.settingsTitle.isEmpty)
+            XCTAssertFalse(strings.showMenuBarIcon.isEmpty)
+            XCTAssertFalse(strings.displaySleepOnLidClose.isEmpty)
+            XCTAssertFalse(strings.openAtLogin.isEmpty)
+            XCTAssertFalse(strings.language.isEmpty)
+            XCTAssertFalse(strings.done.isEmpty)
+        }
     }
 
     func testSimplifiedChineseStrings() {
@@ -17,18 +39,28 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(strings.getStarted, "开始使用")
     }
 
+    func testKoreanStrings() {
+        let strings = AppStrings.localized(for: .korean)
+
+        XCTAssertEqual(AppLanguage.korean.displayName, "한국어")
+        XCTAssertEqual(strings.language, "언어")
+        XCTAssertEqual(strings.settingsTitle, "설정")
+        XCTAssertEqual(strings.explainerOnTitle, "Caps Lock 켜기")
+        XCTAssertEqual(strings.explainerOffTitle, "Caps Lock 끄기")
+    }
+
     func testLanguagePopUpTracksSelectedLanguage() {
         let popUp = LanguagePopUpButton(
             items: AppLanguage.allCases.map { (title: $0.displayName, value: $0.rawValue) },
             selected: AppLanguage.japanese.rawValue
         )
 
-        XCTAssertEqual(popUp.itemTitles, ["English", "日本語", "简体中文"])
+        XCTAssertEqual(popUp.itemTitles, ["English", "日本語", "简体中文", "한국어"])
         XCTAssertEqual(popUp.selectedValue, AppLanguage.japanese.rawValue)
 
-        popUp.setSelected(AppLanguage.simplifiedChinese.rawValue)
+        popUp.setSelected(AppLanguage.korean.rawValue)
 
-        XCTAssertEqual(popUp.selectedValue, AppLanguage.simplifiedChinese.rawValue)
-        XCTAssertEqual(popUp.titleOfSelectedItem, AppLanguage.simplifiedChinese.displayName)
+        XCTAssertEqual(popUp.selectedValue, AppLanguage.korean.rawValue)
+        XCTAssertEqual(popUp.titleOfSelectedItem, AppLanguage.korean.displayName)
     }
 }

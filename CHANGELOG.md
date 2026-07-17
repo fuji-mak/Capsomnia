@@ -4,6 +4,18 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 1.0.2 - 2026-07-16
+
+- Keep external displays active in clamshell mode by skipping forced display sleep whenever an online external display is connected. If the display state cannot be determined, Capsomnia now fails safely without requesting display sleep.
+- Add a GitHub Sponsors funding link for users who want to support ongoing development.
+
+## 1.0.1 - 2026-07-15
+
+- Associate the installed LaunchAgent with the Capsomnia app bundle so new background-item registrations can show the app name and icon instead of falling back to the Developer ID name. Existing macOS registrations may retain their cached label.
+- Add concise usage and safety guidance covering heat, battery drain, normal sleep restoration, critical jobs, backups, and the software warranty boundary.
+- Keep the canonical landing page Japanese for search indexing and move the no-network, no-telemetry, no-account privacy promise closer to the product introduction.
+- Remove unused app and site code and consolidate duplicated internal implementations without intentionally changing behavior.
+
 ## 1.0.0 - 2026-07-12
 
 First stable release of Capsomnia.

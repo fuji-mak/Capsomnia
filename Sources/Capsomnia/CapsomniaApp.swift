@@ -11,6 +11,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var nextDisplaySleepRetryAt = Date.distantPast
     private var didRequestDisplaySleepForClosedLid = false
     private var hasLoggedMissingClamshellState = false
+    private var hasLoggedMissingDisplayState = false
     private var hasLoggedMissingSleepState = false
     private var hasTouchedCapsLockLED = false
     private var shouldRestoreSleepOnTerminate = true
@@ -459,6 +460,22 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         guard clamshellClosed else {
             didRequestDisplaySleepForClosedLid = false
             nextDisplaySleepRetryAt = .distantPast
+            return
+        }
+
+        let externalDisplayConnected = ExternalDisplayReader.isConnected()
+        if externalDisplayConnected != nil {
+            hasLoggedMissingDisplayState = false
+        }
+        guard DisplaySleepPolicy.shouldRequestDisplaySleep(
+            externalDisplayConnected: externalDisplayConnected
+        ) else {
+            didRequestDisplaySleepForClosedLid = false
+            nextDisplaySleepRetryAt = .distantPast
+            if externalDisplayConnected == nil, !hasLoggedMissingDisplayState {
+                log("\(reason) external_display_state_unavailable")
+                hasLoggedMissingDisplayState = true
+            }
             return
         }
 

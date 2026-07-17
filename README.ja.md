@@ -16,7 +16,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-現在のバージョン: `1.0.0`
+現在のバージョン: `1.0.2`
 
 [English README](README.md) · [`Capsomnia.pkg` をダウンロード](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
 
@@ -89,7 +89,7 @@ cd Capsomnia
 初回起動時は、Caps Lockスイッチの動作を説明し、次の項目を選べます。
 
 - メニューバーに丸を表示するか
-- 蓋を閉じたら画面をオフにするか
+- 外部ディスプレイが接続されていない場合に、蓋を閉じたら画面をオフにするか
 - ログイン時に起動するか
 - 日本語・英語のどちらを使うか
 

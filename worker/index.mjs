@@ -5,7 +5,8 @@ const LANGUAGE_QUERY = "lang";
 const LOCALES = {
   en: { path: "/" },
   ja: { path: "/ja/" },
-  "zh-hans": { path: "/zh-hans/" }
+  "zh-hans": { path: "/zh-hans/" },
+  ko: { path: "/ko/" }
 };
 
 export function normalizeLocale(value) {
@@ -15,6 +16,7 @@ export function normalizeLocale(value) {
   if (normalized === "en") return "en";
   if (normalized === "ja") return "ja";
   if (normalized === "zh" || normalized === "zh-hans") return "zh-hans";
+  if (normalized === "ko") return "ko";
   return null;
 }
 
@@ -24,6 +26,7 @@ function localeForLanguageTag(value) {
   if (tag === "en" || tag.startsWith("en-")) return "en";
   if (tag === "ja" || tag.startsWith("ja-")) return "ja";
   if (tag === "zh" || tag.startsWith("zh-")) return "zh-hans";
+  if (tag === "ko" || tag.startsWith("ko-")) return "ko";
   return null;
 }
 

@@ -27,6 +27,14 @@ const pages = [
     currentHref: "/zh-hans/?lang=zh-hans",
     title: "Capsomnia — 把 Caps Lock 变成 macOS 实体防休眠开关",
     content: "让 Caps Lock"
+  },
+  {
+    code: "ko",
+    file: "../docs/ko/index.html",
+    path: "ko/",
+    currentHref: "/ko/?lang=ko",
+    title: "Capsomnia — Caps Lock을 macOS 잠자기 방지 스위치로",
+    content: "Caps Lock에<br><span class=\"catch-accent\">제대로 된 일을 맡기세요</span>"
   }
 ];
 
@@ -34,6 +42,7 @@ const expectedAlternates = [
   '<link rel="alternate" hreflang="en" href="https://capsomnia.com/" />',
   '<link rel="alternate" hreflang="ja" href="https://capsomnia.com/ja/" />',
   '<link rel="alternate" hreflang="zh-Hans" href="https://capsomnia.com/zh-hans/" />',
+  '<link rel="alternate" hreflang="ko" href="https://capsomnia.com/ko/" />',
   '<link rel="alternate" hreflang="x-default" href="https://capsomnia.com/" />'
 ];
 
@@ -136,4 +145,18 @@ test("the Chinese page links to English and Simplified Chinese READMEs", () => {
   assert.ok(html.includes("README（简体中文）"));
   assert.ok(html.includes("简体中文文档"));
   assert.doesNotMatch(html, /\/blob\/main\/README\.ja\.md/);
+});
+
+test("the Korean page links to English and Korean READMEs", () => {
+  const html = readFileSync(
+    new URL("../docs/ko/index.html", import.meta.url),
+    "utf8"
+  );
+
+  assert.ok(html.includes("/blob/main/README.md"));
+  assert.ok(html.includes("/blob/main/README.ko.md"));
+  assert.ok(html.includes("README（한국어）"));
+  assert.ok(html.includes("한국어 문서"));
+  assert.doesNotMatch(html, /\/blob\/main\/README\.ja\.md/);
+  assert.doesNotMatch(html, /\/blob\/main\/README\.zh-Hans\.md/);
 });

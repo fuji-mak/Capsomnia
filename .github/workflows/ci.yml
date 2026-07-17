@@ -54,14 +54,17 @@ jobs:
           test -f docs/googlee5de8ad27617297a.html
           test -f docs/ja/index.html
           test -f docs/zh-hans/index.html
+          test -f docs/ko/index.html
           test "$(cat docs/CNAME)" = 'capsomnia.com'
           grep -q 'https://capsomnia.com/' docs/sitemap.xml
           grep -q 'https://capsomnia.com/ja/' docs/sitemap.xml
           grep -q 'https://capsomnia.com/zh-hans/' docs/sitemap.xml
+          grep -q 'https://capsomnia.com/ko/' docs/sitemap.xml
           grep -q 'Sitemap: https://capsomnia.com/sitemap.xml' docs/robots.txt
           grep -q 'google-site-verification: googlee5de8ad27617297a.html' docs/googlee5de8ad27617297a.html
           grep -q '"@type": "SoftwareApplication"' docs/index.html
           grep -q '"inLanguage": "en"' docs/index.html
           grep -q '"inLanguage": "ja"' docs/ja/index.html
           grep -q '"inLanguage": "zh-Hans"' docs/zh-hans/index.html
+          grep -q '"inLanguage": "ko"' docs/ko/index.html
           grep -q 'hreflang="x-default"' docs/index.html

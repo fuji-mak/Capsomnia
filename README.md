@@ -80,7 +80,8 @@ Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions,
 - Closed-lid use while sleep prevention is active may increase heat and battery consumption.
 - Do not rely on Capsomnia for critical jobs or as a substitute for backups.
 - Turn Caps Lock off after use and confirm that normal sleep behavior has returned.
-- macOS can overwrite a manually written Caps Lock LED during input-source or keyboard-state changes. This change synchronizes the LED when the manual state changes; it does not continuously force the light back on.
+- While a manual state is active, Capsomnia checks the Caps Lock LED every 10 milliseconds and rewrites it only after macOS overwrites it. The light may briefly turn off before repair.
+- LED control uses macOS's unsupported `HIDCapsLockLED` property and may stop working in a future macOS release.
 - Use Capsomnia at your own risk. Compatibility is not guaranteed for every Mac, macOS version, or environment.
 
 ## Settings
@@ -94,7 +95,7 @@ On first launch, Capsomnia explains how the Caps Lock switch works and lets you 
 
 Open Capsomnia again later to change the same settings.
 
-Sleep control does not require Input Monitoring. Capsomnia checks the local Caps Lock state every 250 milliseconds and does not read keyboard events. On some macOS and keyboard configurations, manual LED output may remain unavailable until Capsomnia is allowed in System Settings > Privacy & Security > Input Monitoring; sleep control and the menu bar state continue to work if the LED write is denied.
+Sleep control and manual LED output do not require Input Monitoring. Capsomnia neither opens keyboard devices nor reads input events; it checks only the local Caps Lock state and LED property. Sleep control and the menu bar state continue to work when the LED property is unavailable.
 
 You can open Capsomnia from `/Applications/Capsomnia.app` after package installation, from `~/Applications/Capsomnia.app` after source installation, or from the menu bar item while it is visible.
 

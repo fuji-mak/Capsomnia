@@ -2,11 +2,11 @@ import XCTest
 @testable import Capsomnia
 
 final class CapsLockLEDRetryPolicyTests: XCTestCase {
-    func testUsesExponentialBackoffWithEqualJitter() {
+    func testUsesExponentialBackoffWithUpToFiftyPercentJitter() {
         var policy = CapsLockLEDRetryPolicy(baseDelay: 1)
 
-        XCTAssertEqual(policy.delayAfterFailure(randomUnit: 0), 0.5)
-        XCTAssertEqual(policy.delayAfterFailure(randomUnit: 1), 2)
+        XCTAssertEqual(policy.delayAfterFailure(randomUnit: 0), 1)
+        XCTAssertEqual(policy.delayAfterFailure(randomUnit: 1), 3)
     }
 
     func testStopsAfterThirdConsecutiveFailure() {
@@ -25,7 +25,7 @@ final class CapsLockLEDRetryPolicyTests: XCTestCase {
 
         policy.reset()
 
-        XCTAssertEqual(policy.delayAfterFailure(randomUnit: 0), 0.5)
+        XCTAssertEqual(policy.delayAfterFailure(randomUnit: 0), 1)
         XCTAssertEqual(policy.consecutiveFailures, 1)
     }
 }

@@ -327,7 +327,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             .state = resolution.sleepPreventionOn ? .on : .off
         if resolution.clearedManualOverride {
             log("\(reason) hardware_capslock_changed manual_override=cleared")
-            restoreCapsLockLEDToHardwareState(hardwareState, reason: reason)
+            restoreAutomaticCapsLockLED(reason: reason)
         }
         apply(capsLockOn: resolution.sleepPreventionOn, reason: reason)
     }
@@ -416,26 +416,20 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         capsLockLEDController.synchronize(enabled: capsLockOn, reason: reason)
     }
 
-    private func restoreCapsLockLEDToHardwareState(_ hardwareState: Bool, reason: String) {
+    private func restoreAutomaticCapsLockLED(reason: String) {
         guard hasTouchedCapsLockLED else { return }
 
-        // A real Caps Lock transition returns ownership to macOS. Mark the
-        // environment as changed because macOS may already have overwritten the
-        // output report, even when the controller last wrote the same value.
-        capsLockLEDController.synchronize(
-            enabled: hardwareState,
-            reason: "\(reason)_manual_override_cleared",
-            environmentChanged: true
-        )
+        // A real Caps Lock transition ends the menu override. Auto hands the
+        // shared event-system property back instead of pinning the sampled state.
+        capsLockLEDController.restoreAutomatic(reason: "\(reason)_manual_override_cleared")
     }
 
     private func restoreCapsLockLEDBeforeExit(reason: String) {
         guard hasTouchedCapsLockLED else { return }
 
-        // Manual LED output must not survive the app that owns it. A synchronous
-        // best-effort write also invalidates queued retries before termination.
-        let hardwareState = CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
-        capsLockLEDController.restoreImmediately(enabled: hardwareState, reason: reason)
+        // Stop and drain maintenance before Auto; otherwise a queued repair could
+        // win after cleanup and leave the indicator pinned after Capsomnia exits.
+        capsLockLEDController.restoreAutomaticImmediately(reason: reason)
         hasTouchedCapsLockLED = false
     }
 

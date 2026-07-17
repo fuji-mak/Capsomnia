@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <a href="README.md"><img alt="English README" src="https://img.shields.io/badge/README-EN-b7ff3c?style=for-the-badge&labelColor=111111"></a>
-  <a href="https://fuji-mak.github.io/Capsomnia/"><img alt="Website" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"><img alt="Capsomnia.pkgをダウンロード" src="https://img.shields.io/badge/Download-Capsomnia.pkg-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://capsomnia.com/ja/"><img alt="Website" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
 </p>
 
 <p align="center">
@@ -16,9 +16,9 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-現在のバージョン: `1.0.1`
+現在のバージョン: `1.0.2`
 
-[English README](README.md) · [`Capsomnia.pkg` をダウンロード](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
+[English README](README.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
 **Capsomnia** は、Caps Lock を「閉じた MacBook でも作業を止めないための物理スイッチ」にする小さな macOS アプリです。
 
@@ -86,9 +86,9 @@ cd Capsomnia
 初回起動時は、Caps Lockスイッチの動作を説明し、次の項目を選べます。
 
 - メニューバーに丸を表示するか
-- 蓋を閉じたら画面をオフにするか
+- 外部ディスプレイが接続されていない場合に、蓋を閉じたら画面をオフにするか
 - ログイン時に起動するか
-- 日本語・英語のどちらを使うか
+- 日本語・英語・簡体字中国語・韓国語から使用言語を選択
 
 あとから Capsomnia をもう一度開くと、同じ項目を変更できます。
 
@@ -146,7 +146,7 @@ git pull
 
 Capsomniaは入力監視を要求せず、キーボードイベントも読み取りません。ローカルのCaps Lock状態だけを250ミリ秒ごとに確認し、macOSがタイマー起床をまとめられるようtoleranceを設定しています。
 
-インストール後、macOS が「Taketo Fujimaki」のバックグラウンド項目を表示することがあります。これはログイン時に Capsomnia を起動し、クラッシュ後に復帰するための LaunchAgent です。無効にすると、自動起動とクラッシュ復帰が効かなくなることがあります。
+既存のキャッシュ済み登録では、インストール後もmacOSが「Capsomnia」ではなく「Taketo Fujimaki」のバックグラウンド項目を表示することがあります。これはログイン時にCapsomniaを起動し、クラッシュ後に復帰するためのLaunchAgentです。無効にすると、自動起動とクラッシュ復帰が効かなくなることがあります。
 
 クラッシュ復帰が無効または利用できない状態でCapsomniaを強制終了すると、最後のシステムスリープ設定が残る場合があります。その場合は下記の手動復旧コマンドで通常状態へ戻してください。
 

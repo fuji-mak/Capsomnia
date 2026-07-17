@@ -1,146 +1,162 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
-import vm from "node:vm";
 
-const source = readFileSync(new URL("../docs/capsomnia.js", import.meta.url), "utf8");
-const html = readFileSync(new URL("../docs/index.html", import.meta.url), "utf8");
-
-function renderWithStoredLanguage(storedLanguage) {
-  let savedLanguage = storedLanguage;
-  const listeners = {};
-  const languageButtons = ["en", "ko", "ja"].map((language) => {
-    const attributes = { "data-lang-option": language, "aria-pressed": "false" };
-    return {
-      getAttribute(name) {
-        return attributes[name];
-      },
-      setAttribute(name, value) {
-        attributes[name] = value;
-      }
-    };
-  });
-  const description = {
-    content: "",
-    setAttribute(name, value) {
-      if (name === "content") this.content = value;
-    }
-  };
-  const document = {
-    documentElement: { lang: "" },
-    title: "",
-    querySelector(selector) {
-      return selector === 'meta[name="description"]' ? description : null;
-    },
-    querySelectorAll(selector) {
-      return selector === "[data-lang-option]" ? languageButtons : [];
-    },
-    addEventListener(event, handler) {
-      listeners[event] = handler;
-    },
-  };
-  const window = {
-    localStorage: {
-      getItem() {
-        return savedLanguage;
-      },
-      setItem(_key, value) {
-        savedLanguage = value;
-      }
-    }
-  };
-
-  vm.runInNewContext(source, { console, document, window });
-
-  function snapshot() {
-    return {
-      description: description.content,
-      language: document.documentElement.lang,
-      savedLanguage,
-      title: document.title
-    };
+const siteUrl = "https://capsomnia.com/";
+const pages = [
+  {
+    code: "en",
+    file: "../docs/index.html",
+    path: "",
+    currentHref: "/?lang=en",
+    title: "Capsomnia — Caps Lock as a physical keep-awake switch for macOS",
+    content: "Give Caps Lock"
+  },
+  {
+    code: "ja",
+    file: "../docs/ja/index.html",
+    path: "ja/",
+    currentHref: "/ja/?lang=ja",
+    title: "Capsomnia — Caps LockをMacの物理スリープ防止スイッチに",
+    content: "Macの<span class=\"catch-accent\">最も無駄なキー</span>"
+  },
+  {
+    code: "zh-Hans",
+    file: "../docs/zh-hans/index.html",
+    path: "zh-hans/",
+    currentHref: "/zh-hans/?lang=zh-hans",
+    title: "Capsomnia — 把 Caps Lock 变成 macOS 实体防休眠开关",
+    content: "让 Caps Lock"
+  },
+  {
+    code: "ko",
+    file: "../docs/ko/index.html",
+    path: "ko/",
+    currentHref: "/ko/?lang=ko",
+    title: "Capsomnia — Caps Lock을 macOS 잠자기 방지 스위치로",
+    content: "Caps Lock에<br><span class=\"catch-accent\">제대로 된 일을 맡기세요</span>"
   }
+];
 
-  return {
-    ...snapshot(),
-    clickLanguage(language) {
-      const button = languageButtons.find((candidate) => candidate.getAttribute("data-lang-option") === language);
-      listeners.click({
-        target: {
-          closest(selector) {
-            return selector === "[data-lang-option]" ? button : null;
-          }
-        }
-      });
-      return snapshot();
+const expectedAlternates = [
+  '<link rel="alternate" hreflang="en" href="https://capsomnia.com/" />',
+  '<link rel="alternate" hreflang="ja" href="https://capsomnia.com/ja/" />',
+  '<link rel="alternate" hreflang="zh-Hans" href="https://capsomnia.com/zh-hans/" />',
+  '<link rel="alternate" hreflang="ko" href="https://capsomnia.com/ko/" />',
+  '<link rel="alternate" hreflang="x-default" href="https://capsomnia.com/" />'
+];
+
+for (const page of pages) {
+  test(`${page.code} is a complete, self-canonical static page`, () => {
+    const pageFileUrl = new URL(page.file, import.meta.url);
+    const html = readFileSync(pageFileUrl, "utf8");
+    const pageUrl = `${siteUrl}${page.path}`;
+
+    assert.ok(html.includes(`<html lang="${page.code}">`));
+    assert.ok(html.includes(`<title>${page.title}</title>`));
+    assert.ok(html.includes(`rel="canonical" href="${pageUrl}"`));
+    assert.ok(html.includes(`property="og:url" content="${pageUrl}"`));
+    assert.ok(html.includes(page.content));
+    assert.doesNotMatch(html, /data-i18n|capsomnia\.js/);
+    assert.ok(html.includes('<details class="language-menu relative shrink-0">'));
+    assert.ok(html.includes("<span>Capsomnia</span>"));
+    assert.equal((html.match(/class="language-option /g) ?? []).length, pages.length);
+    assert.doesNotMatch(html, /lang-switch|lang-btn|hidden sm:inline">Capsomnia/);
+
+    const languageSummaryClasses = html.match(
+      /<summary\s+class="([^"]+)"/
+    )?.[1];
+    assert.ok(languageSummaryClasses);
+    assert.match(languageSummaryClasses, /min-h-\[44px\]/);
+    assert.match(languageSummaryClasses, /min-w-\[68px\]/);
+    assert.match(languageSummaryClasses, /px-3/);
+    assert.doesNotMatch(
+      languageSummaryClasses,
+      /rounded-full|border-\[var\(--border-strong\)\]|bg-\[var\(--surface\)\]/
+    );
+
+    for (const alternate of expectedAlternates) assert.ok(html.includes(alternate));
+    for (const localePage of pages) {
+      assert.ok(html.includes(`href="${localePage.currentHref}"`));
     }
-  };
+
+    const currentLink = [...html.matchAll(/<a\b[^>]*>/g)]
+      .map((match) => match[0])
+      .find((tag) => tag.includes(`href="${page.currentHref}"`) && tag.includes("aria-current=\"page\""));
+    assert.ok(currentLink);
+    assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1);
+
+    const jsonLdSource = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
+    assert.ok(jsonLdSource);
+    const jsonLd = JSON.parse(jsonLdSource);
+    for (const entity of jsonLd["@graph"]) {
+      assert.equal(entity.inLanguage, page.code);
+      assert.equal(entity.url, pageUrl);
+    }
+
+    for (const match of html.matchAll(/\s(?:href|src)="([^"]+)"/g)) {
+      const reference = match[1];
+      if (reference.startsWith("#") || /^https?:/.test(reference)) continue;
+
+      const path = reference.split("?")[0];
+      const target = path.startsWith("/")
+        ? new URL(`../docs${path}`, import.meta.url)
+        : new URL(path, pageFileUrl);
+      const resolvedTarget = path.endsWith("/") ? new URL("index.html", target) : target;
+      assert.ok(existsSync(resolvedTarget), `${page.code} references missing asset ${reference}`);
+    }
+  });
 }
 
-test("a fresh visit renders the canonical Japanese page", () => {
-  const result = renderWithStoredLanguage(null);
+const readmes = [
+  "../README.md",
+  "../README.ja.md",
+  "../README.zh-Hans.md",
+  "../README.ko.md"
+];
 
-  assert.equal(result.language, "ja");
-  assert.match(result.title, /Caps LockをMacの物理スリープ防止スイッチに/);
-  assert.match(result.description, /蓋を閉じたMacBook/);
-});
+for (const readme of readmes) {
+  test(`${readme} keeps download prominent and language links secondary`, () => {
+    const markdown = readFileSync(new URL(readme, import.meta.url), "utf8");
 
-test("an explicit English choice remains available", () => {
-  const result = renderWithStoredLanguage("en");
+    assert.ok(markdown.includes("img.shields.io/badge/Download-Capsomnia.pkg-"));
+    assert.doesNotMatch(markdown, /img\.shields\.io\/badge\/README-(?:EN|JA|ZH|KO)-/);
+  });
+}
 
-  assert.equal(result.language, "en");
-  assert.match(result.title, /physical keep-awake switch for macOS/);
-});
+test("the sitemap lists every localized URL and alternate", () => {
+  const sitemap = readFileSync(new URL("../docs/sitemap.xml", import.meta.url), "utf8");
 
-test("an explicit Korean choice remains available", () => {
-  const result = renderWithStoredLanguage("ko");
-
-  assert.equal(result.language, "ko");
-  assert.match(result.title, /Caps Lock을 macOS 잠자기 방지 스위치로/);
-  assert.match(result.description, /MacBook 덮개를 닫은 채/);
-  assert.equal(result.savedLanguage, "ko");
-});
-
-test("the language switch applies and saves Korean", () => {
-  const page = renderWithStoredLanguage("ja");
-  const result = page.clickLanguage("ko");
-
-  assert.equal(result.language, "ko");
-  assert.equal(result.savedLanguage, "ko");
-  assert.match(result.title, /Caps Lock을 macOS 잠자기 방지 스위치로/);
-});
-
-test("every page translation key exists in every language", () => {
-  const exposedSource = source.replace("var translations = {", "var translations = globalThis.translations = {");
-  const context = {
-    console,
-    document: {
-      documentElement: { lang: "" },
-      title: "",
-      querySelector() {
-        return null;
-      },
-      querySelectorAll() {
-        return [];
-      },
-      addEventListener() {}
-    },
-    window: {
-      localStorage: {
-        getItem() {
-          return null;
-        },
-        setItem() {}
-      }
-    }
-  };
-
-  vm.runInNewContext(exposedSource, context);
-
-  const keys = new Set(Array.from(html.matchAll(/data-i18n(?:-[\w-]+)?="([^"]+)"/g), (match) => match[1]));
-  for (const language of ["en", "ko", "ja"]) {
-    for (const key of keys) {
-      assert.ok(key in context.translations[language], `${language} is missing ${key}`);
-    }
+  for (const page of pages) {
+    assert.ok(sitemap.includes(`<loc>${siteUrl}${page.path}</loc>`));
+    assert.ok(sitemap.includes(`hreflang="${page.code}" href="${siteUrl}${page.path}"`));
   }
+  assert.ok(sitemap.includes(`hreflang="x-default" href="${siteUrl}"`));
+});
+
+test("the Chinese page links to English and Simplified Chinese READMEs", () => {
+  const html = readFileSync(
+    new URL("../docs/zh-hans/index.html", import.meta.url),
+    "utf8"
+  );
+
+  assert.ok(html.includes("/blob/main/README.md"));
+  assert.ok(html.includes("/blob/main/README.zh-Hans.md"));
+  assert.ok(html.includes("README（简体中文）"));
+  assert.ok(html.includes("简体中文文档"));
+  assert.doesNotMatch(html, /\/blob\/main\/README\.ja\.md/);
+});
+
+test("the Korean page links to English and Korean READMEs", () => {
+  const html = readFileSync(
+    new URL("../docs/ko/index.html", import.meta.url),
+    "utf8"
+  );
+
+  assert.ok(html.includes("/blob/main/README.md"));
+  assert.ok(html.includes("/blob/main/README.ko.md"));
+  assert.ok(html.includes("README（한국어）"));
+  assert.ok(html.includes("한국어 문서"));
+  assert.doesNotMatch(html, /\/blob\/main\/README\.ja\.md/);
+  assert.doesNotMatch(html, /\/blob\/main\/README\.zh-Hans\.md/);
 });

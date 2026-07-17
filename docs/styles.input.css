@@ -48,9 +48,39 @@ code {
   color: var(--led-deep);
 }
 
-.lang-btn[aria-current="page"] {
+.language-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.language-menu > summary::marker {
+  content: "";
+}
+
+.language-chevron {
+  transition: transform 0.18s ease;
+}
+
+.language-menu[open] .language-chevron {
+  transform: rotate(180deg);
+}
+
+.language-popover {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
+}
+
+.language-option[aria-current="page"] {
+  background: rgba(184, 255, 31, 0.1);
+  color: var(--led-bright);
+}
+
+.language-option[aria-current="page"]::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  border-radius: 999px;
   background: var(--led);
-  color: #000;
+  box-shadow: 0 0 8px var(--led-glow);
 }
 
 .preview-glow {

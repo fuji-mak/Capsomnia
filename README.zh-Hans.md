@@ -5,8 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md"><img alt="English README" src="https://img.shields.io/badge/README-EN-b7ff3c?style=for-the-badge&labelColor=111111"></a>
-  <a href="README.ja.md"><img alt="日本語 README" src="https://img.shields.io/badge/README-JA-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"><img alt="下载Capsomnia.pkg" src="https://img.shields.io/badge/Download-Capsomnia.pkg-b7ff3c?style=for-the-badge&labelColor=111111"></a>
   <a href="https://capsomnia.com/zh-hans/"><img alt="网站" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
 </p>
 
@@ -19,7 +18,7 @@
 
 当前版本：`1.0.2`
 
-[English README](README.md) · [日本語 README](README.ja.md) · [下载 `Capsomnia.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
+[English README](README.md) · [日本語 README](README.ja.md)
 
 本文是英文README的简体中文翻译。如有差异，请以[英文README](README.md)为准。
 

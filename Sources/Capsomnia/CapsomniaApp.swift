@@ -12,6 +12,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var hasLoggedMissingClamshellState = false
     private var hasLoggedMissingDisplayState = false
     private var hasLoggedMissingSleepState = false
+    private var dedicatedModeError = false
     private var shouldRestoreSleepOnTerminate = true
     private var pollingTimer: Timer?
     private var signalSources: [DispatchSourceSignal] = []
@@ -20,7 +21,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let onImage = DotImage.make(color: Brand.led)
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
     private let errorImage = DotImage.make(color: .systemRed)
+    private let dedicatedCapsLockFilter = DedicatedCapsLockFilter()
+    private var nextDedicatedModeRetryAt = Date.distantPast
     private let helperRetryInterval: TimeInterval = 5
+    private let dedicatedModeRetryInterval: TimeInterval = 5
     private let sleepStateVerificationInterval: TimeInterval = 10
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -57,6 +61,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        dedicatedCapsLockFilter.stop()
         guard shouldRestoreSleepOnTerminate else { return }
 
         let result = runHelper("off")
@@ -193,6 +198,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private func showSettingsWindow(page: SettingsPage) {
         if settingsWindowController == nil {
             settingsWindowController = SettingsWindowController(
+                onDedicatedCapsLockModeChange: { [weak self] enabled in
+                    self?.setDedicatedCapsLockMode(enabled)
+                },
                 onShowMenuBarIconChange: { [weak self] enabled in
                     self?.setShowMenuBarIcon(enabled)
                 },
@@ -220,10 +228,40 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func setShowMenuBarIcon(_ enabled: Bool) {
-        Preferences.showMenuBarIcon = enabled
+        let effectiveValue = enabled || Preferences.dedicatedCapsLockMode
+        Preferences.showMenuBarIcon = effectiveValue
         syncStatusItemVisibility()
         rebuildStatusMenu()
-        log("preference show_menu_bar_icon=\(enabled ? "on" : "off")")
+        settingsWindowController?.reloadText()
+        log(
+            "preference show_menu_bar_icon=\(effectiveValue ? "on" : "off")"
+                + " requested=\(enabled ? "on" : "off")"
+        )
+    }
+
+    private func setDedicatedCapsLockMode(_ enabled: Bool) {
+        Preferences.dedicatedCapsLockMode = enabled
+        nextDedicatedModeRetryAt = .distantPast
+
+        if enabled {
+            Preferences.showMenuBarIcon = true
+        } else {
+            dedicatedCapsLockFilter.stop()
+            dedicatedModeError = false
+        }
+
+        let ready = ensureDedicatedCapsLockFilter(
+            promptForPermission: enabled,
+            reason: "preference"
+        )
+        syncStatusItemVisibility()
+        rebuildStatusMenu()
+        applyCurrentCapsLockState(reason: "preference")
+        settingsWindowController?.reloadText()
+        log(
+            "preference dedicated_caps_lock_mode=\(enabled ? "on" : "off")"
+                + " filter_ready=\(ready ? "yes" : "no")"
+        )
     }
 
     private func setLanguage(_ language: AppLanguage) {
@@ -270,8 +308,58 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func applyCurrentCapsLockState(reason: String) {
+        let filterReady = ensureDedicatedCapsLockFilter(
+            promptForPermission: false,
+            reason: reason
+        )
+        guard DedicatedCapsLockReadinessPolicy.shouldHonorCapsLock(
+            dedicatedModeEnabled: Preferences.dedicatedCapsLockMode,
+            filterActive: filterReady
+        ) else {
+            apply(capsLockOn: false, reason: "\(reason)_dedicated_fail_closed")
+            updateStatusError()
+            return
+        }
+
         let flags = CGEventSource.flagsState(.hidSystemState)
         apply(capsLockOn: flags.contains(.maskAlphaShift), reason: reason)
+    }
+
+    private func ensureDedicatedCapsLockFilter(
+        promptForPermission: Bool,
+        reason: String
+    ) -> Bool {
+        guard Preferences.dedicatedCapsLockMode else {
+            if dedicatedCapsLockFilter.state != .inactive {
+                dedicatedCapsLockFilter.stop()
+            }
+            dedicatedModeError = false
+            nextDedicatedModeRetryAt = .distantPast
+            return true
+        }
+
+        if dedicatedCapsLockFilter.isActive {
+            dedicatedModeError = false
+            nextDedicatedModeRetryAt = .distantPast
+            return true
+        }
+
+        let now = Date()
+        guard promptForPermission || now >= nextDedicatedModeRetryAt else {
+            dedicatedModeError = true
+            return false
+        }
+
+        let state = dedicatedCapsLockFilter.start(
+            promptForPermission: promptForPermission
+        )
+        let isReady = state == .active
+        dedicatedModeError = !isReady
+        nextDedicatedModeRetryAt = isReady
+            ? .distantPast
+            : now.addingTimeInterval(dedicatedModeRetryInterval)
+        log("\(reason) dedicated_caps_lock_filter=\(String(describing: state))")
+        return isReady
     }
 
     private func apply(capsLockOn: Bool, reason: String) {
@@ -410,7 +498,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func refreshStatus(capsLockOn: Bool) {
-        if failedSleepState == nil {
+        if failedSleepState == nil, !dedicatedModeError {
             updateStatus(capsLockOn: capsLockOn)
         } else {
             updateStatusError()
@@ -423,7 +511,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
         guard let button = statusItem?.button else { return }
         button.image = errorImage
-        button.toolTip = AppStrings.current().tooltipError
+        let strings = AppStrings.current()
+        button.toolTip = dedicatedModeError
+            ? strings.tooltipDedicatedPermission
+            : strings.tooltipError
     }
 
     private func runHelper(_ mode: String) -> (status: Int32, stdout: String, stderr: String) {
@@ -437,6 +528,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         for signalNumber in [SIGINT, SIGTERM] {
             let source = DispatchSource.makeSignalSource(signal: signalNumber, queue: .main)
             source.setEventHandler { [weak self] in
+                self?.dedicatedCapsLockFilter.stop()
                 let result = self?.runHelper("off")
                 self?.log(
                     "signal=\(signalNumber) restore_off helper_status=\(result?.status ?? -1) "

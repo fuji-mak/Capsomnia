@@ -56,6 +56,8 @@ enum AppLanguage: String, CaseIterable {
 }
 
 struct AppStrings {
+    let dedicatedCapsLockMode: String
+    let dedicatedCapsLockModeDesc: String
     let showMenuBarIcon: String
     let showMenuBarIconDesc: String
     let language: String
@@ -78,11 +80,14 @@ struct AppStrings {
     let tooltipOn: String
     let tooltipOff: String
     let tooltipError: String
+    let tooltipDedicatedPermission: String
 
     static func current() -> AppStrings {
         switch Preferences.language {
         case .english:
             AppStrings(
+                dedicatedCapsLockMode: "Dedicated Caps Lock switch",
+                dedicatedCapsLockModeDesc: "Use Caps Lock only for Capsomnia. Normal typing ignores Caps Lock; Shift still produces uppercase letters. Requires Accessibility permission.",
                 showMenuBarIcon: "Show menu bar icon",
                 showMenuBarIconDesc: "Display the LED status dot in the menu bar.",
                 language: "Language",
@@ -93,7 +98,7 @@ struct AppStrings {
                 openCapsomnia: "Open Capsomnia",
                 quit: "Quit",
                 settingsTitle: "Settings",
-                initialSettingsNote: "macOS may show “Taketo Fujimaki” as a background item. Open Capsomnia again any time to change these settings.",
+                initialSettingsNote: "Dedicated switch mode asks for Accessibility permission so Caps Lock can be removed from normal typing. macOS may also show “Taketo Fujimaki” as a background item.",
                 welcomeTitle: "Welcome to Capsomnia",
                 explainerOnTitle: "Caps Lock on",
                 explainerOnDesc: "System sleep is disabled — work keeps running, lid open or closed.",
@@ -104,10 +109,13 @@ struct AppStrings {
                 getStarted: "Get started",
                 tooltipOn: "Caps Lock ON: processes stay awake",
                 tooltipOff: "Caps Lock OFF: normal sleep",
-                tooltipError: "Capsomnia could not update the sleep setting — retrying"
+                tooltipError: "Capsomnia could not update the sleep setting — retrying",
+                tooltipDedicatedPermission: "Dedicated switch mode needs Accessibility permission — sleep prevention is off"
             )
         case .japanese:
             AppStrings(
+                dedicatedCapsLockMode: "Caps Lock専用スイッチ",
+                dedicatedCapsLockModeDesc: "Caps LockをCapsomnia専用にします。通常入力では大文字固定を無効化し、Shiftでの大文字入力は維持します。アクセシビリティ権限が必要です。",
                 showMenuBarIcon: "メニューバーに表示",
                 showMenuBarIconDesc: "メニューバーにLEDステータスを表示します。",
                 language: "言語",
@@ -118,7 +126,7 @@ struct AppStrings {
                 openCapsomnia: "Capsomniaを開く",
                 quit: "終了",
                 settingsTitle: "設定",
-                initialSettingsNote: "macOSに「Taketo Fujimakiのバックグラウンド項目」と表示される場合があります。設定はあとからいつでも変更できます。",
+                initialSettingsNote: "専用スイッチモードでは、通常入力からCaps Lockを除外するためアクセシビリティ権限を求めます。macOSに「Taketo Fujimakiのバックグラウンド項目」と表示される場合もあります。",
                 welcomeTitle: "Capsomniaへようこそ",
                 explainerOnTitle: "Caps Lock ON",
                 explainerOnDesc: "システムスリープを無効化。蓋を閉じても作業が走り続けます。",
@@ -129,13 +137,15 @@ struct AppStrings {
                 getStarted: "はじめる",
                 tooltipOn: "Caps Lock ON: スリープ抑止中",
                 tooltipOff: "Caps Lock OFF: 通常のスリープ動作",
-                tooltipError: "スリープ設定を更新できませんでした — 再試行中"
+                tooltipError: "スリープ設定を更新できませんでした — 再試行中",
+                tooltipDedicatedPermission: "専用スイッチにアクセシビリティ権限が必要です — スリープ抑止OFF"
             )
         }
     }
 }
 
 private enum PreferenceKey {
+    static let dedicatedCapsLockMode = "DedicatedCapsLockMode"
     static let showMenuBarIcon = "ShowMenuBarIcon"
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
@@ -149,6 +159,7 @@ enum Preferences {
 
     static func registerDefaults() {
         defaults.register(defaults: [
+            PreferenceKey.dedicatedCapsLockMode: false,
             PreferenceKey.showMenuBarIcon: true,
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
@@ -156,6 +167,11 @@ enum Preferences {
             PreferenceKey.didCompleteInitialSetup: false,
             PreferenceKey.forceWelcomeOnNextLaunch: false
         ])
+    }
+
+    static var dedicatedCapsLockMode: Bool {
+        get { defaults.bool(forKey: PreferenceKey.dedicatedCapsLockMode) }
+        set { defaults.set(newValue, forKey: PreferenceKey.dedicatedCapsLockMode) }
     }
 
     static var showMenuBarIcon: Bool {

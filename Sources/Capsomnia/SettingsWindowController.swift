@@ -19,6 +19,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     private let preferencesHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
 
+    private let dedicatedCapsLockModeTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
+    private let dedicatedCapsLockModeDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let dedicatedCapsLockModeToggle = LEDToggle(isOn: Preferences.dedicatedCapsLockMode)
+
     private let menuBarTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
     private let menuBarDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
     private let menuBarToggle = LEDToggle(isOn: Preferences.showMenuBarIcon)
@@ -46,6 +50,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private var initialPreferencesLayoutConstraints: [NSLayoutConstraint] = []
     private var settingsLayoutConstraints: [NSLayoutConstraint] = []
 
+    private let onDedicatedCapsLockModeChange: (Bool) -> Void
     private let onShowMenuBarIconChange: (Bool) -> Void
     private let onLanguageChange: (AppLanguage) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
@@ -54,12 +59,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private var page: SettingsPage = .settings
 
     init(
+        onDedicatedCapsLockModeChange: @escaping (Bool) -> Void,
         onShowMenuBarIconChange: @escaping (Bool) -> Void,
         onLanguageChange: @escaping (AppLanguage) -> Void,
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
         onDisplaySleepOnLidCloseChange: @escaping (Bool) -> Void,
         onFinishInitialSetup: @escaping () -> Void
     ) {
+        self.onDedicatedCapsLockModeChange = onDedicatedCapsLockModeChange
         self.onShowMenuBarIconChange = onShowMenuBarIconChange
         self.onLanguageChange = onLanguageChange
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
@@ -106,6 +113,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         preferencesHeading.stringValue = strings.preferencesHeading.uppercased()
 
+        dedicatedCapsLockModeTitle.stringValue = strings.dedicatedCapsLockMode
+        dedicatedCapsLockModeDesc.stringValue = strings.dedicatedCapsLockModeDesc
         menuBarTitle.stringValue = strings.showMenuBarIcon
         menuBarDesc.stringValue = strings.showMenuBarIconDesc
         displaySleepOnLidCloseTitle.stringValue = strings.displaySleepOnLidClose
@@ -265,7 +274,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private func buildPreferencesCard() -> NSView {
         let card = brandCard()
 
-        menuBarToggle.onToggle = { [weak self] enabled in self?.onShowMenuBarIconChange(enabled) }
+        dedicatedCapsLockModeToggle.onToggle = { [weak self] enabled in
+            self?.onDedicatedCapsLockModeChange(enabled)
+            self?.updateValues()
+        }
+        menuBarToggle.onToggle = { [weak self] enabled in
+            self?.onShowMenuBarIconChange(enabled)
+            self?.updateValues()
+        }
         openAtLoginToggle.onToggle = { [weak self] enabled in
             self?.onLaunchAtLoginChange(enabled)
             self?.updateValues()
@@ -279,6 +295,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onLanguageChange(language)
         }
 
+        let dedicatedCapsLockModeRow = settingRow(
+            title: dedicatedCapsLockModeTitle,
+            desc: dedicatedCapsLockModeDesc,
+            accessory: dedicatedCapsLockModeToggle
+        )
         let menuBarRow = settingRow(title: menuBarTitle, desc: menuBarDesc, accessory: menuBarToggle)
         let displaySleepOnLidCloseRow = settingRow(
             title: displaySleepOnLidCloseTitle,
@@ -291,14 +312,17 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let divider1 = brandDivider()
         let divider2 = brandDivider()
         let divider3 = brandDivider()
+        let divider4 = brandDivider()
 
         let inner = NSStackView(views: [
-            menuBarRow,
+            dedicatedCapsLockModeRow,
             divider1,
-            displaySleepOnLidCloseRow,
+            menuBarRow,
             divider2,
-            openAtLoginRow,
+            displaySleepOnLidCloseRow,
             divider3,
+            openAtLoginRow,
+            divider4,
             languageRow
         ])
         inner.orientation = .vertical
@@ -313,7 +337,17 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             inner.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
             inner.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
         ])
-        for row in [menuBarRow, divider1, displaySleepOnLidCloseRow, divider2, openAtLoginRow, divider3, languageRow] {
+        for row in [
+            dedicatedCapsLockModeRow,
+            divider1,
+            menuBarRow,
+            divider2,
+            displaySleepOnLidCloseRow,
+            divider3,
+            openAtLoginRow,
+            divider4,
+            languageRow
+        ] {
             row.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
         }
         return card
@@ -372,6 +406,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func updateValues() {
+        dedicatedCapsLockModeToggle.setOn(Preferences.dedicatedCapsLockMode)
         menuBarToggle.setOn(Preferences.showMenuBarIcon)
         displaySleepOnLidCloseToggle.setOn(Preferences.displaySleepOnLidClose)
         openAtLoginToggle.setOn(Preferences.launchAtLogin)
@@ -381,6 +416,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private func finishInitialSetup() {
         page = .settings
         onShowMenuBarIconChange(menuBarToggle.isOn)
+        onDedicatedCapsLockModeChange(dedicatedCapsLockModeToggle.isOn)
         if let language = AppLanguage(rawValue: languageSegment.selectedValue) {
             onLanguageChange(language)
         }

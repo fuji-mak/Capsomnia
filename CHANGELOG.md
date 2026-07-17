@@ -4,6 +4,8 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- Add an optional dedicated Caps Lock switch mode that keeps the physical LED as Capsomnia's control while removing Caps Lock from normal typing. Shift and other modifiers continue to work normally.
+
 ## 1.0.2 - 2026-07-16
 
 - Keep external displays active in clamshell mode by skipping forced display sleep whenever an online external display is connected. If the display state cannot be determined, Capsomnia now fails safely without requesting display sleep.

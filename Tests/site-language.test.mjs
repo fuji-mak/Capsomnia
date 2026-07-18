@@ -155,7 +155,7 @@ test("the Korean page links to English and Korean READMEs", () => {
 
   assert.ok(html.includes("/blob/main/README.md"));
   assert.ok(html.includes("/blob/main/README.ko.md"));
-  assert.ok(html.includes("README（한국어）"));
+  assert.ok(html.includes("한국어 README"));
   assert.ok(html.includes("한국어 문서"));
   assert.doesNotMatch(html, /\/blob\/main\/README\.ja\.md/);
   assert.doesNotMatch(html, /\/blob\/main\/README\.zh-Hans\.md/);

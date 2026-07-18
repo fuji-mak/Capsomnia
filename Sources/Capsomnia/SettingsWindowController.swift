@@ -31,6 +31,25 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let displaySleepOnLidCloseDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
     private let displaySleepOnLidCloseToggle = LEDToggle(isOn: Preferences.displaySleepOnLidClose)
 
+    private let keepAwakeModeTitleLabel = brandLabel(size: 13, weight: .medium, color: Brand.text)
+    private let keepAwakeModeDescLabel = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let keepAwakeModePopUp = LanguagePopUpButton(
+        items: [
+            (title: AppStrings.current().modeOff, value: KeepAwakeMode.off.rawValue),
+            (title: AppStrings.current().modeCapsLock, value: KeepAwakeMode.capsLock.rawValue),
+            (title: AppStrings.current().modeAuto, value: KeepAwakeMode.auto.rawValue)
+        ],
+        selected: Preferences.keepAwakeMode.rawValue
+    )
+
+    private let batteryFloorTitleLabel = brandLabel(size: 13, weight: .medium, color: Brand.text)
+    private let batteryFloorDescLabel = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let batteryFloorPopUp = LanguagePopUpButton(
+        items: [(title: AppStrings.current().modeOff, value: "off")]
+            + [10, 15, 20, 25, 30].map { (title: "\($0)%", value: "\($0)") },
+        selected: Preferences.batteryFloorEnabled ? "\(Preferences.batteryFloorPercent)" : "off"
+    )
+
     private let languageTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
     private let languagePopUp = LanguagePopUpButton(
         items: AppLanguage.allCases.map { (title: $0.displayName, value: $0.rawValue) },
@@ -50,6 +69,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let onLanguageChange: (AppLanguage) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
     private let onDisplaySleepOnLidCloseChange: (Bool) -> Void
+    private let onKeepAwakeModeChange: (KeepAwakeMode) -> Void
+    private let onBatteryFloorEnabledChange: (Bool) -> Void
+    private let onBatteryFloorPercentChange: (Int) -> Void
     private let onFinishInitialSetup: () -> Void
     private var page: SettingsPage = .settings
 
@@ -58,12 +80,18 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onLanguageChange: @escaping (AppLanguage) -> Void,
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
         onDisplaySleepOnLidCloseChange: @escaping (Bool) -> Void,
+        onKeepAwakeModeChange: @escaping (KeepAwakeMode) -> Void,
+        onBatteryFloorEnabledChange: @escaping (Bool) -> Void,
+        onBatteryFloorPercentChange: @escaping (Int) -> Void,
         onFinishInitialSetup: @escaping () -> Void
     ) {
         self.onShowMenuBarIconChange = onShowMenuBarIconChange
         self.onLanguageChange = onLanguageChange
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
         self.onDisplaySleepOnLidCloseChange = onDisplaySleepOnLidCloseChange
+        self.onKeepAwakeModeChange = onKeepAwakeModeChange
+        self.onBatteryFloorEnabledChange = onBatteryFloorEnabledChange
+        self.onBatteryFloorPercentChange = onBatteryFloorPercentChange
         self.onFinishInitialSetup = onFinishInitialSetup
 
         let window = NSWindow(
@@ -114,6 +142,17 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         openAtLoginDesc.stringValue = strings.openAtLoginDesc
         languageTitle.stringValue = "Language"
         languagePopUp.setAccessibilityLabel(strings.language)
+
+        keepAwakeModeTitleLabel.stringValue = strings.keepAwakeHeading
+        keepAwakeModeDescLabel.stringValue = strings.keepAwakeModeDesc
+        batteryFloorTitleLabel.stringValue = strings.batteryFloorMenu
+        batteryFloorDescLabel.stringValue = strings.batteryFloorDesc
+        keepAwakeModePopUp.updateTitles([
+            (title: strings.modeOff, value: KeepAwakeMode.off.rawValue),
+            (title: strings.modeCapsLock, value: KeepAwakeMode.capsLock.rawValue),
+            (title: strings.modeAuto, value: KeepAwakeMode.auto.rawValue)
+        ])
+        batteryFloorPopUp.updateTitles([(title: strings.modeOff, value: "off")])
 
         noteLabel.stringValue = strings.initialSettingsNote
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
@@ -279,7 +318,29 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             guard let language = AppLanguage(rawValue: rawValue) else { return }
             self?.onLanguageChange(language)
         }
+        keepAwakeModePopUp.onSelect = { [weak self] rawValue in
+            guard let mode = KeepAwakeMode(rawValue: rawValue) else { return }
+            self?.onKeepAwakeModeChange(mode)
+        }
+        batteryFloorPopUp.onSelect = { [weak self] rawValue in
+            if rawValue == "off" {
+                self?.onBatteryFloorEnabledChange(false)
+            } else if let percent = Int(rawValue) {
+                self?.onBatteryFloorEnabledChange(true)
+                self?.onBatteryFloorPercentChange(percent)
+            }
+        }
 
+        let keepAwakeModeRow = settingRow(
+            title: keepAwakeModeTitleLabel,
+            desc: keepAwakeModeDescLabel,
+            accessory: keepAwakeModePopUp
+        )
+        let batteryFloorRow = settingRow(
+            title: batteryFloorTitleLabel,
+            desc: batteryFloorDescLabel,
+            accessory: batteryFloorPopUp
+        )
         let menuBarRow = settingRow(title: menuBarTitle, desc: menuBarDesc, accessory: menuBarToggle)
         let displaySleepOnLidCloseRow = settingRow(
             title: displaySleepOnLidCloseTitle,
@@ -289,19 +350,23 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let openAtLoginRow = settingRow(title: openAtLoginTitle, desc: openAtLoginDesc, accessory: openAtLoginToggle)
         let languageRow = settingRow(title: languageTitle, desc: nil, accessory: languagePopUp)
 
-        let divider1 = brandDivider()
-        let divider2 = brandDivider()
-        let divider3 = brandDivider()
+        let dividers = (0..<5).map { _ in brandDivider() }
 
-        let inner = NSStackView(views: [
+        let rows: [NSView] = [
+            keepAwakeModeRow,
+            dividers[0],
+            batteryFloorRow,
+            dividers[1],
             menuBarRow,
-            divider1,
+            dividers[2],
             displaySleepOnLidCloseRow,
-            divider2,
+            dividers[3],
             openAtLoginRow,
-            divider3,
+            dividers[4],
             languageRow
-        ])
+        ]
+
+        let inner = NSStackView(views: rows)
         inner.orientation = .vertical
         inner.alignment = .leading
         inner.spacing = 14
@@ -314,7 +379,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             inner.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
             inner.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
         ])
-        for row in [menuBarRow, divider1, displaySleepOnLidCloseRow, divider2, openAtLoginRow, divider3, languageRow] {
+        for row in rows {
             row.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
         }
         return card
@@ -377,6 +442,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         displaySleepOnLidCloseToggle.setOn(Preferences.displaySleepOnLidClose)
         openAtLoginToggle.setOn(Preferences.launchAtLogin)
         languagePopUp.setSelected(Preferences.language.rawValue)
+        keepAwakeModePopUp.setSelected(Preferences.keepAwakeMode.rawValue)
+        batteryFloorPopUp.setSelected(
+            Preferences.batteryFloorEnabled ? "\(Preferences.batteryFloorPercent)" : "off"
+        )
     }
 
     private func finishInitialSetup() {

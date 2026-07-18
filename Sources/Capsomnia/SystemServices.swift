@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 import IOKit
+import IOKit.ps
 
 struct LaunchAgentError: LocalizedError {
     let message: String
@@ -127,5 +128,82 @@ enum ExternalDisplayReader {
 enum DisplaySleepPolicy {
     static func shouldRequestDisplaySleep(externalDisplayConnected: Bool?) -> Bool {
         externalDisplayConnected == false
+    }
+}
+
+/// A point-in-time read of the power source, via IOKit power sources (no subprocess).
+enum BatteryReader {
+    struct Snapshot {
+        /// True when running on wall power (AC / adapter).
+        let onAC: Bool
+        /// Charge percentage 0-100, or nil when no internal battery reading is available.
+        let percent: Int?
+    }
+
+    static func read() -> Snapshot? {
+        guard let blob = IOPSCopyPowerSourcesInfo()?.takeRetainedValue() else {
+            return nil
+        }
+        guard let sources = IOPSCopyPowerSourcesList(blob)?.takeRetainedValue() as? [CFTypeRef] else {
+            return nil
+        }
+
+        let providingType = IOPSGetProvidingPowerSourceType(blob)?.takeRetainedValue() as String?
+        let onAC = providingType == kIOPSACPowerValue
+
+        var percent: Int?
+        for source in sources {
+            guard let description = IOPSGetPowerSourceDescription(blob, source)?
+                .takeUnretainedValue() as? [String: Any] else {
+                continue
+            }
+            guard let current = description[kIOPSCurrentCapacityKey as String] as? Int,
+                  let maximum = description[kIOPSMaxCapacityKey as String] as? Int,
+                  maximum > 0 else {
+                continue
+            }
+            percent = Int((Double(current) / Double(maximum) * 100).rounded())
+            break
+        }
+
+        return Snapshot(onAC: onAC, percent: percent)
+    }
+}
+
+/// Pure, deterministic keep-awake decision: user intent with a battery-floor safety
+/// override and hysteresis latch. Extracted from the app delegate so it is unit-testable.
+enum BatteryFloorPolicy {
+    /// - Parameters:
+    ///   - intent: whether the current mode wants the Mac awake.
+    ///   - batteryReadable: false when the power source could not be read at all.
+    ///   - percent: charge 0-100, or nil when unknown (but power source WAS readable).
+    ///   - latched: whether keep-awake is currently released because of a prior low-battery hit.
+    /// - Returns: the keep-awake decision and the next latch state.
+    static func decide(
+        intent: Bool,
+        floorEnabled: Bool,
+        floorPercent: Int,
+        recoverMargin: Int,
+        onAC: Bool,
+        percent: Int?,
+        batteryReadable: Bool,
+        latched: Bool
+    ) -> (keepAwake: Bool, latched: Bool) {
+        guard intent else { return (false, false) }
+        guard floorEnabled else { return (true, false) }
+        guard batteryReadable else { return (true, latched) }
+        if onAC { return (true, false) }
+        guard let percent else { return (true, latched) }
+
+        if latched {
+            if percent >= floorPercent + recoverMargin {
+                return (true, false)
+            }
+            return (false, true)
+        }
+        if percent <= floorPercent {
+            return (false, true)
+        }
+        return (true, false)
     }
 }

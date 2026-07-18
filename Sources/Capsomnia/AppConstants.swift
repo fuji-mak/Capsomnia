@@ -37,6 +37,17 @@ enum Brand {
     static let offDotBorder = srgb(0x3A3A3A)
 }
 
+/// How Capsomnia decides whether to keep the Mac awake.
+/// - off:      never override sleep (normal macOS behavior).
+/// - capsLock: keep awake while Caps Lock is ON (upstream Capsomnia behavior).
+/// - auto:     keep awake automatically (reachability mode) — for closing the lid and
+///             remote-controlling from a phone; the battery floor still releases it near empty.
+enum KeepAwakeMode: String, CaseIterable {
+    case off
+    case capsLock
+    case auto
+}
+
 enum AppLanguage: String, CaseIterable {
     case english = "en"
     case japanese = "ja"
@@ -102,6 +113,13 @@ struct AppStrings {
     let tooltipOn: String
     let tooltipOff: String
     let tooltipError: String
+    let keepAwakeHeading: String
+    let modeOff: String
+    let modeCapsLock: String
+    let modeAuto: String
+    let batteryFloorMenu: String
+    let keepAwakeModeDesc: String
+    let batteryFloorDesc: String
 
     static func current() -> AppStrings {
         localized(for: Preferences.language)
@@ -132,7 +150,14 @@ struct AppStrings {
                 getStarted: "Get started",
                 tooltipOn: "Caps Lock ON: processes stay awake",
                 tooltipOff: "Caps Lock OFF: normal sleep",
-                tooltipError: "Capsomnia could not update the sleep setting — retrying"
+                tooltipError: "Capsomnia could not update the sleep setting — retrying",
+                keepAwakeHeading: "Keep awake",
+                modeOff: "Off",
+                modeCapsLock: "Caps Lock",
+                modeAuto: "Auto (always)",
+                batteryFloorMenu: "Battery floor",
+                keepAwakeModeDesc: "Off = normal sleep. Caps Lock = awake while Caps Lock is on. Auto = always keep awake (for closing the lid and working remotely).",
+                batteryFloorDesc: "On battery, allow sleep at or below this level so the battery is never fully drained."
             )
         case .korean:
             AppStrings(
@@ -142,7 +167,7 @@ struct AppStrings {
                 openAtLogin: "로그인할 때 열기",
                 openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
                 displaySleepOnLidClose: "덮개를 닫을 때 화면 끄기",
-                displaySleepOnLidCloseDesc: "Caps Lock이 켜진 상태에서 덮개를 닫으면 외부 디스플레이가 연결되지 않은 경우에만 화면을 끕니다.",
+                displaySleepOnLidCloseDesc: "Caps Lock이 켜져 있으면 외부 디스플레이가 연결되지 않은 경우에만 덮개를 닫을 때 화면을 끕니다.",
                 openCapsomnia: "Capsomnia 열기",
                 quit: "종료",
                 settingsTitle: "설정",
@@ -157,7 +182,14 @@ struct AppStrings {
                 getStarted: "시작하기",
                 tooltipOn: "Caps Lock 켜짐: 잠자기 방지 중",
                 tooltipOff: "Caps Lock 꺼짐: 평소 잠자기",
-                tooltipError: "잠자기 설정을 바꾸지 못했습니다. 다시 시도 중입니다."
+                tooltipError: "잠자기 설정을 바꾸지 못했습니다. 다시 시도 중입니다.",
+                keepAwakeHeading: "잠자기 방지",
+                modeOff: "끄기",
+                modeCapsLock: "Caps Lock",
+                modeAuto: "자동 (항상)",
+                batteryFloorMenu: "배터리 하한",
+                keepAwakeModeDesc: "끄기 = 평소 잠자기. Caps Lock = Caps Lock이 켜져 있는 동안 깨어 있음. 자동 = 항상 깨어 있음(덮개를 닫고 원격 작업할 때).",
+                batteryFloorDesc: "배터리 사용 중에는 이 수준 이하에서 잠자기를 허용해 배터리가 완전히 방전되지 않게 합니다."
             )
         case .japanese:
             AppStrings(
@@ -182,7 +214,14 @@ struct AppStrings {
                 getStarted: "はじめる",
                 tooltipOn: "Caps Lock ON: スリープ抑止中",
                 tooltipOff: "Caps Lock OFF: 通常のスリープ動作",
-                tooltipError: "スリープ設定を更新できませんでした — 再試行中"
+                tooltipError: "スリープ設定を更新できませんでした — 再試行中",
+                keepAwakeHeading: "スリープ防止",
+                modeOff: "オフ",
+                modeCapsLock: "Caps Lock",
+                modeAuto: "自動(常時)",
+                batteryFloorMenu: "バッテリー下限",
+                keepAwakeModeDesc: "オフ=通常のスリープ / Caps Lock=Caps Lock ON中だけ起きる / 自動=常時起こす(蓋を閉じてリモート作業する用)。",
+                batteryFloorDesc: "バッテリー駆動時、この残量以下でスリープを許可。電池が完全に尽きるのを防ぎます。"
             )
         case .simplifiedChinese:
             AppStrings(
@@ -207,7 +246,14 @@ struct AppStrings {
                 getStarted: "开始使用",
                 tooltipOn: "Caps Lock 已开启：任务将保持运行",
                 tooltipOff: "Caps Lock 已关闭：正常睡眠",
-                tooltipError: "Capsomnia 无法更新睡眠设置——正在重试"
+                tooltipError: "Capsomnia 无法更新睡眠设置——正在重试",
+                keepAwakeHeading: "防止睡眠",
+                modeOff: "关闭",
+                modeCapsLock: "Caps Lock",
+                modeAuto: "自动（始终）",
+                batteryFloorMenu: "电量下限",
+                keepAwakeModeDesc: "关闭 = 正常睡眠。Caps Lock = 开启 Caps Lock 时保持唤醒。自动 = 始终保持唤醒（合盖远程工作时）。",
+                batteryFloorDesc: "使用电池时，在此电量或以下允许睡眠，避免电池彻底耗尽。"
             )
         }
     }
@@ -218,6 +264,9 @@ private enum PreferenceKey {
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
     static let displaySleepOnLidClose = "DisplaySleepOnLidClose"
+    static let keepAwakeMode = "KeepAwakeMode"
+    static let batteryFloorEnabled = "BatteryFloorEnabled"
+    static let batteryFloorPercent = "BatteryFloorPercent"
     static let didCompleteInitialSetup = "DidCompleteInitialSetup"
     static let forceWelcomeOnNextLaunch = "ForceWelcomeOnNextLaunch"
 }
@@ -231,6 +280,9 @@ enum Preferences {
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
             PreferenceKey.displaySleepOnLidClose: true,
+            PreferenceKey.keepAwakeMode: KeepAwakeMode.capsLock.rawValue,
+            PreferenceKey.batteryFloorEnabled: true,
+            PreferenceKey.batteryFloorPercent: 15,
             PreferenceKey.didCompleteInitialSetup: false,
             PreferenceKey.forceWelcomeOnNextLaunch: false
         ])
@@ -257,6 +309,28 @@ enum Preferences {
     static var displaySleepOnLidClose: Bool {
         get { defaults.bool(forKey: PreferenceKey.displaySleepOnLidClose) }
         set { defaults.set(newValue, forKey: PreferenceKey.displaySleepOnLidClose) }
+    }
+
+    static var keepAwakeMode: KeepAwakeMode {
+        get {
+            KeepAwakeMode(rawValue: defaults.string(forKey: PreferenceKey.keepAwakeMode) ?? "")
+                ?? .capsLock
+        }
+        set { defaults.set(newValue.rawValue, forKey: PreferenceKey.keepAwakeMode) }
+    }
+
+    static var batteryFloorEnabled: Bool {
+        get { defaults.bool(forKey: PreferenceKey.batteryFloorEnabled) }
+        set { defaults.set(newValue, forKey: PreferenceKey.batteryFloorEnabled) }
+    }
+
+    /// Battery percentage at or below which keep-awake is released (0 = fall back to 15).
+    static var batteryFloorPercent: Int {
+        get {
+            let value = defaults.integer(forKey: PreferenceKey.batteryFloorPercent)
+            return (value >= 5 && value <= 90) ? value : 15
+        }
+        set { defaults.set(newValue, forKey: PreferenceKey.batteryFloorPercent) }
     }
 
     static var didCompleteInitialSetup: Bool {

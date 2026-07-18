@@ -106,6 +106,15 @@ final class LanguagePopUpButton: NSPopUpButton {
         select(item)
     }
 
+    /// Update the visible titles (e.g. after a language change) without losing selection.
+    func updateTitles(_ items: [(title: String, value: String)]) {
+        let selected = selectedValue
+        for item in items {
+            itemArray.first(where: { $0.representedObject as? String == item.value })?.title = item.title
+        }
+        setSelected(selected)
+    }
+
     @objc private func selectionChanged() {
         onSelect?(selectedValue)
     }

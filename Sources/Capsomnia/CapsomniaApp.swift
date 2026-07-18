@@ -22,6 +22,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let errorImage = DotImage.make(color: .systemRed)
     private let helperRetryInterval: TimeInterval = 5
     private let sleepStateVerificationInterval: TimeInterval = 10
+    private var cachedBattery: BatteryReader.Snapshot?
+    private var cachedBatteryReadAt = Date.distantPast
+    private var batteryFloorLatched = false
+    private let batteryCacheInterval: TimeInterval = 5
+    private let batteryFloorRecoverMargin = 5
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if terminateIfNewerInteractiveDuplicate() {
@@ -93,10 +98,20 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         showSettingsWindow(page: currentSettingsPage())
     }
 
-    /// The state Capsomnia is acting on: the last state it applied, falling
-    /// back to the live hardware Caps Lock state before the first apply.
+    /// The state Capsomnia is acting on for status display: the last state it applied,
+    /// falling back to the mode's intent before the first apply.
     private var currentCapsLockState: Bool {
-        lastAppliedState ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        if let lastAppliedState {
+            return lastAppliedState
+        }
+        switch Preferences.keepAwakeMode {
+        case .off:
+            return false
+        case .auto:
+            return true
+        case .capsLock:
+            return CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        }
     }
 
     private func syncStatusItemVisibility() {
@@ -131,6 +146,45 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         let strings = AppStrings.current()
         let menu = NSMenu()
+
+        let heading = NSMenuItem(title: strings.keepAwakeHeading, action: nil, keyEquivalent: "")
+        heading.isEnabled = false
+        menu.addItem(heading)
+
+        let currentMode = Preferences.keepAwakeMode
+        let modeItems: [(KeepAwakeMode, String)] = [
+            (.off, strings.modeOff),
+            (.capsLock, strings.modeCapsLock),
+            (.auto, strings.modeAuto)
+        ]
+        for (mode, title) in modeItems {
+            let modeItem = NSMenuItem(title: title, action: #selector(selectMode), keyEquivalent: "")
+            modeItem.target = self
+            modeItem.representedObject = mode.rawValue
+            modeItem.state = currentMode == mode ? .on : .off
+            menu.addItem(modeItem)
+        }
+
+        let floorValue = Preferences.batteryFloorEnabled ? "\(Preferences.batteryFloorPercent)%" : strings.modeOff
+        let floorItem = NSMenuItem(title: "\(strings.batteryFloorMenu) (\(floorValue))", action: nil, keyEquivalent: "")
+        let floorSubmenu = NSMenu()
+        let floorOff = NSMenuItem(title: strings.modeOff, action: #selector(selectBatteryFloor), keyEquivalent: "")
+        floorOff.target = self
+        floorOff.representedObject = "off"
+        floorOff.state = Preferences.batteryFloorEnabled ? .off : .on
+        floorSubmenu.addItem(floorOff)
+        for percent in [10, 15, 20, 25, 30] {
+            let option = NSMenuItem(title: "\(percent)%", action: #selector(selectBatteryFloor), keyEquivalent: "")
+            option.target = self
+            option.representedObject = "\(percent)"
+            option.state = (Preferences.batteryFloorEnabled && Preferences.batteryFloorPercent == percent) ? .on : .off
+            floorSubmenu.addItem(option)
+        }
+        menu.setSubmenu(floorSubmenu, for: floorItem)
+        menu.addItem(floorItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let showMenuBarItem = NSMenuItem(
             title: strings.showMenuBarIcon,
             action: #selector(toggleShowMenuBarIcon),
@@ -172,6 +226,51 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         setShowMenuBarIcon(!Preferences.showMenuBarIcon)
     }
 
+    @objc private func selectMode(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String,
+              let mode = KeepAwakeMode(rawValue: rawValue) else {
+            return
+        }
+        setKeepAwakeMode(mode)
+    }
+
+    @objc private func selectBatteryFloor(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String else { return }
+        if rawValue == "off" {
+            setBatteryFloorEnabled(false)
+        } else if let percent = Int(rawValue) {
+            setBatteryFloorEnabled(true)
+            setBatteryFloorPercent(percent)
+        }
+    }
+
+    private func setKeepAwakeMode(_ mode: KeepAwakeMode) {
+        guard Preferences.keepAwakeMode != mode else { return }
+        Preferences.keepAwakeMode = mode
+        batteryFloorLatched = false
+        rebuildStatusMenu()
+        applyCurrentCapsLockState(reason: "mode_change")
+        refreshStatus(capsLockOn: currentCapsLockState)
+        log("preference keep_awake_mode=\(mode.rawValue)")
+    }
+
+    private func setBatteryFloorEnabled(_ enabled: Bool) {
+        Preferences.batteryFloorEnabled = enabled
+        batteryFloorLatched = false
+        rebuildStatusMenu()
+        applyCurrentCapsLockState(reason: "battery_floor_change")
+        log("preference battery_floor_enabled=\(enabled ? "on" : "off")")
+    }
+
+    private func setBatteryFloorPercent(_ percent: Int) {
+        guard Preferences.batteryFloorPercent != percent else { return }
+        Preferences.batteryFloorPercent = percent
+        batteryFloorLatched = false
+        rebuildStatusMenu()
+        applyCurrentCapsLockState(reason: "battery_floor_percent")
+        log("preference battery_floor_percent=\(percent)")
+    }
+
     @objc private func selectLanguage(_ sender: NSMenuItem) {
         guard let rawValue = sender.representedObject as? String,
               let language = AppLanguage(rawValue: rawValue) else {
@@ -204,6 +303,15 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 },
                 onDisplaySleepOnLidCloseChange: { [weak self] enabled in
                     self?.setDisplaySleepOnLidClose(enabled)
+                },
+                onKeepAwakeModeChange: { [weak self] mode in
+                    self?.setKeepAwakeMode(mode)
+                },
+                onBatteryFloorEnabledChange: { [weak self] enabled in
+                    self?.setBatteryFloorEnabled(enabled)
+                },
+                onBatteryFloorPercentChange: { [weak self] percent in
+                    self?.setBatteryFloorPercent(percent)
                 },
                 onFinishInitialSetup: { [weak self] in
                     Preferences.didCompleteInitialSetup = true
@@ -265,13 +373,61 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
         timer.tolerance = 0.05
         pollingTimer = timer
-        RunLoop.main.add(timer, forMode: .common)
+        // .default (not .common): the poll — which may spawn pmset on the 10s
+        // verification tick — must NOT fire while a menu is being tracked, or the
+        // subprocess hitches the click. Caps Lock is re-applied when tracking ends.
+        RunLoop.main.add(timer, forMode: .default)
         log("polling_ready interval_ms=250 tolerance_ms=50")
     }
 
     private func applyCurrentCapsLockState(reason: String) {
-        let flags = CGEventSource.flagsState(.hidSystemState)
-        apply(capsLockOn: flags.contains(.maskAlphaShift), reason: reason)
+        apply(capsLockOn: desiredKeepAwake(), reason: reason)
+    }
+
+    /// Cached power-source read (refreshed every `batteryCacheInterval`) so the 250ms
+    /// poll never spins IOKit needlessly.
+    private func batterySnapshot() -> BatteryReader.Snapshot? {
+        let now = Date()
+        if let cachedBattery, now.timeIntervalSince(cachedBatteryReadAt) < batteryCacheInterval {
+            return cachedBattery
+        }
+        if let fresh = BatteryReader.read() {
+            cachedBattery = fresh
+            cachedBatteryReadAt = now
+            return fresh
+        }
+        return cachedBattery
+    }
+
+    /// Single source of truth for whether to keep the Mac awake: user intent (mode)
+    /// with a hysteresis-latched battery-floor safety override. On battery below the
+    /// floor it releases so the Mac can sleep and the battery is never fully drained
+    /// (which would also drop remote access). Unreadable power state stays awake —
+    /// reachability is the priority.
+    private func desiredKeepAwake() -> Bool {
+        let intent: Bool
+        switch Preferences.keepAwakeMode {
+        case .off:
+            intent = false
+        case .capsLock:
+            intent = CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        case .auto:
+            intent = true
+        }
+
+        let battery = batterySnapshot()
+        let result = BatteryFloorPolicy.decide(
+            intent: intent,
+            floorEnabled: Preferences.batteryFloorEnabled,
+            floorPercent: Preferences.batteryFloorPercent,
+            recoverMargin: batteryFloorRecoverMargin,
+            onAC: battery?.onAC ?? false,
+            percent: battery?.percent,
+            batteryReadable: battery != nil,
+            latched: batteryFloorLatched
+        )
+        batteryFloorLatched = result.latched
+        return result.keepAwake
     }
 
     private func apply(capsLockOn: Bool, reason: String) {

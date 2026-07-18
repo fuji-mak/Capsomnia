@@ -27,7 +27,8 @@ final class SettingsWindowControllerTests: XCTestCase {
             XCTAssertTrue(renderedText.contains(expected), "Missing rendered text: \(expected)")
         }
 
-        let languagePopUp: LanguagePopUpButton = try XCTUnwrap(descendants(of: contentView).first)
+        let popUps: [LanguagePopUpButton] = descendants(of: contentView)
+        let languagePopUp = try XCTUnwrap(popUps.first { AppLanguage(rawValue: $0.selectedValue) != nil })
         XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.korean.rawValue)
         XCTAssertEqual(languagePopUp.titleOfSelectedItem, AppLanguage.korean.displayName)
         XCTAssertEqual(languagePopUp.accessibilityLabel(), "언어")
@@ -52,7 +53,8 @@ final class SettingsWindowControllerTests: XCTestCase {
         _ = NSApplication.shared
         let controller = makeController()
         let contentView = try XCTUnwrap(controller.window?.contentView)
-        let languagePopUp: LanguagePopUpButton = try XCTUnwrap(descendants(of: contentView).first)
+        let popUps: [LanguagePopUpButton] = descendants(of: contentView)
+        let languagePopUp = try XCTUnwrap(popUps.first { AppLanguage(rawValue: $0.selectedValue) != nil })
 
         XCTAssertEqual(languagePopUp.itemTitles, ["English", "日本語", "简体中文", "한국어"])
         XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.english.rawValue)
@@ -69,6 +71,9 @@ final class SettingsWindowControllerTests: XCTestCase {
             onLanguageChange: { _ in },
             onLaunchAtLoginChange: { _ in },
             onDisplaySleepOnLidCloseChange: { _ in },
+            onKeepAwakeModeChange: { _ in },
+            onBatteryFloorEnabledChange: { _ in },
+            onBatteryFloorPercentChange: { _ in },
             onFinishInitialSetup: {}
         )
     }

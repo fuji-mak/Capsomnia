@@ -6,6 +6,13 @@ All notable changes to Capsomnia will be documented in this file.
 
 - Add an optional dedicated Caps Lock switch mode that keeps the physical LED as Capsomnia's control while removing Caps Lock from normal typing. Shift and other modifiers continue to work normally.
 
+## 1.0.3 - 2026-07-18
+
+- Add Simplified Chinese and Korean localizations to the macOS app, README, and website.
+- Replace the app's segmented language control with a compact pop-up menu for English, Japanese, Simplified Chinese, and Korean.
+- Move the official website to `capsomnia.com`, add localized routes, and route first visits by browser language through Cloudflare Workers while preserving redirects from the previous GitHub Pages URL.
+- Refine the README and landing-page download buttons, language navigation, localized metadata, and support links.
+
 ## 1.0.2 - 2026-07-16
 
 - Keep external displays active in clamshell mode by skipping forced display sleep whenever an online external display is connected. If the display state cannot be determined, Capsomnia now fails safely without requesting display sleep.

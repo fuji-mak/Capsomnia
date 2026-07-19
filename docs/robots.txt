@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://fuji-mak.github.io/Capsomnia/sitemap.xml
+Sitemap: https://capsomnia.com/sitemap.xml

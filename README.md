@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <a href="README.ja.md"><img alt="日本語 README" src="https://img.shields.io/badge/README-JA-b7ff3c?style=for-the-badge&labelColor=111111"></a>
-  <a href="https://fuji-mak.github.io/Capsomnia/"><img alt="Website" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"><img alt="Download Capsomnia.pkg" src="https://img.shields.io/badge/Download-Capsomnia.pkg-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://capsomnia.com/"><img alt="Website" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
 </p>
 
 <p align="center">
@@ -16,9 +16,9 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `1.0.2`
+Current version: `1.0.3`
 
-[日本語 README](README.ja.md) · [Download `Capsomnia.pkg`](https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg)
+[日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
 Capsomnia is a small macOS menu bar app that turns Caps Lock into a physical keep-awake switch for closed-lid MacBook work.
 
@@ -90,7 +90,7 @@ On first launch, Capsomnia explains how the Caps Lock switch works and lets you 
 - whether to show the menu bar dot
 - whether to turn the display off when the lid closes and no external display is connected
 - whether to open Capsomnia at login
-- English or Japanese
+- English, Japanese, Simplified Chinese, or Korean
 
 Open Capsomnia again later to change the same settings. Dedicated switch mode keeps the menu bar dot visible so its active, inactive, or error state is always observable.
 
@@ -148,7 +148,7 @@ Package-installed app files, the helper, and the system LaunchAgent are owned by
 
 Standard mode does not request Input Monitoring or inspect keyboard events. Dedicated switch mode uses Accessibility permission for a local active Core Graphics event filter. The filter receives keyboard events only to remove `.maskAlphaShift` and suppress the Caps Lock modifier-change event; it does not log event contents, persist them, or send them over the network. Capsomnia still reads the physical Caps Lock state every 250 milliseconds to control sleep.
 
-macOS may show a "Taketo Fujimaki" background item after installation. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
+macOS may show "Taketo Fujimaki" instead of "Capsomnia" for an existing cached background-item registration. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
 
 If Capsomnia is force-killed while crash recovery is disabled or unavailable, the last system sleep setting can remain active. Use the manual recovery command below to restore normal sleep behavior.
 

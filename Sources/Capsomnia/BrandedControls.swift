@@ -60,92 +60,54 @@ final class LEDToggle: NSView {
     }
 }
 
-/// Segmented control matching the landing-page EN/JA language switch.
-final class SegmentedPill: NSView {
-    private struct Segment {
-        let value: String
-        let container: ClickableView
-        let label: NSTextField
-    }
-
-    private var segments: [Segment] = []
-    private(set) var selectedValue: String
+/// A compact, native pop-up button for choosing one language.
+final class LanguagePopUpButton: NSPopUpButton {
     var onSelect: ((String) -> Void)?
 
     init(items: [(title: String, value: String)], selected: String) {
-        selectedValue = selected
-        super.init(frame: .zero)
-        wantsLayer = true
-        layer?.cornerRadius = 11
-        layer?.backgroundColor = Brand.surface2.cgColor
-        layer?.borderWidth = 1
-        layer?.borderColor = Brand.borderStrong.cgColor
+        super.init(frame: .zero, pullsDown: false)
         translatesAutoresizingMaskIntoConstraints = false
         setContentHuggingPriority(.required, for: .horizontal)
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+        controlSize = .small
+        font = .systemFont(ofSize: 12, weight: .semibold)
+        alignment = .left
+        bezelStyle = .rounded
+        bezelColor = Brand.surface2
+        contentTintColor = Brand.text
+        target = self
+        action = #selector(selectionChanged)
 
-        let stack = NSStackView()
-        stack.orientation = .horizontal
-        stack.distribution = .fillEqually
-        stack.spacing = 2
-        stack.edgeInsets = NSEdgeInsets(top: 3, left: 3, bottom: 3, right: 3)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor)
-        ])
-
+        menu?.removeAllItems()
         for item in items {
-            let container = ClickableView()
-            container.wantsLayer = true
-            container.layer?.cornerRadius = 8
-            container.translatesAutoresizingMaskIntoConstraints = false
-
-            let label = NSTextField(labelWithString: item.title)
-            label.font = .systemFont(ofSize: 12, weight: .bold)
-            label.alignment = .center
-            label.translatesAutoresizingMaskIntoConstraints = false
-            container.addSubview(label)
-
-            NSLayoutConstraint.activate([
-                container.heightAnchor.constraint(equalToConstant: 24),
-                container.widthAnchor.constraint(greaterThanOrEqualToConstant: 48),
-                label.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-                label.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-                label.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: 10)
-            ])
-
-            let value = item.value
-            container.onClick = { [weak self] in self?.select(value) }
-            stack.addArrangedSubview(container)
-            segments.append(Segment(value: value, container: container, label: label))
+            let menuItem = NSMenuItem(title: item.title, action: nil, keyEquivalent: "")
+            menuItem.representedObject = item.value
+            menu?.addItem(menuItem)
         }
+        setSelected(selected)
 
-        updateSelection()
+        NSLayoutConstraint.activate([
+            widthAnchor.constraint(equalToConstant: 124),
+            heightAnchor.constraint(equalToConstant: 28)
+        ])
     }
 
     required init?(coder: NSCoder) { nil }
 
+    var selectedValue: String {
+        selectedItem?.representedObject as? String ?? ""
+    }
+
     func setSelected(_ value: String) {
-        selectedValue = value
-        updateSelection()
-    }
-
-    private func select(_ value: String) {
-        guard value != selectedValue else { return }
-        selectedValue = value
-        updateSelection()
-        onSelect?(value)
-    }
-
-    private func updateSelection() {
-        for segment in segments {
-            let isSelected = segment.value == selectedValue
-            segment.container.layer?.backgroundColor = isSelected ? Brand.led.cgColor : NSColor.clear.cgColor
-            segment.label.textColor = isSelected ? .black : Brand.textDim
+        guard let item = itemArray.first(where: { $0.representedObject as? String == value }) else {
+            selectItem(at: 0)
+            return
         }
+        select(item)
+    }
+
+    @objc private func selectionChanged() {
+        onSelect?(selectedValue)
     }
 }
 

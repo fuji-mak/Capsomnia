@@ -40,9 +40,29 @@ enum Brand {
 enum AppLanguage: String, CaseIterable {
     case english = "en"
     case japanese = "ja"
+    case simplifiedChinese = "zh-Hans"
+    case korean = "ko"
 
     static var defaultLanguage: AppLanguage {
-        Locale.preferredLanguages.first?.hasPrefix("ja") == true ? .japanese : .english
+        defaultLanguage(for: Locale.preferredLanguages.first)
+    }
+
+    static func defaultLanguage(for preferredLanguage: String?) -> AppLanguage {
+        let languageCode = preferredLanguage?
+            .split(whereSeparator: { $0 == "-" || $0 == "_" })
+            .first?
+            .lowercased()
+
+        if languageCode == "ja" {
+            return .japanese
+        }
+        if languageCode == "zh" {
+            return .simplifiedChinese
+        }
+        if languageCode == "ko" {
+            return .korean
+        }
+        return .english
     }
 
     var displayName: String {
@@ -51,6 +71,10 @@ enum AppLanguage: String, CaseIterable {
             "English"
         case .japanese:
             "日本語"
+        case .simplifiedChinese:
+            "简体中文"
+        case .korean:
+            "한국어"
         }
     }
 }
@@ -83,7 +107,11 @@ struct AppStrings {
     let tooltipDedicatedPermission: String
 
     static func current() -> AppStrings {
-        switch Preferences.language {
+        localized(for: Preferences.language)
+    }
+
+    static func localized(for language: AppLanguage) -> AppStrings {
+        switch language {
         case .english:
             AppStrings(
                 dedicatedCapsLockMode: "Dedicated Caps Lock switch",
@@ -112,6 +140,34 @@ struct AppStrings {
                 tooltipError: "Capsomnia could not update the sleep setting — retrying",
                 tooltipDedicatedPermission: "Dedicated switch mode needs Accessibility permission — sleep prevention is off"
             )
+        case .korean:
+            AppStrings(
+                dedicatedCapsLockMode: "Caps Lock 전용 스위치",
+                dedicatedCapsLockModeDesc: "Caps Lock을 Capsomnia 전용으로 사용합니다. 일반 입력에서는 Caps Lock의 대문자 고정을 무시하고 Shift를 누르면 대문자를 입력할 수 있습니다. 손쉬운 사용 권한이 필요합니다.",
+                showMenuBarIcon: "메뉴 막대에 표시",
+                showMenuBarIconDesc: "메뉴 막대에 LED 상태 표시를 보여 줍니다.",
+                language: "언어",
+                openAtLogin: "로그인할 때 열기",
+                openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
+                displaySleepOnLidClose: "덮개를 닫을 때 화면 끄기",
+                displaySleepOnLidCloseDesc: "Caps Lock이 켜진 상태에서 덮개를 닫으면 외부 디스플레이가 연결되지 않은 경우에만 화면을 끕니다.",
+                openCapsomnia: "Capsomnia 열기",
+                quit: "종료",
+                settingsTitle: "설정",
+                initialSettingsNote: "전용 스위치 모드에서는 일반 입력에서 Caps Lock을 제외하기 위해 손쉬운 사용 권한이 필요합니다. macOS에 ‘Taketo Fujimaki’ 백그라운드 항목이 표시될 수도 있습니다.",
+                welcomeTitle: "Capsomnia 시작하기",
+                explainerOnTitle: "Caps Lock 켜기",
+                explainerOnDesc: "시스템 잠자기를 막습니다. 덮개를 닫아도 작업은 계속됩니다.",
+                explainerOffTitle: "Caps Lock 끄기",
+                explainerOffDesc: "평소 잠자기 동작으로 돌아갑니다.",
+                preferencesHeading: "기본 설정",
+                done: "완료",
+                getStarted: "시작하기",
+                tooltipOn: "Caps Lock 켜짐: 잠자기 방지 중",
+                tooltipOff: "Caps Lock 꺼짐: 평소 잠자기",
+                tooltipError: "잠자기 설정을 바꾸지 못했습니다. 다시 시도 중입니다.",
+                tooltipDedicatedPermission: "전용 스위치 모드에 손쉬운 사용 권한이 필요합니다. 잠자기 방지는 꺼져 있습니다."
+            )
         case .japanese:
             AppStrings(
                 dedicatedCapsLockMode: "Caps Lock専用スイッチ",
@@ -139,6 +195,34 @@ struct AppStrings {
                 tooltipOff: "Caps Lock OFF: 通常のスリープ動作",
                 tooltipError: "スリープ設定を更新できませんでした — 再試行中",
                 tooltipDedicatedPermission: "専用スイッチにアクセシビリティ権限が必要です — スリープ抑止OFF"
+            )
+        case .simplifiedChinese:
+            AppStrings(
+                dedicatedCapsLockMode: "Caps Lock 专用开关",
+                dedicatedCapsLockModeDesc: "将 Caps Lock 仅用作 Capsomnia 开关。正常输入会忽略 Caps Lock，按住 Shift 仍可输入大写字母。需要辅助功能权限。",
+                showMenuBarIcon: "显示菜单栏图标",
+                showMenuBarIconDesc: "在菜单栏中显示 LED 状态指示灯。",
+                language: "语言",
+                openAtLogin: "登录时启动",
+                openAtLoginDesc: "登录后自动启动 Capsomnia。",
+                displaySleepOnLidClose: "合盖时关闭显示屏",
+                displaySleepOnLidCloseDesc: "Caps Lock 开启时，仅在未连接外接显示器的情况下，合盖后让显示屏进入睡眠。",
+                openCapsomnia: "打开 Capsomnia",
+                quit: "退出",
+                settingsTitle: "设置",
+                initialSettingsNote: "专用开关模式需要辅助功能权限，以便在正常输入中忽略 Caps Lock。macOS 也可能将“Taketo Fujimaki”显示为后台项目。",
+                welcomeTitle: "欢迎使用 Capsomnia",
+                explainerOnTitle: "Caps Lock 已开启",
+                explainerOnDesc: "系统睡眠已停用——无论开盖还是合盖，任务都会继续运行。",
+                explainerOffTitle: "Caps Lock 已关闭",
+                explainerOffDesc: "已恢复正常睡眠。",
+                preferencesHeading: "偏好设置",
+                done: "完成",
+                getStarted: "开始使用",
+                tooltipOn: "Caps Lock 已开启：任务将保持运行",
+                tooltipOff: "Caps Lock 已关闭：正常睡眠",
+                tooltipError: "Capsomnia 无法更新睡眠设置——正在重试",
+                tooltipDedicatedPermission: "专用开关模式需要辅助功能权限——睡眠防止已关闭"
             )
         }
     }

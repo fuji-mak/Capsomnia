@@ -6,10 +6,10 @@ enum SettingsPage {
 }
 
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
-    private static let settingsContentWidth: CGFloat = 400
+    private static let settingsContentWidth: CGFloat = 420
 
     private let headerIcon = NSImageView()
-    private let titleLabel = brandLabel(size: 21, weight: .bold, color: Brand.text)
+    private let titleLabel = brandLabel(size: 20, weight: .bold, color: Brand.text)
 
     private let explainerCard = brandCard()
     private let explainerOnTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
@@ -17,31 +17,31 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let explainerOffTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
     private let explainerOffDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
 
-    private let preferencesHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
+    private let preferencesHeading = brandLabel(size: 12, weight: .semibold, color: Brand.textFaint)
 
-    private let dedicatedCapsLockModeTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
-    private let dedicatedCapsLockModeDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let dedicatedCapsLockModeTitle = brandLabel(size: 13, weight: .regular, color: Brand.text)
+    private let dedicatedCapsLockModeDesc = brandLabel(size: 11, color: Brand.textDim, wraps: true)
     private let dedicatedCapsLockModeToggle = LEDToggle(isOn: Preferences.dedicatedCapsLockMode)
 
-    private let menuBarTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
-    private let menuBarDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let menuBarTitle = brandLabel(size: 13, weight: .regular, color: Brand.text)
+    private let menuBarDesc = brandLabel(size: 11, color: Brand.textDim, wraps: true)
     private let menuBarToggle = LEDToggle(isOn: Preferences.showMenuBarIcon)
 
-    private let openAtLoginTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
-    private let openAtLoginDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let openAtLoginTitle = brandLabel(size: 13, weight: .regular, color: Brand.text)
+    private let openAtLoginDesc = brandLabel(size: 11, color: Brand.textDim, wraps: true)
     private let openAtLoginToggle = LEDToggle(isOn: Preferences.launchAtLogin)
 
-    private let displaySleepOnLidCloseTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
-    private let displaySleepOnLidCloseDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let displaySleepOnLidCloseTitle = brandLabel(size: 13, weight: .regular, color: Brand.text)
+    private let displaySleepOnLidCloseDesc = brandLabel(size: 11, color: Brand.textDim, wraps: true)
     private let displaySleepOnLidCloseToggle = LEDToggle(isOn: Preferences.displaySleepOnLidClose)
 
-    private let languageTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
+    private let languageTitle = brandLabel(size: 13, weight: .regular, color: Brand.text)
     private let languagePopUp = LanguagePopUpButton(
         items: AppLanguage.allCases.map { (title: $0.displayName, value: $0.rawValue) },
         selected: Preferences.language.rawValue
     )
 
-    private let noteLabel = brandLabel(size: 12, color: Brand.textFaint, wraps: true)
+    private let noteLabel = brandLabel(size: 11, color: Brand.textFaint, wraps: true)
     private let doneButton = LEDButton()
 
     private let rootStack = NSStackView()
@@ -84,7 +84,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
-        window.backgroundColor = Brand.bg
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = true
         window.appearance = NSAppearance(named: .darkAqua)
         window.standardWindowButton(.zoomButton)?.isHidden = true
         window.standardWindowButton(.miniaturizeButton)?.isHidden = true
@@ -166,11 +168,15 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func buildContent() {
-        let contentView = NSView()
-        contentView.wantsLayer = true
-        contentView.layer?.backgroundColor = Brand.bg.cgColor
+        let effectView = NSVisualEffectView()
+        effectView.material = .contentBackground
+        effectView.blendingMode = .withinWindow
+        effectView.state = .active
+        effectView.appearance = NSAppearance(named: .darkAqua)
+        effectView.wantsLayer = true
+        effectView.layer?.backgroundColor = Brand.bg.cgColor
 
-        headerIcon.image = BrandIcon.make(diameter: 60)
+        headerIcon.image = BrandIcon.make(diameter: 64)
         headerIcon.translatesAutoresizingMaskIntoConstraints = false
         headerIcon.setContentHuggingPriority(.required, for: .horizontal)
 
@@ -179,8 +185,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let header = NSStackView(views: [headerIcon, titleLabel])
         header.orientation = .vertical
         header.alignment = .centerX
-        header.spacing = 10
-        header.setCustomSpacing(14, after: headerIcon)
+        header.spacing = 8
+        header.setCustomSpacing(10, after: headerIcon)
 
         buildExplainerCard()
 
@@ -195,8 +201,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         rootStack.addArrangedSubview(bodyStack)
         rootStack.setCustomSpacing(20, after: header)
 
-        contentView.addSubview(rootStack)
-        window?.contentView = contentView
+        effectView.addSubview(rootStack)
+        window?.contentView = effectView
 
         initialPreferencesLayoutConstraints = [
             explainerCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
@@ -209,11 +215,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
         ]
 
+        let inset = Brand.windowContentInset
         NSLayoutConstraint.activate([
-            rootStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 28),
-            rootStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -28),
-            rootStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 28),
-            rootStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24),
+            rootStack.leadingAnchor.constraint(equalTo: effectView.leadingAnchor, constant: inset),
+            rootStack.trailingAnchor.constraint(equalTo: effectView.trailingAnchor, constant: -inset),
+            rootStack.topAnchor.constraint(equalTo: effectView.topAnchor, constant: 36),
+            rootStack.bottomAnchor.constraint(equalTo: effectView.bottomAnchor, constant: -20),
             header.widthAnchor.constraint(equalTo: rootStack.widthAnchor),
             bodyStack.widthAnchor.constraint(equalTo: rootStack.widthAnchor)
         ])
@@ -261,21 +268,23 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private func buildExplainerCard() {
         let onRow = explainerRow(dot: brandStatusDot(on: true), title: explainerOnTitle, desc: explainerOnDesc)
         let offRow = explainerRow(dot: brandStatusDot(on: false), title: explainerOffTitle, desc: explainerOffDesc)
+        let divider = brandDivider(leadingInset: 34)
 
-        let inner = NSStackView(views: [onRow, offRow])
+        let inner = NSStackView(views: [onRow, divider, offRow])
         inner.orientation = .vertical
         inner.alignment = .leading
-        inner.spacing = 14
+        inner.spacing = 0
         inner.translatesAutoresizingMaskIntoConstraints = false
 
         explainerCard.addSubview(inner)
         NSLayoutConstraint.activate([
-            inner.leadingAnchor.constraint(equalTo: explainerCard.leadingAnchor, constant: 16),
-            inner.trailingAnchor.constraint(equalTo: explainerCard.trailingAnchor, constant: -16),
-            inner.topAnchor.constraint(equalTo: explainerCard.topAnchor, constant: 16),
-            inner.bottomAnchor.constraint(equalTo: explainerCard.bottomAnchor, constant: -16),
+            inner.leadingAnchor.constraint(equalTo: explainerCard.leadingAnchor),
+            inner.trailingAnchor.constraint(equalTo: explainerCard.trailingAnchor),
+            inner.topAnchor.constraint(equalTo: explainerCard.topAnchor, constant: 4),
+            inner.bottomAnchor.constraint(equalTo: explainerCard.bottomAnchor, constant: -4),
             onRow.widthAnchor.constraint(equalTo: inner.widthAnchor),
-            offRow.widthAnchor.constraint(equalTo: inner.widthAnchor)
+            offRow.widthAnchor.constraint(equalTo: inner.widthAnchor),
+            divider.widthAnchor.constraint(equalTo: inner.widthAnchor)
         ])
     }
 
@@ -341,16 +350,16 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         ])
         inner.orientation = .vertical
         inner.alignment = .leading
-        inner.spacing = 14
+        inner.spacing = 0
         inner.detachesHiddenViews = true
         inner.translatesAutoresizingMaskIntoConstraints = false
 
         card.addSubview(inner)
         NSLayoutConstraint.activate([
-            inner.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
-            inner.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
-            inner.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
-            inner.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
+            inner.leadingAnchor.constraint(equalTo: card.leadingAnchor),
+            inner.trailingAnchor.constraint(equalTo: card.trailingAnchor),
+            inner.topAnchor.constraint(equalTo: card.topAnchor, constant: 2),
+            inner.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -2)
         ])
         for row in [
             menuBarRow,
@@ -368,14 +377,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         return card
     }
 
-    /// A "title + optional description / accessory on the right" row.
+    /// System Settings–style row: title + optional caption, accessory trailing.
     private func settingRow(title: NSTextField, desc: NSTextField?, accessory: NSView) -> NSView {
         let texts: NSView
         if let desc {
             let column = NSStackView(views: [title, desc])
             column.orientation = .vertical
             column.alignment = .leading
-            column.spacing = 2
+            column.spacing = 1
             texts = column
         } else {
             texts = title
@@ -391,7 +400,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         row.alignment = .centerY
         row.distribution = .fill
         row.spacing = 12
+        row.edgeInsets = NSEdgeInsets(top: 10, left: 16, bottom: 10, right: 14)
         row.translatesAutoresizingMaskIntoConstraints = false
+        row.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
         return row
     }
 
@@ -399,25 +410,26 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let column = NSStackView(views: [title, desc])
         column.orientation = .vertical
         column.alignment = .leading
-        column.spacing = 2
+        column.spacing = 1
         column.translatesAutoresizingMaskIntoConstraints = false
 
         let dotHolder = NSView()
         dotHolder.translatesAutoresizingMaskIntoConstraints = false
         dotHolder.addSubview(dot)
         NSLayoutConstraint.activate([
-            dotHolder.widthAnchor.constraint(equalToConstant: 12),
+            dotHolder.widthAnchor.constraint(equalToConstant: 10),
             dot.topAnchor.constraint(equalTo: dotHolder.topAnchor, constant: 4),
             dot.leadingAnchor.constraint(equalTo: dotHolder.leadingAnchor),
             dot.bottomAnchor.constraint(lessThanOrEqualTo: dotHolder.bottomAnchor)
         ])
 
-        let row = NSStackView(views: [dotHolder, column])
-        row.orientation = .horizontal
-        row.alignment = .top
-        row.spacing = 12
-        row.translatesAutoresizingMaskIntoConstraints = false
-        return row
+        let content = NSStackView(views: [dotHolder, column])
+        content.orientation = .horizontal
+        content.alignment = .top
+        content.spacing = 10
+        content.edgeInsets = NSEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
+        content.translatesAutoresizingMaskIntoConstraints = false
+        return content
     }
 
     private func updateValues() {

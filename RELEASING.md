@@ -13,6 +13,12 @@ Before building a release, update:
 - `resources/Info.plist`: `CFBundleVersion`
 - `README.md`: current version
 - `README.ja.md`: current version
+- `README.zh-Hans.md`: current version
+- `README.ko.md`: current version
+- `docs/index.html`: JSON-LD `softwareVersion`
+- `docs/ja/index.html`: JSON-LD `softwareVersion`
+- `docs/zh-hans/index.html`: JSON-LD `softwareVersion`
+- `docs/ko/index.html`: JSON-LD `softwareVersion`
 - `CHANGELOG.md`: release entry
 
 Never replace a published tag or release asset. If a published build needs any change, increment the version and create a new release. Enable GitHub Immutable Releases before publishing the first stable release.

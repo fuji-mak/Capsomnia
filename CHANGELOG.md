@@ -4,7 +4,14 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 1.1.0 - 2026-07-19
+
 - Add the optional "Prevent all-caps typing" setting. When enabled, the Caps Lock indicator continues to control Capsomnia while normal typing is no longer locked to uppercase. Shift and other modifiers continue to work normally.
+- Add the setting and its Accessibility explanation in English, Japanese, Simplified Chinese, and Korean.
+- Simplify initial setup to the menu bar icon, the optional typing setting, and language while keeping display sleep on lid close and launch at login enabled by default and editable later.
+- Keep menu bar visibility independent from the typing setting while continuing to show a temporary red indicator for errors.
+- Clarify the optional Accessibility behavior on all four localized landing pages.
+- Polish Korean display-sleep and README wording.
 
 ## 1.0.3 - 2026-07-18
 

@@ -406,8 +406,8 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
         </div>
         <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">No Input Monitoring</h3>
-            <p class="text-sm text-[var(--text-faint)]">Capsomnia does not read keyboard events. It checks only the local Caps Lock state every 250 milliseconds.</p>
+            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">Optional Accessibility permission</h3>
+            <p class="text-sm text-[var(--text-faint)]">Accessibility permission is required only when “Prevent all-caps typing” is enabled. When it is off, Capsomnia does not inspect keyboard events and checks only the local Caps Lock state every 250 milliseconds. When it is on, Core Graphics event handling removes the Caps Lock modifier from text input; event data is never logged, stored, or transmitted.</p>
           </div>
           <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
             <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">Background item prompt</h3>

@@ -66,7 +66,7 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 
 ## What It Does
 
-- Dedicated switch mode (optional): Caps Lock controls Capsomnia only. Its uppercase-lock modifier is removed from normal keyboard input, while Shift and other modifiers continue to work normally.
+- Prevent all-caps typing (optional): when the indicator is on, Caps Lock no longer forces uppercase input. Shift still types uppercase letters.
 - Caps Lock on: keeps AI agents and other work from being interrupted when the MacBook lid is closed. Remote operation through tools such as Codex Mobile remains possible. The Caps Lock light physically shows the current state.
 - Caps Lock off: restores normal sleep behavior.
 - Lid closed while Caps Lock is on: puts the display to sleep only when no external display is connected, while work keeps running.
@@ -86,15 +86,13 @@ Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions,
 
 On first launch, Capsomnia explains how the Caps Lock switch works and lets you choose:
 
-- whether to use Caps Lock only as Capsomnia's dedicated switch
 - whether to show the menu bar dot
-- whether to turn the display off when the lid closes and no external display is connected
-- whether to open Capsomnia at login
+- whether to prevent all-caps typing while the indicator is on
 - English, Japanese, Simplified Chinese, or Korean
 
-Open Capsomnia again later to change the same settings. Dedicated switch mode keeps the menu bar dot visible so its active, inactive, or error state is always observable.
+"Turn display off when lid closes" and "Open at login" are enabled by default and do not appear in initial setup. Open Capsomnia again later to change all settings. "Show menu bar icon" remains independent when "Prevent all-caps typing" is enabled. If the icon is hidden, a red dot appears temporarily when an error occurs.
 
-Dedicated switch mode requires macOS Accessibility permission. Capsomnia installs a local Core Graphics event filter that removes only the Caps Lock modifier from keyboard events; it does not store keyboard input or send it anywhere. If permission is missing or the filter stops, Capsomnia fails closed: sleep prevention is turned off, the menu bar dot turns red, and the app retries. Standard mode does not require this permission and only checks the local Caps Lock state every 250 milliseconds.
+macOS Accessibility permission is required only when "Prevent all-caps typing" is enabled. Capsomnia installs a local Core Graphics event filter that removes only the Caps Lock modifier from keyboard events; it does not store keyboard input or send it anywhere. If permission is missing or the filter stops, Capsomnia fails closed: sleep prevention is turned off, the menu bar dot turns red, and the app retries. When this setting is disabled, Accessibility permission is not required and Capsomnia only checks the local Caps Lock state every 250 milliseconds.
 
 You can open Capsomnia from `/Applications/Capsomnia.app` after package installation, from `~/Applications/Capsomnia.app` after source installation, or from the menu bar item while it is visible.
 
@@ -146,7 +144,7 @@ Capsomnia's menu bar app does not run as root. System sleep settings require ele
 
 Package-installed app files, the helper, and the system LaunchAgent are owned by `root:wheel`. The packaged helper is also signed with the same Developer ID as the app. Capsomnia verifies the actual `SleepDisabled` state after every change and every ten seconds afterward. If the helper cannot apply a change, the state cannot be verified, or the setting drifts, the menu bar dot turns red and Capsomnia retries after five seconds instead of showing the requested state as active. The red error dot appears temporarily even if the menu bar icon is normally hidden.
 
-Standard mode does not request Input Monitoring or inspect keyboard events. Dedicated switch mode uses Accessibility permission for a local active Core Graphics event filter. The filter receives keyboard events only to remove `.maskAlphaShift` and suppress the Caps Lock modifier-change event; it does not log event contents, persist them, or send them over the network. Capsomnia still reads the physical Caps Lock state every 250 milliseconds to control sleep.
+When "Prevent all-caps typing" is disabled, Capsomnia does not request Input Monitoring or inspect keyboard events. When it is enabled, a local active Core Graphics event filter uses Accessibility permission only to remove `.maskAlphaShift` and suppress the Caps Lock modifier-change event. It does not log event contents, persist them, or send them over the network. Capsomnia still reads the physical Caps Lock state every 250 milliseconds to control sleep.
 
 macOS may show "Taketo Fujimaki" instead of "Capsomnia" for an existing cached background-item registration. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
 

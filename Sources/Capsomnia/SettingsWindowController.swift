@@ -47,6 +47,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let rootStack = NSStackView()
     private let bodyStack = NSStackView()
     private var preferencesCard = NSView()
+    private var settingsOnlyPreferenceViews: [NSView] = []
     private var initialPreferencesLayoutConstraints: [NSLayoutConstraint] = []
     private var settingsLayoutConstraints: [NSLayoutConstraint] = []
 
@@ -111,7 +112,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         explainerOffTitle.stringValue = strings.explainerOffTitle
         explainerOffDesc.stringValue = strings.explainerOffDesc
 
-        preferencesHeading.stringValue = strings.preferencesHeading.uppercased()
+        let preferencesHeadingText = isInitialSetup
+            ? strings.initialPreferencesHeading
+            : strings.preferencesHeading
+        preferencesHeading.stringValue = preferencesHeadingText.uppercased()
 
         dedicatedCapsLockModeTitle.stringValue = strings.dedicatedCapsLockMode
         dedicatedCapsLockModeDesc.stringValue = strings.dedicatedCapsLockModeDesc
@@ -129,6 +133,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         explainerCard.isHidden = page != .initialPreferences
         noteLabel.isHidden = page != .initialPreferences
+        for view in settingsOnlyPreferenceViews {
+            view.isHidden = isInitialSetup
+        }
 
         updateValues()
     }
@@ -314,21 +321,28 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let divider2 = brandDivider()
         let divider3 = brandDivider()
         let divider4 = brandDivider()
+        settingsOnlyPreferenceViews = [
+            displaySleepOnLidCloseRow,
+            divider2,
+            openAtLoginRow,
+            divider3
+        ]
 
         let inner = NSStackView(views: [
-            dedicatedCapsLockModeRow,
-            divider1,
             menuBarRow,
-            divider2,
+            divider1,
             displaySleepOnLidCloseRow,
-            divider3,
+            divider2,
             openAtLoginRow,
+            divider3,
+            dedicatedCapsLockModeRow,
             divider4,
             languageRow
         ])
         inner.orientation = .vertical
         inner.alignment = .leading
         inner.spacing = 14
+        inner.detachesHiddenViews = true
         inner.translatesAutoresizingMaskIntoConstraints = false
 
         card.addSubview(inner)
@@ -339,13 +353,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             inner.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
         ])
         for row in [
-            dedicatedCapsLockModeRow,
-            divider1,
             menuBarRow,
-            divider2,
+            divider1,
             displaySleepOnLidCloseRow,
-            divider3,
+            divider2,
             openAtLoginRow,
+            divider3,
+            dedicatedCapsLockModeRow,
             divider4,
             languageRow
         ] {

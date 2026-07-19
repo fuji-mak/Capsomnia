@@ -28,6 +28,7 @@ final class LocalizationTests: XCTestCase {
             XCTAssertFalse(strings.displaySleepOnLidClose.isEmpty)
             XCTAssertFalse(strings.openAtLogin.isEmpty)
             XCTAssertFalse(strings.language.isEmpty)
+            XCTAssertFalse(strings.initialPreferencesHeading.isEmpty)
             XCTAssertFalse(strings.done.isEmpty)
             XCTAssertFalse(strings.tooltipDedicatedPermission.isEmpty)
         }

@@ -228,24 +228,18 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func setShowMenuBarIcon(_ enabled: Bool) {
-        let effectiveValue = enabled || Preferences.dedicatedCapsLockMode
-        Preferences.showMenuBarIcon = effectiveValue
+        Preferences.showMenuBarIcon = enabled
         syncStatusItemVisibility()
         rebuildStatusMenu()
         settingsWindowController?.reloadText()
-        log(
-            "preference show_menu_bar_icon=\(effectiveValue ? "on" : "off")"
-                + " requested=\(enabled ? "on" : "off")"
-        )
+        log("preference show_menu_bar_icon=\(enabled ? "on" : "off")")
     }
 
     private func setDedicatedCapsLockMode(_ enabled: Bool) {
         Preferences.dedicatedCapsLockMode = enabled
         nextDedicatedModeRetryAt = .distantPast
 
-        if enabled {
-            Preferences.showMenuBarIcon = true
-        } else {
+        if !enabled {
             dedicatedCapsLockFilter.stop()
             dedicatedModeError = false
         }

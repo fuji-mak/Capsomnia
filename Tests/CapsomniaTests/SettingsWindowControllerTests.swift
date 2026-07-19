@@ -4,10 +4,41 @@ import XCTest
 
 @MainActor
 final class SettingsWindowControllerTests: XCTestCase {
+    func testJapaneseInitialSetupHidesDefaultOnSettings() throws {
+        let previousLanguage = Preferences.language
+        Preferences.language = .japanese
+        defer { Preferences.language = previousLanguage }
+        let strings = AppStrings.localized(for: .japanese)
+
+        _ = NSApplication.shared
+        let controller = makeController()
+        defer { controller.close() }
+
+        controller.show(page: .initialPreferences)
+        let contentView = try XCTUnwrap(controller.window?.contentView)
+        contentView.layoutSubtreeIfNeeded()
+
+        var renderedText = Set(visibleDescendants(of: contentView).map(\NSTextField.stringValue))
+        XCTAssertTrue(renderedText.contains(strings.initialPreferencesHeading))
+        XCTAssertTrue(renderedText.contains(strings.dedicatedCapsLockMode))
+        XCTAssertFalse(renderedText.contains(strings.preferencesHeading))
+        XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
+        XCTAssertFalse(renderedText.contains(strings.openAtLogin))
+
+        controller.show(page: .settings)
+        contentView.layoutSubtreeIfNeeded()
+
+        renderedText = Set(visibleDescendants(of: contentView).map(\NSTextField.stringValue))
+        XCTAssertTrue(renderedText.contains(strings.preferencesHeading))
+        XCTAssertTrue(renderedText.contains(strings.displaySleepOnLidClose))
+        XCTAssertTrue(renderedText.contains(strings.openAtLogin))
+    }
+
     func testKoreanSettingsRenderWithinTheWindow() throws {
         let previousLanguage = Preferences.language
         Preferences.language = .korean
         defer { Preferences.language = previousLanguage }
+        let strings = AppStrings.localized(for: .korean)
 
         _ = NSApplication.shared
         let controller = makeController()
@@ -18,12 +49,12 @@ final class SettingsWindowControllerTests: XCTestCase {
         let renderedText = Set(labels.map(\.stringValue))
 
         for expected in [
-            "Caps Lock 전용 스위치",
-            "메뉴 막대에 표시",
-            "덮개를 닫을 때 화면 끄기",
-            "로그인할 때 열기",
+            strings.dedicatedCapsLockMode,
+            strings.showMenuBarIcon,
+            strings.displaySleepOnLidClose,
+            strings.openAtLogin,
             "Language",
-            "완료"
+            strings.done
         ] {
             XCTAssertTrue(renderedText.contains(expected), "Missing rendered text: \(expected)")
         }
@@ -79,6 +110,14 @@ final class SettingsWindowControllerTests: XCTestCase {
         view.subviews.flatMap { child -> [T] in
             let current = (child as? T).map { [$0] } ?? []
             return current + descendants(of: child)
+        }
+    }
+
+    private func visibleDescendants<T: NSView>(of view: NSView) -> [T] {
+        view.subviews.flatMap { child -> [T] in
+            guard !child.isHidden else { return [] }
+            let current = (child as? T).map { [$0] } ?? []
+            return current + visibleDescendants(of: child)
         }
     }
 }

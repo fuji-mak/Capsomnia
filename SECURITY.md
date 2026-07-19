@@ -29,7 +29,7 @@ Capsomnia's menu bar app runs as the current user. It does not run as root.
 
 Capsomnia itself does not make network requests, collect telemetry, or require an account.
 
-Capsomnia does not request Input Monitoring or read keyboard events. It checks only the local Caps Lock state every 250 milliseconds.
+When "Prevent all-caps typing" is disabled, Capsomnia does not request Input Monitoring or inspect keyboard events. When enabled, it requires Accessibility permission for a local active Core Graphics event filter. The filter removes only the Caps Lock modifier and suppresses the Caps Lock modifier-change event; it does not log, persist, or transmit event contents. If the filter is unavailable, Capsomnia turns sleep prevention off and reports an error instead of acting on the physical switch.
 
 System sleep settings require elevated privileges, so Capsomnia installs a small root-owned native helper at:
 

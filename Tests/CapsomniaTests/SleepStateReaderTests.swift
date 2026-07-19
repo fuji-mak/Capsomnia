@@ -1,3 +1,4 @@
+import CoreGraphics
 import XCTest
 @testable import Capsomnia
 
@@ -37,5 +38,61 @@ final class DisplaySleepPolicyTests: XCTestCase {
 
     func testSuppressesDisplaySleepWhenDisplayStateIsUnavailable() {
         XCTAssertFalse(DisplaySleepPolicy.shouldRequestDisplaySleep(externalDisplayConnected: nil))
+    }
+}
+
+final class DedicatedCapsLockEventPolicyTests: XCTestCase {
+    func testRemovesCapsLockFlagAndPreservesOtherModifiers() {
+        let flags: CGEventFlags = [.maskAlphaShift, .maskShift, .maskCommand]
+
+        let sanitized = DedicatedCapsLockEventPolicy.sanitizedFlags(flags)
+
+        XCTAssertFalse(sanitized.contains(.maskAlphaShift))
+        XCTAssertTrue(sanitized.contains(.maskShift))
+        XCTAssertTrue(sanitized.contains(.maskCommand))
+    }
+
+    func testSuppressesOnlyCapsLockFlagsChangedEvent() {
+        XCTAssertTrue(
+            DedicatedCapsLockEventPolicy.shouldSuppress(
+                eventType: .flagsChanged,
+                keyCode: DedicatedCapsLockEventPolicy.capsLockKeyCode
+            )
+        )
+        XCTAssertFalse(
+            DedicatedCapsLockEventPolicy.shouldSuppress(
+                eventType: .keyDown,
+                keyCode: DedicatedCapsLockEventPolicy.capsLockKeyCode
+            )
+        )
+        XCTAssertFalse(
+            DedicatedCapsLockEventPolicy.shouldSuppress(
+                eventType: .flagsChanged,
+                keyCode: 56
+            )
+        )
+    }
+}
+
+final class DedicatedCapsLockReadinessPolicyTests: XCTestCase {
+    func testRequiresActiveFilterOnlyWhenDedicatedModeIsEnabled() {
+        XCTAssertTrue(
+            DedicatedCapsLockReadinessPolicy.shouldHonorCapsLock(
+                dedicatedModeEnabled: false,
+                filterActive: false
+            )
+        )
+        XCTAssertTrue(
+            DedicatedCapsLockReadinessPolicy.shouldHonorCapsLock(
+                dedicatedModeEnabled: true,
+                filterActive: true
+            )
+        )
+        XCTAssertFalse(
+            DedicatedCapsLockReadinessPolicy.shouldHonorCapsLock(
+                dedicatedModeEnabled: true,
+                filterActive: false
+            )
+        )
     }
 }

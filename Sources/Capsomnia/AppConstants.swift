@@ -80,6 +80,8 @@ enum AppLanguage: String, CaseIterable {
 }
 
 struct AppStrings {
+    let dedicatedCapsLockMode: String
+    let dedicatedCapsLockModeDesc: String
     let showMenuBarIcon: String
     let showMenuBarIconDesc: String
     let language: String
@@ -96,12 +98,14 @@ struct AppStrings {
     let explainerOnDesc: String
     let explainerOffTitle: String
     let explainerOffDesc: String
+    let initialPreferencesHeading: String
     let preferencesHeading: String
     let done: String
     let getStarted: String
     let tooltipOn: String
     let tooltipOff: String
     let tooltipError: String
+    let tooltipDedicatedPermission: String
 
     static func current() -> AppStrings {
         localized(for: Preferences.language)
@@ -111,6 +115,8 @@ struct AppStrings {
         switch language {
         case .english:
             AppStrings(
+                dedicatedCapsLockMode: "Prevent all-caps typing",
+                dedicatedCapsLockModeDesc: "When the indicator is on, Caps Lock no longer forces uppercase input. Shift still types uppercase letters. Requires Accessibility permission.",
                 showMenuBarIcon: "Show menu bar icon",
                 showMenuBarIconDesc: "Display the LED status dot in the menu bar.",
                 language: "Language",
@@ -121,21 +127,25 @@ struct AppStrings {
                 openCapsomnia: "Open Capsomnia",
                 quit: "Quit",
                 settingsTitle: "Settings",
-                initialSettingsNote: "macOS may show “Taketo Fujimaki” as a background item. Open Capsomnia again any time to change these settings.",
+                initialSettingsNote: "Accessibility permission is required only when “Prevent all-caps typing” is enabled. macOS may display a background item named “Taketo Fujimaki”.",
                 welcomeTitle: "Welcome to Capsomnia",
                 explainerOnTitle: "Caps Lock on",
                 explainerOnDesc: "System sleep is disabled — work keeps running, lid open or closed.",
                 explainerOffTitle: "Caps Lock off",
                 explainerOffDesc: "Normal sleep behavior resumes.",
+                initialPreferencesHeading: "Initial setup",
                 preferencesHeading: "Preferences",
                 done: "Done",
                 getStarted: "Get started",
                 tooltipOn: "Caps Lock ON: processes stay awake",
                 tooltipOff: "Caps Lock OFF: normal sleep",
-                tooltipError: "Capsomnia could not update the sleep setting — retrying"
+                tooltipError: "Capsomnia could not update the sleep setting — retrying",
+                tooltipDedicatedPermission: "“Prevent all-caps typing” requires Accessibility permission — sleep prevention is off"
             )
         case .korean:
             AppStrings(
+                dedicatedCapsLockMode: "대문자 고정 방지",
+                dedicatedCapsLockModeDesc: "표시등이 켜져 있어도 입력이 대문자로 고정되지 않도록 합니다. Shift를 누른 대문자 입력은 그대로 사용할 수 있습니다. 손쉬운 사용 권한이 필요합니다.",
                 showMenuBarIcon: "메뉴 막대에 표시",
                 showMenuBarIconDesc: "메뉴 막대에 LED 상태 표시를 보여 줍니다.",
                 language: "언어",
@@ -146,21 +156,25 @@ struct AppStrings {
                 openCapsomnia: "Capsomnia 열기",
                 quit: "종료",
                 settingsTitle: "설정",
-                initialSettingsNote: "macOS에 ‘Taketo Fujimaki’ 백그라운드 항목이 표시될 수 있습니다. 이 설정은 나중에 언제든 바꿀 수 있습니다.",
+                initialSettingsNote: "‘대문자 고정 방지’를 활성화하는 경우에만 손쉬운 사용 권한이 필요합니다. macOS에 ‘Taketo Fujimaki’ 백그라운드 항목이 표시될 수 있습니다.",
                 welcomeTitle: "Capsomnia 시작하기",
                 explainerOnTitle: "Caps Lock 켜기",
                 explainerOnDesc: "시스템 잠자기를 막습니다. 덮개를 닫아도 작업은 계속됩니다.",
                 explainerOffTitle: "Caps Lock 끄기",
                 explainerOffDesc: "평소 잠자기 동작으로 돌아갑니다.",
+                initialPreferencesHeading: "초기 설정",
                 preferencesHeading: "기본 설정",
                 done: "완료",
                 getStarted: "시작하기",
                 tooltipOn: "Caps Lock 켜짐: 잠자기 방지 중",
                 tooltipOff: "Caps Lock 꺼짐: 평소 잠자기",
-                tooltipError: "잠자기 설정을 바꾸지 못했습니다. 다시 시도 중입니다."
+                tooltipError: "잠자기 설정을 바꾸지 못했습니다. 다시 시도 중입니다.",
+                tooltipDedicatedPermission: "대문자 고정 방지 기능에는 손쉬운 사용 권한이 필요합니다. 잠자기 방지는 꺼져 있습니다."
             )
         case .japanese:
             AppStrings(
+                dedicatedCapsLockMode: "大文字固定を防ぐ",
+                dedicatedCapsLockModeDesc: "インジケーターがオンの時に入力が大文字固定になるのを無効化します。Shiftでの大文字入力は維持します。アクセシビリティ権限が必要です。",
                 showMenuBarIcon: "メニューバーに表示",
                 showMenuBarIconDesc: "メニューバーにLEDステータスを表示します。",
                 language: "言語",
@@ -171,21 +185,25 @@ struct AppStrings {
                 openCapsomnia: "Capsomniaを開く",
                 quit: "終了",
                 settingsTitle: "設定",
-                initialSettingsNote: "macOSに「Taketo Fujimakiのバックグラウンド項目」と表示される場合があります。設定はあとからいつでも変更できます。",
+                initialSettingsNote: "「大文字固定を防ぐ」を有効にする場合のみ、アクセシビリティ権限が必要です。macOSに「Taketo Fujimakiのバックグラウンド項目」と表示される場合があります。",
                 welcomeTitle: "Capsomniaへようこそ",
                 explainerOnTitle: "Caps Lock ON",
                 explainerOnDesc: "システムスリープを無効化。蓋を閉じても作業が走り続けます。",
                 explainerOffTitle: "Caps Lock OFF",
                 explainerOffDesc: "通常のスリープ動作に戻ります。",
+                initialPreferencesHeading: "初期設定",
                 preferencesHeading: "環境設定",
                 done: "完了",
                 getStarted: "はじめる",
                 tooltipOn: "Caps Lock ON: スリープ抑止中",
                 tooltipOff: "Caps Lock OFF: 通常のスリープ動作",
-                tooltipError: "スリープ設定を更新できませんでした — 再試行中"
+                tooltipError: "スリープ設定を更新できませんでした — 再試行中",
+                tooltipDedicatedPermission: "「大文字固定を防ぐ」にはアクセシビリティ権限が必要です — スリープ抑止OFF"
             )
         case .simplifiedChinese:
             AppStrings(
+                dedicatedCapsLockMode: "防止输入锁定为大写",
+                dedicatedCapsLockModeDesc: "指示灯亮起时，防止输入被锁定为大写。仍可按住 Shift 输入大写字母。需要辅助功能权限。",
                 showMenuBarIcon: "显示菜单栏图标",
                 showMenuBarIconDesc: "在菜单栏中显示 LED 状态指示灯。",
                 language: "语言",
@@ -196,24 +214,27 @@ struct AppStrings {
                 openCapsomnia: "打开 Capsomnia",
                 quit: "退出",
                 settingsTitle: "设置",
-                initialSettingsNote: "macOS 可能会将“Taketo Fujimaki”显示为后台项目。你可以随时重新打开 Capsomnia 更改这些设置。",
+                initialSettingsNote: "仅在启用“防止输入锁定为大写”时才需要辅助功能权限。macOS 可能会显示名为“Taketo Fujimaki”的后台项目。",
                 welcomeTitle: "欢迎使用 Capsomnia",
                 explainerOnTitle: "Caps Lock 已开启",
                 explainerOnDesc: "系统睡眠已停用——无论开盖还是合盖，任务都会继续运行。",
                 explainerOffTitle: "Caps Lock 已关闭",
                 explainerOffDesc: "已恢复正常睡眠。",
+                initialPreferencesHeading: "初始设置",
                 preferencesHeading: "偏好设置",
                 done: "完成",
                 getStarted: "开始使用",
                 tooltipOn: "Caps Lock 已开启：任务将保持运行",
                 tooltipOff: "Caps Lock 已关闭：正常睡眠",
-                tooltipError: "Capsomnia 无法更新睡眠设置——正在重试"
+                tooltipError: "Capsomnia 无法更新睡眠设置——正在重试",
+                tooltipDedicatedPermission: "“防止输入锁定为大写”需要辅助功能权限——睡眠防止已关闭"
             )
         }
     }
 }
 
 private enum PreferenceKey {
+    static let dedicatedCapsLockMode = "DedicatedCapsLockMode"
     static let showMenuBarIcon = "ShowMenuBarIcon"
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
@@ -227,6 +248,7 @@ enum Preferences {
 
     static func registerDefaults() {
         defaults.register(defaults: [
+            PreferenceKey.dedicatedCapsLockMode: false,
             PreferenceKey.showMenuBarIcon: true,
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
@@ -234,6 +256,11 @@ enum Preferences {
             PreferenceKey.didCompleteInitialSetup: false,
             PreferenceKey.forceWelcomeOnNextLaunch: false
         ])
+    }
+
+    static var dedicatedCapsLockMode: Bool {
+        get { defaults.bool(forKey: PreferenceKey.dedicatedCapsLockMode) }
+        set { defaults.set(newValue, forKey: PreferenceKey.dedicatedCapsLockMode) }
     }
 
     static var showMenuBarIcon: Bool {

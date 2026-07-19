@@ -22,11 +22,15 @@ final class LocalizationTests: XCTestCase {
             let strings = AppStrings.localized(for: language)
 
             XCTAssertFalse(strings.settingsTitle.isEmpty)
+            XCTAssertFalse(strings.dedicatedCapsLockMode.isEmpty)
+            XCTAssertFalse(strings.dedicatedCapsLockModeDesc.isEmpty)
             XCTAssertFalse(strings.showMenuBarIcon.isEmpty)
             XCTAssertFalse(strings.displaySleepOnLidClose.isEmpty)
             XCTAssertFalse(strings.openAtLogin.isEmpty)
             XCTAssertFalse(strings.language.isEmpty)
+            XCTAssertFalse(strings.initialPreferencesHeading.isEmpty)
             XCTAssertFalse(strings.done.isEmpty)
+            XCTAssertFalse(strings.tooltipDedicatedPermission.isEmpty)
         }
     }
 

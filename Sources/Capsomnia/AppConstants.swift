@@ -12,7 +12,7 @@ let logPath = logDirectoryURL
     .path
 let openSettingsNotificationName = Notification.Name("\(appLabel).openSettings")
 
-/// Colors lifted straight from the landing page (docs/styles.css :root).
+/// Dark-mode tokens mapped from macOS 26 Figma chrome + Capsomnia LED brand.
 enum Brand {
     static func srgb(_ hex: UInt32, alpha: CGFloat = 1.0) -> NSColor {
         NSColor(
@@ -23,18 +23,24 @@ enum Brand {
         )
     }
 
-    static let bg = srgb(0x000000)
-    static let surface = srgb(0x0A0A0A)
-    static let surface2 = srgb(0x111111)
-    static let border = srgb(0x1F1F1F)
-    static let borderStrong = srgb(0x2A2A2A)
-    static let text = srgb(0xF2F4EC)
-    static let textDim = srgb(0xA7AD9C)
-    static let textFaint = srgb(0x6F7466)
+    static let bg = srgb(0x1E1E1E)
+    static let surface = srgb(0x2C2C2E)
+    static let surface2 = srgb(0x3A3A3C)
+    static let border = srgb(0xFFFFFF, alpha: 0.10)
+    static let borderStrong = srgb(0xFFFFFF, alpha: 0.16)
+    static let separator = srgb(0xFFFFFF, alpha: 0.08)
+    static let text = srgb(0xFFFFFF)
+    static let textDim = srgb(0xEBEBF5, alpha: 0.60)
+    static let textFaint = srgb(0xEBEBF5, alpha: 0.40)
     static let led = srgb(0xB8FF1F)
     static let ledBright = srgb(0xD8FF63)
-    static let offDot = srgb(0x2C2C2C)
-    static let offDotBorder = srgb(0x3A3A3A)
+    static let offDot = srgb(0x3A3A3C)
+    static let offDotBorder = srgb(0xFFFFFF, alpha: 0.18)
+    static let switchOff = srgb(0x39393D)
+    static let switchOn = srgb(0x30D158)
+    static let switchKnob = srgb(0xFFFFFF)
+    static let cardRadius: CGFloat = 12
+    static let windowContentInset: CGFloat = 20
 }
 
 enum AppLanguage: String, CaseIterable {

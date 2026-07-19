@@ -4,6 +4,10 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- Restyle the settings window after the macOS 26 Figma kit in dark mode: System Settings–style grouped lists with inset separators, frosted dark material, and a system-green switch. Keep the original full-width LED Done / Get started button. Capsomnia LED green stays on the CTA, status dots, and app icon.
+- Force the app appearance to dark mode so light system appearance does not wash out the UI.
+- Regenerate `resources/AppIcon.icns` from `resources/CapsomniaIcon.svg`.
+
 ## 1.1.0 - 2026-07-19
 
 - Add the optional "Prevent all-caps typing" setting. When enabled, the Caps Lock indicator continues to control Capsomnia while normal typing is no longer locked to uppercase. Shift and other modifiers continue to work normally.

@@ -1,33 +1,60 @@
 import AppKit
 
-// MARK: - Branded controls
+// MARK: - Branded controls (macOS 26 dark)
 
-/// On/off pill toggle drawn in the landing-page LED palette.
+/// System-style switch: green track when on, white knob.
 final class LEDToggle: NSView {
     private let track = CALayer()
     private let knob = CALayer()
+    private let offGlyph = CAShapeLayer()
+    private let onGlyph = CAShapeLayer()
     private(set) var isOn: Bool
     var onToggle: ((Bool) -> Void)?
 
+    private let trackWidth: CGFloat = 40
+    private let trackHeight: CGFloat = 24
+    private let knobSize: CGFloat = 20
+    private let knobInset: CGFloat = 2
+
     init(isOn: Bool) {
         self.isOn = isOn
-        super.init(frame: NSRect(x: 0, y: 0, width: 42, height: 24))
+        super.init(frame: NSRect(x: 0, y: 0, width: trackWidth, height: trackHeight))
         wantsLayer = true
         translatesAutoresizingMaskIntoConstraints = false
-        widthAnchor.constraint(equalToConstant: 42).isActive = true
-        heightAnchor.constraint(equalToConstant: 24).isActive = true
+        widthAnchor.constraint(equalToConstant: trackWidth).isActive = true
+        heightAnchor.constraint(equalToConstant: trackHeight).isActive = true
 
-        track.frame = NSRect(x: 0, y: 0, width: 42, height: 24)
-        track.cornerRadius = 12
+        track.frame = NSRect(x: 0, y: 0, width: trackWidth, height: trackHeight)
+        track.cornerRadius = trackHeight / 2
+        track.cornerCurve = .continuous
         layer?.addSublayer(track)
 
-        knob.frame = NSRect(x: 3, y: 3, width: 18, height: 18)
-        knob.cornerRadius = 9
-        knob.backgroundColor = NSColor.white.cgColor
+        offGlyph.fillColor = nil
+        offGlyph.strokeColor = NSColor.black.withAlphaComponent(0.28).cgColor
+        offGlyph.lineWidth = 1.25
+        offGlyph.path = CGPath(
+            ellipseIn: CGRect(x: trackWidth - 14.5, y: (trackHeight - 7) / 2, width: 7, height: 7),
+            transform: nil
+        )
+        track.addSublayer(offGlyph)
+
+        onGlyph.fillColor = NSColor.black.withAlphaComponent(0.28).cgColor
+        onGlyph.path = CGPath(
+            roundedRect: CGRect(x: 9, y: (trackHeight - 9) / 2, width: 2, height: 9),
+            cornerWidth: 1,
+            cornerHeight: 1,
+            transform: nil
+        )
+        track.addSublayer(onGlyph)
+
+        knob.bounds = CGRect(x: 0, y: 0, width: knobSize, height: knobSize)
+        knob.cornerRadius = knobSize / 2
+        knob.cornerCurve = .continuous
+        knob.backgroundColor = Brand.switchKnob.cgColor
         knob.shadowColor = NSColor.black.cgColor
-        knob.shadowOpacity = 0.35
-        knob.shadowRadius = 2
-        knob.shadowOffset = CGSize(width: 0, height: -1)
+        knob.shadowOpacity = 0.22
+        knob.shadowRadius = 2.5
+        knob.shadowOffset = CGSize(width: 0, height: -0.5)
         layer?.addSublayer(knob)
 
         apply(animated: false)
@@ -53,9 +80,15 @@ final class LEDToggle: NSView {
     private func apply(animated: Bool) {
         CATransaction.begin()
         CATransaction.setDisableActions(!animated)
-        CATransaction.setAnimationDuration(0.18)
-        track.backgroundColor = (isOn ? Brand.led : Brand.offDot).cgColor
-        knob.frame.origin.x = isOn ? 21 : 3
+        CATransaction.setAnimationDuration(0.2)
+        CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
+
+        track.backgroundColor = (isOn ? Brand.switchOn : Brand.switchOff).cgColor
+        let knobX = isOn ? trackWidth - knobSize - knobInset : knobInset
+        knob.position = CGPoint(x: knobX + knobSize / 2, y: trackHeight / 2)
+        offGlyph.opacity = isOn ? 0 : 1
+        onGlyph.opacity = isOn ? 1 : 0
+
         CATransaction.commit()
     }
 }
@@ -70,9 +103,10 @@ final class LanguagePopUpButton: NSPopUpButton {
         setContentHuggingPriority(.required, for: .horizontal)
         setContentCompressionResistancePriority(.required, for: .horizontal)
         controlSize = .small
-        font = .systemFont(ofSize: 12, weight: .semibold)
+        font = .systemFont(ofSize: 12, weight: .medium)
         alignment = .left
         bezelStyle = .rounded
+        appearance = NSAppearance(named: .darkAqua)
         bezelColor = Brand.surface2
         contentTintColor = Brand.text
         target = self
@@ -111,7 +145,7 @@ final class LanguagePopUpButton: NSPopUpButton {
     }
 }
 
-/// LED-green primary button matching the landing-page CTA.
+/// Full-width LED primary button at the bottom of the settings window.
 final class LEDButton: NSView {
     private let label = NSTextField(labelWithString: "")
     var onClick: (() -> Void)?
@@ -125,6 +159,7 @@ final class LEDButton: NSView {
         super.init(frame: .zero)
         wantsLayer = true
         layer?.cornerRadius = 11
+        layer?.cornerCurve = .continuous
         layer?.backgroundColor = Brand.led.cgColor
         translatesAutoresizingMaskIntoConstraints = false
 

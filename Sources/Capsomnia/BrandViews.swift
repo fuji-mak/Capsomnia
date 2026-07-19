@@ -21,38 +21,45 @@ func brandLabel(
     return label
 }
 
+/// Grouped-list surface (macOS 26 dark Group Box).
 func brandCard() -> NSView {
-    let view = NSView()
-    view.wantsLayer = true
-    view.layer?.backgroundColor = Brand.surface.cgColor
-    view.layer?.cornerRadius = 14
-    view.layer?.borderWidth = 1
-    view.layer?.borderColor = Brand.border.cgColor
+    let view = GlassCardView()
     view.translatesAutoresizingMaskIntoConstraints = false
     return view
 }
 
-func brandDivider() -> NSView {
-    let view = NSView()
-    view.wantsLayer = true
-    view.layer?.backgroundColor = Brand.border.cgColor
-    view.translatesAutoresizingMaskIntoConstraints = false
-    view.heightAnchor.constraint(equalToConstant: 1).isActive = true
-    return view
+/// Inset separator for System Settings–style grouped rows.
+func brandDivider(leadingInset: CGFloat = 16) -> NSView {
+    let holder = NSView()
+    holder.translatesAutoresizingMaskIntoConstraints = false
+    holder.heightAnchor.constraint(equalToConstant: 1).isActive = true
+
+    let line = NSView()
+    line.wantsLayer = true
+    line.layer?.backgroundColor = Brand.separator.cgColor
+    line.translatesAutoresizingMaskIntoConstraints = false
+    holder.addSubview(line)
+    NSLayoutConstraint.activate([
+        line.leadingAnchor.constraint(equalTo: holder.leadingAnchor, constant: leadingInset),
+        line.trailingAnchor.constraint(equalTo: holder.trailingAnchor),
+        line.topAnchor.constraint(equalTo: holder.topAnchor),
+        line.bottomAnchor.constraint(equalTo: holder.bottomAnchor)
+    ])
+    return holder
 }
 
 func brandStatusDot(on: Bool) -> NSView {
     let dot = NSView()
     dot.wantsLayer = true
     dot.translatesAutoresizingMaskIntoConstraints = false
-    dot.widthAnchor.constraint(equalToConstant: 12).isActive = true
-    dot.heightAnchor.constraint(equalToConstant: 12).isActive = true
-    dot.layer?.cornerRadius = 6
+    dot.widthAnchor.constraint(equalToConstant: 10).isActive = true
+    dot.heightAnchor.constraint(equalToConstant: 10).isActive = true
+    dot.layer?.cornerRadius = 5
     if on {
         dot.layer?.backgroundColor = Brand.led.cgColor
         dot.layer?.shadowColor = Brand.led.cgColor
-        dot.layer?.shadowOpacity = 0.85
-        dot.layer?.shadowRadius = 5
+        dot.layer?.shadowOpacity = 0.75
+        dot.layer?.shadowRadius = 4
         dot.layer?.shadowOffset = .zero
         dot.layer?.masksToBounds = false
     } else {
@@ -61,6 +68,19 @@ func brandStatusDot(on: Bool) -> NSView {
         dot.layer?.borderColor = Brand.offDotBorder.cgColor
     }
     return dot
+}
+
+final class GlassCardView: NSView {
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.cornerRadius = Brand.cardRadius
+        layer?.cornerCurve = .continuous
+        layer?.backgroundColor = Brand.surface.cgColor
+        layer?.masksToBounds = true
+    }
+
+    required init?(coder: NSCoder) { nil }
 }
 
 enum BrandIcon {

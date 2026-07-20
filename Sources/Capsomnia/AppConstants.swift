@@ -82,6 +82,7 @@ enum AppLanguage: String, CaseIterable {
 struct AppStrings {
     let dedicatedCapsLockMode: String
     let dedicatedCapsLockModeDesc: String
+    let toggleCapsLock: String
     let showMenuBarIcon: String
     let showMenuBarIconDesc: String
     let language: String
@@ -117,6 +118,7 @@ struct AppStrings {
             AppStrings(
                 dedicatedCapsLockMode: "Prevent all-caps typing",
                 dedicatedCapsLockModeDesc: "When the indicator is on, Caps Lock no longer forces uppercase input. Shift still types uppercase letters. Requires Accessibility permission.",
+                toggleCapsLock: "Toggle Caps Lock",
                 showMenuBarIcon: "Show menu bar icon",
                 showMenuBarIconDesc: "Display the LED status dot in the menu bar.",
                 language: "Language",
@@ -146,6 +148,7 @@ struct AppStrings {
             AppStrings(
                 dedicatedCapsLockMode: "대문자 고정 방지",
                 dedicatedCapsLockModeDesc: "표시등이 켜져 있어도 입력이 대문자로 고정되지 않도록 합니다. Shift를 누른 대문자 입력은 그대로 사용할 수 있습니다. 손쉬운 사용 권한이 필요합니다.",
+                toggleCapsLock: "Caps Lock 전환",
                 showMenuBarIcon: "메뉴 막대에 표시",
                 showMenuBarIconDesc: "메뉴 막대에 LED 상태 표시를 보여 줍니다.",
                 language: "언어",
@@ -175,6 +178,7 @@ struct AppStrings {
             AppStrings(
                 dedicatedCapsLockMode: "大文字固定を防ぐ",
                 dedicatedCapsLockModeDesc: "インジケーターがオンの時に入力が大文字固定になるのを無効化します。Shiftでの大文字入力は維持します。アクセシビリティ権限が必要です。",
+                toggleCapsLock: "Caps Lockを切り替え",
                 showMenuBarIcon: "メニューバーに表示",
                 showMenuBarIconDesc: "メニューバーにLEDステータスを表示します。",
                 language: "言語",
@@ -204,6 +208,7 @@ struct AppStrings {
             AppStrings(
                 dedicatedCapsLockMode: "防止输入锁定为大写",
                 dedicatedCapsLockModeDesc: "指示灯亮起时，防止输入被锁定为大写。仍可按住 Shift 输入大写字母。需要辅助功能权限。",
+                toggleCapsLock: "切换 Caps Lock",
                 showMenuBarIcon: "显示菜单栏图标",
                 showMenuBarIconDesc: "在菜单栏中显示 LED 状态指示灯。",
                 language: "语言",

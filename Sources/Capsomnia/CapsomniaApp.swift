@@ -1,5 +1,4 @@
 import AppKit
-import CoreGraphics
 import Foundation
 
 final class Capsomnia: NSObject, NSApplicationDelegate {
@@ -10,6 +9,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var nextDisplaySleepRetryAt = Date.distantPast
     private var didRequestDisplaySleepForClosedLid = false
     private var hasLoggedMissingClamshellState = false
+    private var hasLoggedMissingCapsLockState = false
     private var hasLoggedMissingDisplayState = false
     private var hasLoggedMissingSleepState = false
     private var dedicatedModeError = false
@@ -21,7 +21,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let onImage = DotImage.make(color: Brand.led)
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
     private let errorImage = DotImage.make(color: .systemRed)
+    private let capsLockStateReader = SystemCapsLockStateReader()
     private let dedicatedCapsLockFilter = DedicatedCapsLockFilter()
+    private let capsLockToggleCoordinator = CapsLockToggleCoordinator()
     private var nextDedicatedModeRetryAt = Date.distantPast
     private let helperRetryInterval: TimeInterval = 5
     private let dedicatedModeRetryInterval: TimeInterval = 5
@@ -101,7 +103,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     /// The state Capsomnia is acting on: the last state it applied, falling
     /// back to the live hardware Caps Lock state before the first apply.
     private var currentCapsLockState: Bool {
-        lastAppliedState ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        lastAppliedState ?? capsLockStateReader.currentState() ?? false
     }
 
     private func syncStatusItemVisibility() {
@@ -136,6 +138,15 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         let strings = AppStrings.current()
         let menu = NSMenu()
+        let toggleCapsLockItem = NSMenuItem(
+            title: strings.toggleCapsLock,
+            action: #selector(toggleCapsLockFromMenu),
+            keyEquivalent: ""
+        )
+        toggleCapsLockItem.target = self
+        menu.addItem(toggleCapsLockItem)
+        menu.addItem(NSMenuItem.separator())
+
         let showMenuBarItem = NSMenuItem(
             title: strings.showMenuBarIcon,
             action: #selector(toggleShowMenuBarIcon),
@@ -175,6 +186,39 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
     @objc private func toggleShowMenuBarIcon() {
         setShowMenuBarIcon(!Preferences.showMenuBarIcon)
+    }
+
+    @objc private func toggleCapsLockFromMenu() {
+        log("menu_toggle_capslock requested")
+
+        // NSMenu tracks in a non-default run loop mode. Scheduling in the
+        // default mode lets the action return and menu tracking finish before
+        // changing the real modifier-lock state.
+        RunLoop.main.perform(inModes: [.default]) { [weak self] in
+            guard let self else { return }
+            self.capsLockToggleCoordinator.requestToggle { [weak self] result in
+                self?.handleMenuCapsLockToggleResult(result)
+            }
+        }
+    }
+
+    private func handleMenuCapsLockToggleResult(_ result: CapsLockToggleResult) {
+        switch result {
+        case let .changed(target):
+            log("menu_toggle_capslock target=\(target ? "on" : "off") succeeded=true")
+        case .unavailable:
+            log("menu_toggle_capslock failed=hid_system_unavailable")
+        case .readFailed:
+            log("menu_toggle_capslock failed=read_state")
+        case let .writeFailed(target):
+            log("menu_toggle_capslock target=\(target ? "on" : "off") failed=write_state")
+        case let .verificationFailed(target, actual):
+            let actualValue = actual.map { $0 ? "on" : "off" } ?? "unknown"
+            log(
+                "menu_toggle_capslock target=\(target ? "on" : "off")"
+                    + " failed=verification actual=\(actualValue)"
+            )
+        }
     }
 
     @objc private func selectLanguage(_ sender: NSMenuItem) {
@@ -315,8 +359,18 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             return
         }
 
-        let flags = CGEventSource.flagsState(.hidSystemState)
-        apply(capsLockOn: flags.contains(.maskAlphaShift), reason: reason)
+        guard let capsLockOn = capsLockStateReader.currentState() else {
+            if !hasLoggedMissingCapsLockState {
+                log("\(reason) capslock_state_unavailable")
+                hasLoggedMissingCapsLockState = true
+            }
+            apply(capsLockOn: false, reason: "\(reason)_capslock_unavailable")
+            updateStatusError()
+            return
+        }
+
+        hasLoggedMissingCapsLockState = false
+        apply(capsLockOn: capsLockOn, reason: reason)
     }
 
     private func ensureDedicatedCapsLockFilter(

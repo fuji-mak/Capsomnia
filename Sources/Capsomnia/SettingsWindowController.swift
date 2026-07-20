@@ -27,19 +27,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let menuBarDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
     private let menuBarToggle = LEDToggle(isOn: Preferences.showMenuBarIcon)
 
-    private let openAtLoginTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
-    private let openAtLoginDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
-    private let openAtLoginToggle = LEDToggle(isOn: Preferences.launchAtLogin)
-
-    private let displaySleepOnLidCloseTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
-    private let displaySleepOnLidCloseDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
-    private let displaySleepOnLidCloseToggle = LEDToggle(isOn: Preferences.displaySleepOnLidClose)
-
     private let languageTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
     private let languagePopUp = LanguagePopUpButton(
         items: AppLanguage.allCases.map { (title: $0.displayName, value: $0.rawValue) },
         selected: Preferences.language.rawValue
     )
+    private let advancedSettingsButton = NSButton()
 
     private let noteLabel = brandLabel(size: 12, color: Brand.textFaint, wraps: true)
     private let doneButton = LEDButton()
@@ -47,9 +40,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let rootStack = NSStackView()
     private let bodyStack = NSStackView()
     private var preferencesCard = NSView()
-    private var settingsOnlyPreferenceViews: [NSView] = []
     private var initialPreferencesLayoutConstraints: [NSLayoutConstraint] = []
     private var settingsLayoutConstraints: [NSLayoutConstraint] = []
+    private var advancedSettingsWindowController: AdvancedSettingsWindowController?
 
     private let onDedicatedCapsLockModeChange: (Bool) -> Void
     private let onShowMenuBarIconChange: (Bool) -> Void
@@ -121,21 +114,18 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         dedicatedCapsLockModeDesc.stringValue = strings.dedicatedCapsLockModeDesc
         menuBarTitle.stringValue = strings.showMenuBarIcon
         menuBarDesc.stringValue = strings.showMenuBarIconDesc
-        displaySleepOnLidCloseTitle.stringValue = strings.displaySleepOnLidClose
-        displaySleepOnLidCloseDesc.stringValue = strings.displaySleepOnLidCloseDesc
-        openAtLoginTitle.stringValue = strings.openAtLogin
-        openAtLoginDesc.stringValue = strings.openAtLoginDesc
-        languageTitle.stringValue = "Language"
+        languageTitle.stringValue = strings.language
+        dedicatedCapsLockModeToggle.setAccessibilityLabel(strings.dedicatedCapsLockMode)
+        menuBarToggle.setAccessibilityLabel(strings.showMenuBarIcon)
         languagePopUp.setAccessibilityLabel(strings.language)
+        updateAdvancedSettingsButtonText(strings)
+        advancedSettingsWindowController?.reloadText()
 
         noteLabel.stringValue = strings.initialSettingsNote
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
 
         explainerCard.isHidden = page != .initialPreferences
         noteLabel.isHidden = page != .initialPreferences
-        for view in settingsOnlyPreferenceViews {
-            view.isHidden = isInitialSetup
-        }
 
         updateValues()
     }
@@ -185,6 +175,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         buildExplainerCard()
 
         preferencesCard = buildPreferencesCard()
+        configureAdvancedSettingsButton()
 
         doneButton.onClick = { [weak self] in self?.done() }
 
@@ -206,6 +197,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         ]
         settingsLayoutConstraints = [
             preferencesCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            advancedSettingsButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
         ]
 
@@ -236,9 +228,15 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         bodyStack.addArrangedSubview(preferencesCard)
         if isInitialSetup {
             bodyStack.addArrangedSubview(noteLabel)
+        } else {
+            bodyStack.addArrangedSubview(advancedSettingsButton)
         }
         bodyStack.addArrangedSubview(doneButton)
         bodyStack.setCustomSpacing(8, after: preferencesHeading)
+        if !isInitialSetup {
+            bodyStack.setCustomSpacing(12, after: preferencesCard)
+            bodyStack.setCustomSpacing(20, after: advancedSettingsButton)
+        }
         NSLayoutConstraint.activate(
             isInitialSetup ? initialPreferencesLayoutConstraints : settingsLayoutConstraints
         )
@@ -290,14 +288,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onShowMenuBarIconChange(enabled)
             self?.updateValues()
         }
-        openAtLoginToggle.onToggle = { [weak self] enabled in
-            self?.onLaunchAtLoginChange(enabled)
-            self?.updateValues()
-        }
-        displaySleepOnLidCloseToggle.onToggle = { [weak self] enabled in
-            self?.onDisplaySleepOnLidCloseChange(enabled)
-            self?.updateValues()
-        }
         languagePopUp.onSelect = { [weak self] rawValue in
             guard let language = AppLanguage(rawValue: rawValue) else { return }
             self?.onLanguageChange(language)
@@ -309,34 +299,16 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             accessory: dedicatedCapsLockModeToggle
         )
         let menuBarRow = settingRow(title: menuBarTitle, desc: menuBarDesc, accessory: menuBarToggle)
-        let displaySleepOnLidCloseRow = settingRow(
-            title: displaySleepOnLidCloseTitle,
-            desc: displaySleepOnLidCloseDesc,
-            accessory: displaySleepOnLidCloseToggle
-        )
-        let openAtLoginRow = settingRow(title: openAtLoginTitle, desc: openAtLoginDesc, accessory: openAtLoginToggle)
         let languageRow = settingRow(title: languageTitle, desc: nil, accessory: languagePopUp)
 
         let divider1 = brandDivider()
         let divider2 = brandDivider()
-        let divider3 = brandDivider()
-        let divider4 = brandDivider()
-        settingsOnlyPreferenceViews = [
-            displaySleepOnLidCloseRow,
-            divider2,
-            openAtLoginRow,
-            divider3
-        ]
 
         let inner = NSStackView(views: [
             menuBarRow,
             divider1,
-            displaySleepOnLidCloseRow,
-            divider2,
-            openAtLoginRow,
-            divider3,
             dedicatedCapsLockModeRow,
-            divider4,
+            divider2,
             languageRow
         ])
         inner.orientation = .vertical
@@ -355,12 +327,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         for row in [
             menuBarRow,
             divider1,
-            displaySleepOnLidCloseRow,
-            divider2,
-            openAtLoginRow,
-            divider3,
             dedicatedCapsLockModeRow,
-            divider4,
+            divider2,
             languageRow
         ] {
             row.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
@@ -423,9 +391,46 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private func updateValues() {
         dedicatedCapsLockModeToggle.setOn(Preferences.dedicatedCapsLockMode)
         menuBarToggle.setOn(Preferences.showMenuBarIcon)
-        displaySleepOnLidCloseToggle.setOn(Preferences.displaySleepOnLidClose)
-        openAtLoginToggle.setOn(Preferences.launchAtLogin)
         languagePopUp.setSelected(Preferences.language.rawValue)
+    }
+
+    private func configureAdvancedSettingsButton() {
+        advancedSettingsButton.translatesAutoresizingMaskIntoConstraints = false
+        advancedSettingsButton.bezelStyle = .rounded
+        advancedSettingsButton.controlSize = .large
+        advancedSettingsButton.alignment = .center
+        advancedSettingsButton.imagePosition = .noImage
+        advancedSettingsButton.contentTintColor = Brand.text
+        advancedSettingsButton.bezelColor = Brand.surface2
+        advancedSettingsButton.font = .systemFont(ofSize: 13, weight: .semibold)
+        advancedSettingsButton.target = self
+        advancedSettingsButton.action = #selector(showAdvancedSettings)
+        advancedSettingsButton.focusRingType = .exterior
+        advancedSettingsButton.heightAnchor.constraint(equalToConstant: 42).isActive = true
+    }
+
+    private func updateAdvancedSettingsButtonText(_ strings: AppStrings) {
+        advancedSettingsButton.attributedTitle = NSAttributedString(
+            string: strings.advancedSettings,
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
+                .foregroundColor: Brand.text
+            ]
+        )
+        advancedSettingsButton.setAccessibilityLabel(strings.advancedSettings)
+        advancedSettingsButton.setAccessibilityHelp(strings.advancedSettingsDesc)
+    }
+
+    @objc func showAdvancedSettings() {
+        guard let parentWindow = window else { return }
+
+        if advancedSettingsWindowController == nil {
+            advancedSettingsWindowController = AdvancedSettingsWindowController(
+                onLaunchAtLoginChange: onLaunchAtLoginChange,
+                onDisplaySleepOnLidCloseChange: onDisplaySleepOnLidCloseChange
+            )
+        }
+        advancedSettingsWindowController?.show(relativeTo: parentWindow)
     }
 
     private func finishInitialSetup() {

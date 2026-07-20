@@ -30,10 +30,18 @@ final class LEDToggle: NSView {
         knob.shadowOffset = CGSize(width: 0, height: -1)
         layer?.addSublayer(knob)
 
+        setAccessibilityElement(true)
+        setAccessibilityRole(.checkBox)
+        setAccessibilityEnabled(true)
+        focusRingType = .exterior
         apply(animated: false)
     }
 
     required init?(coder: NSCoder) { nil }
+
+    override var acceptsFirstResponder: Bool {
+        true
+    }
 
     func setOn(_ value: Bool) {
         isOn = value
@@ -41,6 +49,48 @@ final class LEDToggle: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        toggle()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 36 || event.charactersIgnoringModifiers == " " {
+            toggle()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        toggle()
+        return true
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let result = super.becomeFirstResponder()
+        needsDisplay = true
+        return result
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let result = super.resignFirstResponder()
+        needsDisplay = true
+        return result
+    }
+
+    override func drawFocusRingMask() {
+        NSBezierPath(
+            roundedRect: bounds,
+            xRadius: bounds.height / 2,
+            yRadius: bounds.height / 2
+        ).fill()
+    }
+
+    override var focusRingMaskBounds: NSRect {
+        bounds
+    }
+
+    private func toggle() {
         isOn.toggle()
         apply(animated: true)
         onToggle?(isOn)
@@ -57,6 +107,7 @@ final class LEDToggle: NSView {
         track.backgroundColor = (isOn ? Brand.led : Brand.offDot).cgColor
         knob.frame.origin.x = isOn ? 21 : 3
         CATransaction.commit()
+        setAccessibilityValue(isOn ? 1 : 0)
     }
 }
 
@@ -111,6 +162,131 @@ final class LanguagePopUpButton: NSPopUpButton {
     }
 }
 
+/// A visual shortcut recorder used by the advanced-settings preview.
+///
+/// It records a display value for the current app session only. Registering
+/// and persisting the global shortcut belongs to the shortcut feature itself.
+final class ShortcutRecorderButton: NSButton {
+    private var placeholderTitle: String
+    private var recordingTitle: String
+    private var recordedDisplay: String?
+    private var isRecording = false
+
+    init(placeholder: String, recording: String) {
+        placeholderTitle = placeholder
+        recordingTitle = recording
+        super.init(frame: .zero)
+
+        translatesAutoresizingMaskIntoConstraints = false
+        bezelStyle = .rounded
+        controlSize = .large
+        alignment = .center
+        font = .systemFont(ofSize: 12, weight: .medium)
+        contentTintColor = Brand.text
+        bezelColor = Brand.surface2
+        imagePosition = .noImage
+        title = placeholder
+        target = self
+        action = #selector(beginRecording)
+        focusRingType = .exterior
+
+        heightAnchor.constraint(equalToConstant: 40).isActive = true
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override var acceptsFirstResponder: Bool {
+        true
+    }
+
+    func setStrings(placeholder: String, recording: String) {
+        placeholderTitle = placeholder
+        recordingTitle = recording
+        refreshTitle()
+    }
+
+    @objc private func beginRecording() {
+        isRecording = true
+        refreshTitle()
+        window?.makeFirstResponder(self)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        guard isRecording else {
+            super.keyDown(with: event)
+            return
+        }
+
+        if event.keyCode == 53 {
+            isRecording = false
+            refreshTitle()
+            return
+        }
+
+        if event.keyCode == 51 || event.keyCode == 117 {
+            recordedDisplay = nil
+            isRecording = false
+            refreshTitle()
+            return
+        }
+
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let relevantModifiers = modifiers.intersection([.control, .option, .shift, .command])
+        guard !relevantModifiers.isEmpty,
+              let characters = event.charactersIgnoringModifiers,
+              let character = characters.first,
+              !character.isWhitespace else {
+            NSSound.beep()
+            return
+        }
+
+        recordedDisplay = shortcutDisplay(
+            modifiers: relevantModifiers,
+            character: character
+        )
+        isRecording = false
+        refreshTitle()
+    }
+
+    private func refreshTitle() {
+        let value = isRecording
+            ? recordingTitle
+            : recordedDisplay ?? placeholderTitle
+        attributedTitle = NSAttributedString(
+            string: value,
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 12, weight: .medium),
+                .foregroundColor: isRecording ? Brand.led : Brand.textDim
+            ]
+        )
+        bezelColor = isRecording
+            ? Brand.led.withAlphaComponent(0.24)
+            : Brand.surface2
+        setAccessibilityValue(value)
+    }
+
+    private func shortcutDisplay(
+        modifiers: NSEvent.ModifierFlags,
+        character: Character
+    ) -> String {
+        var value = ""
+        if modifiers.contains(.control) {
+            value += "⌃"
+        }
+        if modifiers.contains(.option) {
+            value += "⌥"
+        }
+        if modifiers.contains(.shift) {
+            value += "⇧"
+        }
+        if modifiers.contains(.command) {
+            value += "⌘"
+        }
+        value += String(character).uppercased()
+        return value
+    }
+}
+
 /// LED-green primary button matching the landing-page CTA.
 final class LEDButton: NSView {
     private let label = NSTextField(labelWithString: "")
@@ -118,7 +294,10 @@ final class LEDButton: NSView {
 
     var title: String {
         get { label.stringValue }
-        set { label.stringValue = newValue }
+        set {
+            label.stringValue = newValue
+            setAccessibilityLabel(newValue)
+        }
     }
 
     init() {
@@ -127,6 +306,10 @@ final class LEDButton: NSView {
         layer?.cornerRadius = 11
         layer?.backgroundColor = Brand.led.cgColor
         translatesAutoresizingMaskIntoConstraints = false
+        setAccessibilityElement(true)
+        setAccessibilityRole(.button)
+        setAccessibilityEnabled(true)
+        focusRingType = .exterior
 
         label.font = .systemFont(ofSize: 13, weight: .semibold)
         label.textColor = .black
@@ -149,8 +332,50 @@ final class LEDButton: NSView {
 
     required init?(coder: NSCoder) { nil }
 
+    override var acceptsFirstResponder: Bool {
+        true
+    }
+
     override func mouseDown(with event: NSEvent) {
-        onClick?()
+        window?.makeFirstResponder(self)
+        performAction()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 36 || event.charactersIgnoringModifiers == " " {
+            performAction()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        performAction()
+        return true
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let result = super.becomeFirstResponder()
+        needsDisplay = true
+        return result
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let result = super.resignFirstResponder()
+        needsDisplay = true
+        return result
+    }
+
+    override func drawFocusRingMask() {
+        NSBezierPath(
+            roundedRect: bounds,
+            xRadius: 11,
+            yRadius: 11
+        ).fill()
+    }
+
+    override var focusRingMaskBounds: NSRect {
+        bounds
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -163,6 +388,10 @@ final class LEDButton: NSView {
 
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    private func performAction() {
+        onClick?()
     }
 }
 

@@ -86,10 +86,20 @@ struct AppStrings {
     let showMenuBarIcon: String
     let showMenuBarIconDesc: String
     let language: String
+    let advancedSettings: String
+    let advancedSettingsDesc: String
+    let advancedSettingsTitle: String
+    let advancedSettingsSubtitle: String
+    let systemBehavior: String
     let openAtLogin: String
     let openAtLoginDesc: String
     let displaySleepOnLidClose: String
     let displaySleepOnLidCloseDesc: String
+    let keyboardShortcut: String
+    let keyboardShortcutDesc: String
+    let shortcutRecorderPlaceholder: String
+    let shortcutRecorderRecording: String
+    let shortcutPreviewNote: String
     let openCapsomnia: String
     let quit: String
     let settingsTitle: String
@@ -122,10 +132,20 @@ struct AppStrings {
                 showMenuBarIcon: "Show menu bar icon",
                 showMenuBarIconDesc: "Display the LED status dot in the menu bar.",
                 language: "Language",
+                advancedSettings: "Advanced Settings",
+                advancedSettingsDesc: "Sleep, login, and keyboard shortcut options",
+                advancedSettingsTitle: "Advanced Settings",
+                advancedSettingsSubtitle: "Fine-tune how Capsomnia behaves on this Mac.",
+                systemBehavior: "System Behavior",
                 openAtLogin: "Open at login",
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
                 displaySleepOnLidClose: "Turn display off when lid closes",
                 displaySleepOnLidCloseDesc: "When Caps Lock is on, let the display sleep after closing the lid only if no external display is connected.",
+                keyboardShortcut: "Toggle shortcut",
+                keyboardShortcutDesc: "Run the same Caps Lock toggle as the menu bar command.",
+                shortcutRecorderPlaceholder: "Click to enter a shortcut",
+                shortcutRecorderRecording: "Press your shortcut…",
+                shortcutPreviewNote: "Preview only — shortcut activation will be added next.",
                 openCapsomnia: "Open Capsomnia",
                 quit: "Quit",
                 settingsTitle: "Settings",
@@ -152,10 +172,20 @@ struct AppStrings {
                 showMenuBarIcon: "메뉴 막대에 표시",
                 showMenuBarIconDesc: "메뉴 막대에 LED 상태 표시를 보여 줍니다.",
                 language: "언어",
+                advancedSettings: "고급 설정",
+                advancedSettingsDesc: "잠자기, 로그인 및 키보드 단축키 옵션",
+                advancedSettingsTitle: "고급 설정",
+                advancedSettingsSubtitle: "이 Mac에서 Capsomnia가 동작하는 방식을 세부 조정합니다.",
+                systemBehavior: "시스템 동작",
                 openAtLogin: "로그인할 때 열기",
                 openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
                 displaySleepOnLidClose: "덮개를 닫을 때 화면 끄기",
                 displaySleepOnLidCloseDesc: "Caps Lock이 켜진 상태에서 덮개를 닫으면 외부 디스플레이가 연결되지 않은 경우에만 화면을 끕니다.",
+                keyboardShortcut: "전환 단축키",
+                keyboardShortcutDesc: "메뉴 막대 명령과 동일한 Caps Lock 전환을 실행합니다.",
+                shortcutRecorderPlaceholder: "클릭하여 단축키 입력",
+                shortcutRecorderRecording: "단축키를 누르세요…",
+                shortcutPreviewNote: "미리보기 전용 — 단축키 활성화는 다음 단계에서 추가됩니다.",
                 openCapsomnia: "Capsomnia 열기",
                 quit: "종료",
                 settingsTitle: "설정",
@@ -182,10 +212,20 @@ struct AppStrings {
                 showMenuBarIcon: "メニューバーに表示",
                 showMenuBarIconDesc: "メニューバーにLEDステータスを表示します。",
                 language: "言語",
+                advancedSettings: "詳細設定",
+                advancedSettingsDesc: "画面・ログイン・ショートカットの設定",
+                advancedSettingsTitle: "詳細設定",
+                advancedSettingsSubtitle: "このMacでのCapsomniaの動作を細かく調整します。",
+                systemBehavior: "システム動作",
                 openAtLogin: "ログイン時に起動",
                 openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
                 displaySleepOnLidClose: "蓋を閉じたら画面をオフ",
                 displaySleepOnLidCloseDesc: "Caps Lock ON中は、外部ディスプレイが接続されていない場合のみ、蓋を閉じたら画面を暗くします。",
+                keyboardShortcut: "切り替えショートカット",
+                keyboardShortcutDesc: "メニューバーと同じCaps Lock切り替えを実行します。",
+                shortcutRecorderPlaceholder: "クリックしてショートカットを入力",
+                shortcutRecorderRecording: "ショートカットを入力…",
+                shortcutPreviewNote: "現在はUIプレビューです。ショートカットの有効化は次に実装します。",
                 openCapsomnia: "Capsomniaを開く",
                 quit: "終了",
                 settingsTitle: "設定",
@@ -212,10 +252,20 @@ struct AppStrings {
                 showMenuBarIcon: "显示菜单栏图标",
                 showMenuBarIconDesc: "在菜单栏中显示 LED 状态指示灯。",
                 language: "语言",
+                advancedSettings: "高级设置",
+                advancedSettingsDesc: "显示屏、登录和键盘快捷键选项",
+                advancedSettingsTitle: "高级设置",
+                advancedSettingsSubtitle: "精细调整 Capsomnia 在这台 Mac 上的行为。",
+                systemBehavior: "系统行为",
                 openAtLogin: "登录时启动",
                 openAtLoginDesc: "登录后自动启动 Capsomnia。",
                 displaySleepOnLidClose: "合盖时关闭显示屏",
                 displaySleepOnLidCloseDesc: "Caps Lock 开启时，仅在未连接外接显示器的情况下，合盖后让显示屏进入睡眠。",
+                keyboardShortcut: "切换快捷键",
+                keyboardShortcutDesc: "执行与菜单栏命令相同的 Caps Lock 切换。",
+                shortcutRecorderPlaceholder: "点击输入快捷键",
+                shortcutRecorderRecording: "请按下快捷键…",
+                shortcutPreviewNote: "仅供界面预览——快捷键启用功能将在下一步添加。",
                 openCapsomnia: "打开 Capsomnia",
                 quit: "退出",
                 settingsTitle: "设置",

@@ -24,14 +24,26 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertFalse(renderedText.contains(strings.preferencesHeading))
         XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
         XCTAssertFalse(renderedText.contains(strings.openAtLogin))
+        var visibleButtons: [NSButton] = visibleDescendants(of: contentView)
+        XCTAssertFalse(
+            visibleButtons.contains {
+                $0.accessibilityLabel() == strings.advancedSettings
+            }
+        )
 
         controller.show(page: .settings)
         contentView.layoutSubtreeIfNeeded()
 
         renderedText = Set(visibleDescendants(of: contentView).map(\NSTextField.stringValue))
         XCTAssertTrue(renderedText.contains(strings.preferencesHeading))
-        XCTAssertTrue(renderedText.contains(strings.displaySleepOnLidClose))
-        XCTAssertTrue(renderedText.contains(strings.openAtLogin))
+        XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
+        XCTAssertFalse(renderedText.contains(strings.openAtLogin))
+        visibleButtons = visibleDescendants(of: contentView)
+        XCTAssertTrue(
+            visibleButtons.contains {
+                $0.accessibilityLabel() == strings.advancedSettings
+            }
+        )
     }
 
     func testKoreanSettingsRenderWithinTheWindow() throws {
@@ -51,13 +63,20 @@ final class SettingsWindowControllerTests: XCTestCase {
         for expected in [
             strings.dedicatedCapsLockMode,
             strings.showMenuBarIcon,
-            strings.displaySleepOnLidClose,
-            strings.openAtLogin,
-            "Language",
+            strings.language,
             strings.done
         ] {
             XCTAssertTrue(renderedText.contains(expected), "Missing rendered text: \(expected)")
         }
+        XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
+        XCTAssertFalse(renderedText.contains(strings.openAtLogin))
+
+        let buttons: [NSButton] = descendants(of: contentView)
+        XCTAssertTrue(
+            buttons.contains {
+                $0.accessibilityLabel() == strings.advancedSettings
+            }
+        )
 
         let languagePopUp: LanguagePopUpButton = try XCTUnwrap(descendants(of: contentView).first)
         XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.korean.rawValue)

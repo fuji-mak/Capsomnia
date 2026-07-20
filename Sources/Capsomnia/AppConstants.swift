@@ -281,7 +281,9 @@ enum Preferences {
             PreferenceKey.launchAtLogin: true,
             PreferenceKey.displaySleepOnLidClose: true,
             PreferenceKey.keepAwakeMode: KeepAwakeMode.capsLock.rawValue,
-            PreferenceKey.batteryFloorEnabled: true,
+            // Off by default: on, it would release keep-awake near empty for users
+            // who never asked for it, changing existing Caps Lock behavior.
+            PreferenceKey.batteryFloorEnabled: false,
             PreferenceKey.batteryFloorPercent: 15,
             PreferenceKey.didCompleteInitialSetup: false,
             PreferenceKey.forceWelcomeOnNextLaunch: false

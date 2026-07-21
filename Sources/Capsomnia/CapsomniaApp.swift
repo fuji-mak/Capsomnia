@@ -24,6 +24,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let capsLockStateReader = SystemCapsLockStateReader()
     private let dedicatedCapsLockFilter = DedicatedCapsLockFilter()
     private let capsLockToggleCoordinator = CapsLockToggleCoordinator()
+    private let globalHotKeyManager = GlobalHotKeyManager()
     private var nextDedicatedModeRetryAt = Date.distantPast
     private let helperRetryInterval: TimeInterval = 5
     private let dedicatedModeRetryInterval: TimeInterval = 5
@@ -35,6 +36,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         Preferences.registerDefaults()
+        configureGlobalHotKey()
         let shouldShowInitialSetup = Preferences.consumeForceWelcomeOnNextLaunch()
             || !Preferences.didCompleteInitialSetup
 
@@ -189,33 +191,38 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     @objc private func toggleCapsLockFromMenu() {
-        log("menu_toggle_capslock requested")
-
         // NSMenu tracks in a non-default run loop mode. Scheduling in the
         // default mode lets the action return and menu tracking finish before
         // changing the real modifier-lock state.
         RunLoop.main.perform(inModes: [.default]) { [weak self] in
-            guard let self else { return }
-            self.capsLockToggleCoordinator.requestToggle { [weak self] result in
-                self?.handleMenuCapsLockToggleResult(result)
-            }
+            self?.requestCapsLockToggle(source: "menu")
         }
     }
 
-    private func handleMenuCapsLockToggleResult(_ result: CapsLockToggleResult) {
+    private func requestCapsLockToggle(source: String) {
+        log("\(source)_toggle_capslock requested")
+        capsLockToggleCoordinator.requestToggle { [weak self] result in
+            self?.handleCapsLockToggleResult(result, source: source)
+        }
+    }
+
+    private func handleCapsLockToggleResult(
+        _ result: CapsLockToggleResult,
+        source: String
+    ) {
         switch result {
         case let .changed(target):
-            log("menu_toggle_capslock target=\(target ? "on" : "off") succeeded=true")
+            log("\(source)_toggle_capslock target=\(target ? "on" : "off") succeeded=true")
         case .unavailable:
-            log("menu_toggle_capslock failed=hid_system_unavailable")
+            log("\(source)_toggle_capslock failed=hid_system_unavailable")
         case .readFailed:
-            log("menu_toggle_capslock failed=read_state")
+            log("\(source)_toggle_capslock failed=read_state")
         case let .writeFailed(target):
-            log("menu_toggle_capslock target=\(target ? "on" : "off") failed=write_state")
+            log("\(source)_toggle_capslock target=\(target ? "on" : "off") failed=write_state")
         case let .verificationFailed(target, actual):
             let actualValue = actual.map { $0 ? "on" : "off" } ?? "unknown"
             log(
-                "menu_toggle_capslock target=\(target ? "on" : "off")"
+                "\(source)_toggle_capslock target=\(target ? "on" : "off")"
                     + " failed=verification actual=\(actualValue)"
             )
         }
@@ -256,6 +263,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 },
                 onDisplaySleepOnLidCloseChange: { [weak self] enabled in
                     self?.setDisplaySleepOnLidClose(enabled)
+                },
+                onKeyboardShortcutChange: { [weak self] shortcut in
+                    self?.setKeyboardShortcut(shortcut) ?? false
+                },
+                onKeyboardShortcutRecordingChange: { [weak self] isRecording in
+                    self?.setKeyboardShortcutRecording(isRecording)
                 },
                 onFinishInitialSetup: { [weak self] in
                     Preferences.didCompleteInitialSetup = true
@@ -332,6 +345,55 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             didRequestDisplaySleepForClosedLid = false
         }
         log("preference display_sleep_on_lid_close=\(enabled ? "on" : "off")")
+    }
+
+    private func configureGlobalHotKey() {
+        globalHotKeyManager.onTrigger = { [weak self] in
+            self?.requestCapsLockToggle(source: "shortcut")
+        }
+
+        let shortcut = Preferences.keyboardShortcut
+        let status = globalHotKeyManager.replaceShortcut(with: shortcut)
+        guard status == noErr else {
+            Preferences.keyboardShortcut = nil
+            log("shortcut_register startup_failed status=\(status)")
+            return
+        }
+
+        if let shortcut {
+            log("shortcut_register startup=\(shortcut.displayValue) succeeded=true")
+        }
+    }
+
+    private func setKeyboardShortcut(_ shortcut: KeyboardShortcut?) -> Bool {
+        let status = globalHotKeyManager.replaceShortcut(with: shortcut)
+        guard status == noErr else {
+            log(
+                "shortcut_register value=\(shortcut?.displayValue ?? "none")"
+                    + " failed_status=\(status)"
+            )
+            return false
+        }
+
+        Preferences.keyboardShortcut = shortcut
+        log("preference keyboard_shortcut=\(shortcut?.displayValue ?? "none")")
+        return true
+    }
+
+    private func setKeyboardShortcutRecording(_ isRecording: Bool) {
+        if isRecording {
+            globalHotKeyManager.suspend()
+            return
+        }
+
+        let status = globalHotKeyManager.replaceShortcut(
+            with: Preferences.keyboardShortcut
+        )
+        guard status != noErr else { return }
+
+        Preferences.keyboardShortcut = nil
+        settingsWindowController?.reloadText()
+        log("shortcut_register resume_failed status=\(status)")
     }
 
     private func installPollingMonitor() {

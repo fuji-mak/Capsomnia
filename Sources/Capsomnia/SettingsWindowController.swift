@@ -636,10 +636,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func updateAdvancedSettingsButtonText(_ strings: AppStrings) {
-        advancedSettingsButton.setStrings(
-            title: strings.advancedSettings,
-            subtitle: strings.advancedSettingsDesc
-        )
+        advancedSettingsButton.setTitle(strings.advancedSettings)
     }
 
     func showAdvancedSettings() {

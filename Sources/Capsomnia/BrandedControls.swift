@@ -165,7 +165,6 @@ final class LanguagePopUpButton: NSPopUpButton {
 /// A full-width navigation card used to reveal a deeper settings page.
 final class DisclosureButton: NSView {
     private let titleLabel = NSTextField(labelWithString: "")
-    private let subtitleLabel = NSTextField(labelWithString: "")
     private let chevronHolder = NSView()
     private let chevronView = NSImageView()
     private var isHovered = false
@@ -189,17 +188,9 @@ final class DisclosureButton: NSView {
         titleLabel.textColor = Brand.text
         titleLabel.lineBreakMode = .byTruncatingTail
 
-        subtitleLabel.font = .systemFont(ofSize: 11.5, weight: .regular)
-        subtitleLabel.textColor = Brand.textDim
-        subtitleLabel.lineBreakMode = .byTruncatingTail
-
-        let labels = NSStackView(views: [titleLabel, subtitleLabel])
-        labels.orientation = .vertical
-        labels.alignment = .leading
-        labels.spacing = 3
-        labels.translatesAutoresizingMaskIntoConstraints = false
-        labels.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        labels.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         chevronHolder.translatesAutoresizingMaskIntoConstraints = false
         chevronHolder.wantsLayer = true
@@ -216,7 +207,7 @@ final class DisclosureButton: NSView {
         chevronView.translatesAutoresizingMaskIntoConstraints = false
         chevronHolder.addSubview(chevronView)
 
-        let content = NSStackView(views: [labels, chevronHolder])
+        let content = NSStackView(views: [titleLabel, chevronHolder])
         content.orientation = .horizontal
         content.alignment = .centerY
         content.distribution = .fill
@@ -225,7 +216,7 @@ final class DisclosureButton: NSView {
         addSubview(content)
 
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: 62),
+            heightAnchor.constraint(equalToConstant: 52),
             chevronHolder.widthAnchor.constraint(equalToConstant: 30),
             chevronHolder.heightAnchor.constraint(equalToConstant: 30),
             chevronView.centerXAnchor.constraint(equalTo: chevronHolder.centerXAnchor),
@@ -249,11 +240,10 @@ final class DisclosureButton: NSView {
         true
     }
 
-    func setStrings(title: String, subtitle: String) {
+    func setTitle(_ title: String) {
         titleLabel.stringValue = title
-        subtitleLabel.stringValue = subtitle
         setAccessibilityLabel(title)
-        setAccessibilityHelp(subtitle)
+        setAccessibilityHelp(nil)
     }
 
     override func mouseDown(with event: NSEvent) {

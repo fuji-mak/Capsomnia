@@ -30,7 +30,6 @@ final class LocalizationTests: XCTestCase {
             XCTAssertFalse(strings.openAtLogin.isEmpty)
             XCTAssertFalse(strings.language.isEmpty)
             XCTAssertFalse(strings.advancedSettings.isEmpty)
-            XCTAssertFalse(strings.advancedSettingsDesc.isEmpty)
             XCTAssertFalse(strings.systemBehavior.isEmpty)
             XCTAssertFalse(strings.keyboardShortcut.isEmpty)
             XCTAssertFalse(strings.keyboardShortcutDesc.isEmpty)

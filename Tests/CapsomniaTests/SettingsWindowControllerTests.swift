@@ -50,10 +50,7 @@ final class SettingsWindowControllerTests: XCTestCase {
             }
         )
         let advancedSettingsButton = try XCTUnwrap(visibleButtons.first)
-        XCTAssertEqual(
-            advancedSettingsButton.accessibilityHelp(),
-            strings.advancedSettingsDesc
-        )
+        XCTAssertNil(advancedSettingsButton.accessibilityHelp())
         XCTAssertTrue(advancedSettingsButton.accessibilityPerformPress())
         XCTAssertEqual(controller.window?.title, strings.advancedSettings)
     }
@@ -76,7 +73,7 @@ final class SettingsWindowControllerTests: XCTestCase {
             strings.dedicatedCapsLockMode,
             strings.showMenuBarIcon,
             strings.language,
-            strings.advancedSettingsDesc,
+            strings.advancedSettings,
             strings.done
         ] {
             XCTAssertTrue(renderedText.contains(expected), "Missing rendered text: \(expected)")

@@ -333,30 +333,28 @@
         aria-labelledby="custom-shortcut-title"
       >
         <div class="relative overflow-hidden rounded-[24px] border border-[var(--border-strong)] bg-[var(--surface)] px-5 py-8 sm:px-8 sm:py-10 lg:px-12">
-          <div class="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[var(--led)] opacity-10 blur-[80px]" aria-hidden="true"></div>
-          <div class="relative grid items-center gap-10 lg:grid-cols-[1fr_0.82fr] lg:gap-16">
+          <div class="relative grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12">
             <div class="max-w-[620px]">
               <p class="mb-3 font-mono text-sm font-semibold uppercase tracking-normal text-[var(--led)]">自定义快捷键</p>
               <h2 id="custom-shortcut-title" class="mb-5 text-[clamp(1.8rem,4vw,2.7rem)] font-bold leading-[1.12]">自由设置按键</h2>
               <p class="text-[1.08rem] leading-relaxed text-[var(--text-dim)]">即使 Caps Lock 已用于其他功能，也可以用你喜欢的快捷键开启或关闭 Capsomnia。Capsomnia 开启期间，键盘上的绿色 Caps Lock 指示灯会保持亮起。</p>
             </div>
-            <div class="rounded-[18px] border border-[var(--border-strong)] bg-black/60 p-5 sm:p-6" aria-hidden="true">
-              <p class="mb-5 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[var(--text-faint)]">你的快捷键</p>
-              <div class="flex flex-wrap items-center gap-3">
-                <div class="flex items-center gap-2">
-                  <kbd class="flex h-12 min-w-12 items-center justify-center rounded-[10px] border border-[var(--border-strong)] bg-[var(--surface)] px-3 font-mono text-lg font-semibold text-[var(--text)] shadow-[inset_0_-2px_0_var(--border)]">⌘</kbd>
-                  <kbd class="flex h-12 min-w-12 items-center justify-center rounded-[10px] border border-[var(--border-strong)] bg-[var(--surface)] px-3 font-mono text-lg font-semibold text-[var(--text)] shadow-[inset_0_-2px_0_var(--border)]">⌥</kbd>
-                  <kbd class="flex h-12 min-w-12 items-center justify-center rounded-[10px] border border-[var(--border-strong)] bg-[var(--surface)] px-3 font-mono text-lg font-semibold text-[var(--text)] shadow-[inset_0_-2px_0_var(--border)]">K</kbd>
+            <div class="mx-auto w-full max-w-[540px]">
+              <div class="overflow-hidden rounded-[18px] border border-[var(--border-strong)] bg-black shadow-[0_18px_50px_-28px_rgba(0,0,0,0.9)]">
+                <div class="flex h-9 items-center gap-2 border-b border-[var(--border)] bg-[#0d0d0d] px-4" aria-hidden="true">
+                  <span class="h-3 w-3 rounded-full bg-[#ff5f57]"></span>
+                  <span class="h-3 w-3 rounded-full bg-[#febc2e]"></span>
+                  <span class="h-3 w-3 rounded-full bg-[#28c840]"></span>
                 </div>
-                <span class="px-1 text-xl text-[var(--text-faint)]">→</span>
-                <div class="inline-flex min-h-12 items-center gap-3 rounded-full border border-[rgba(184,255,31,0.28)] bg-[rgba(184,255,31,0.08)] px-4">
-                  <span class="h-2.5 w-2.5 rounded-full bg-[var(--led)] shadow-[0_0_12px_2px_var(--led-glow)]"></span>
-                  <span class="text-sm font-bold text-[var(--led-bright)]">Capsomnia ON</span>
-                </div>
-              </div>
-              <div class="mt-5 flex items-center gap-2 border-t border-[var(--border)] pt-4 text-sm text-[var(--text-dim)]">
-                <span class="h-2 w-2 rounded-full bg-[var(--led)] shadow-[0_0_8px_var(--led-glow)]"></span>
-                <span>Caps Lock 指示灯</span>
+                <img
+                  class="block h-auto w-full"
+                  src="/app-preview-shortcut-en.png"
+                  alt="Capsomnia 高级设置中的切换快捷键界面"
+                  width="1080"
+                  height="400"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
             </div>
           </div>

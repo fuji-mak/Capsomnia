@@ -88,7 +88,6 @@ struct AppStrings {
     let language: String
     let advancedSettings: String
     let advancedSettingsDesc: String
-    let advancedSettingsTitle: String
     let systemBehavior: String
     let openAtLogin: String
     let openAtLoginDesc: String
@@ -134,7 +133,6 @@ struct AppStrings {
                 language: "Language",
                 advancedSettings: "Advanced Settings",
                 advancedSettingsDesc: "Sleep, login, and keyboard shortcut options",
-                advancedSettingsTitle: "Advanced Settings",
                 systemBehavior: "System Behavior",
                 openAtLogin: "Open at login",
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
@@ -174,7 +172,6 @@ struct AppStrings {
                 language: "언어",
                 advancedSettings: "고급 설정",
                 advancedSettingsDesc: "잠자기, 로그인 및 키보드 단축키 옵션",
-                advancedSettingsTitle: "고급 설정",
                 systemBehavior: "시스템 동작",
                 openAtLogin: "로그인할 때 열기",
                 openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
@@ -214,7 +211,6 @@ struct AppStrings {
                 language: "言語",
                 advancedSettings: "詳細設定",
                 advancedSettingsDesc: "画面・ログイン・ショートカットの設定",
-                advancedSettingsTitle: "詳細設定",
                 systemBehavior: "システム動作",
                 openAtLogin: "ログイン時に起動",
                 openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
@@ -254,7 +250,6 @@ struct AppStrings {
                 language: "语言",
                 advancedSettings: "高级设置",
                 advancedSettingsDesc: "显示屏、登录和键盘快捷键选项",
-                advancedSettingsTitle: "高级设置",
                 systemBehavior: "系统行为",
                 openAtLogin: "登录时启动",
                 openAtLoginDesc: "登录后自动启动 Capsomnia。",

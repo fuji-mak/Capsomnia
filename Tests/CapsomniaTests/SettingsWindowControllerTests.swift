@@ -145,13 +145,13 @@ final class SettingsWindowControllerTests: XCTestCase {
 
         XCTAssertTrue(originalWindow === advancedWindow)
         XCTAssertGreaterThan(contentView.bounds.width, basicWidth)
-        XCTAssertEqual(advancedWindow.title, strings.advancedSettingsTitle)
+        XCTAssertEqual(advancedWindow.title, strings.advancedSettings)
 
         let renderedText = Set(
             visibleDescendants(of: contentView).map(\NSTextField.stringValue)
         )
         for expected in [
-            strings.advancedSettingsTitle,
+            strings.advancedSettings,
             strings.preferencesHeading.uppercased(),
             strings.showMenuBarIcon,
             strings.dedicatedCapsLockMode,

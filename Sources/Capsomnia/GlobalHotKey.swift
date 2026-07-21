@@ -84,31 +84,28 @@ struct KeyboardShortcut: Equatable {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         let modifiers = ShortcutModifiers(eventFlags: flags)
         let keyCode = UInt32(event.keyCode)
+        let key: String
 
         if let functionKey = Self.functionKeyLabel(for: event.keyCode) {
             guard modifiers.containsPrimaryModifier || modifiers == [.shift] else {
                 return nil
             }
-            self.init(
-                keyCode: keyCode,
-                modifiers: modifiers,
-                key: functionKey
-            )
-            return
-        }
-
-        guard modifiers.containsPrimaryModifier,
-              let characters = event.charactersIgnoringModifiers,
-              let character = characters.first,
-              !character.isWhitespace,
-              !character.isNewline else {
-            return nil
+            key = functionKey
+        } else {
+            guard modifiers.containsPrimaryModifier,
+                  let characters = event.charactersIgnoringModifiers,
+                  let character = characters.first,
+                  !character.isWhitespace,
+                  !character.isNewline else {
+                return nil
+            }
+            key = String(character)
         }
 
         self.init(
             keyCode: keyCode,
             modifiers: modifiers,
-            key: String(character)
+            key: key
         )
     }
 
@@ -148,7 +145,7 @@ struct KeyboardShortcut: Equatable {
 }
 
 private func capsomniaGlobalHotKeyHandler(
-    _ nextHandler: EventHandlerCallRef?,
+    _: EventHandlerCallRef?,
     _ event: EventRef?,
     _ userData: UnsafeMutableRawPointer?
 ) -> OSStatus {
@@ -185,7 +182,6 @@ final class GlobalHotKeyManager {
         }
     }
 
-    @discardableResult
     func replaceShortcut(with shortcut: KeyboardShortcut?) -> OSStatus {
         precondition(Thread.isMainThread)
 

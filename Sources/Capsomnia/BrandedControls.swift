@@ -172,6 +172,7 @@ final class ShortcutRecorderButton: NSView {
     private var isRecording = false
     private var isHovered = false
     private var isShowingRegistrationError = false
+    private var renderedKeycapTokens: [String] = []
 
     var onShortcutChange: ((KeyboardShortcut?) -> Bool)?
     var onRecordingChange: ((Bool) -> Void)?
@@ -375,15 +376,7 @@ final class ShortcutRecorderButton: NSView {
         }
 
         if event.keyCode == 51 || event.keyCode == 117 {
-            endRecording()
-            if onShortcutChange?(nil) ?? true {
-                shortcut = nil
-                isShowingRegistrationError = false
-            } else {
-                isShowingRegistrationError = true
-                NSSound.beep()
-            }
-            refreshAppearance()
+            commit(nil)
             return
         }
 
@@ -392,15 +385,7 @@ final class ShortcutRecorderButton: NSView {
             return
         }
 
-        endRecording()
-        if onShortcutChange?(candidate) ?? true {
-            shortcut = candidate
-            isShowingRegistrationError = false
-        } else {
-            isShowingRegistrationError = true
-            NSSound.beep()
-        }
-        refreshAppearance()
+        commit(candidate)
     }
 
     override func accessibilityPerformPress() -> Bool {
@@ -436,6 +421,18 @@ final class ShortcutRecorderButton: NSView {
         bounds
     }
 
+    private func commit(_ candidate: KeyboardShortcut?) {
+        endRecording()
+        if onShortcutChange?(candidate) ?? true {
+            shortcut = candidate
+            isShowingRegistrationError = false
+        } else {
+            isShowingRegistrationError = true
+            NSSound.beep()
+        }
+        refreshAppearance()
+    }
+
     private func refreshAppearance() {
         valueLabel.stringValue = isShowingRegistrationError
             ? registrationFailedTitle
@@ -453,8 +450,9 @@ final class ShortcutRecorderButton: NSView {
         keycapStack.isHidden = !hasRecordedShortcut
         actionPill.isHidden = hasRecordedShortcut
 
-        if hasRecordedShortcut {
-            rebuildKeycaps(tokens)
+        if hasRecordedShortcut, tokens != renderedKeycapTokens {
+            renderedKeycapTokens = tokens
+            rebuildKeycaps()
         }
 
         let highlighted = isRecording || isHovered
@@ -482,16 +480,15 @@ final class ShortcutRecorderButton: NSView {
         )
     }
 
-    private func rebuildKeycaps(_ tokens: [String]) {
+    private func rebuildKeycaps() {
         for view in keycapStack.arrangedSubviews {
             keycapStack.removeArrangedSubview(view)
             view.removeFromSuperview()
         }
-        for token in tokens {
+        for token in renderedKeycapTokens {
             keycapStack.addArrangedSubview(ShortcutKeycapView(value: token))
         }
     }
-
 }
 
 private final class ShortcutKeycapView: NSView {
@@ -637,18 +634,5 @@ final class LEDButton: NSView {
 
     private func performAction() {
         onClick?()
-    }
-}
-
-/// A plain view that forwards a click as a closure.
-final class ClickableView: NSView {
-    var onClick: (() -> Void)?
-
-    override func mouseDown(with event: NSEvent) {
-        onClick?()
-    }
-
-    override func resetCursorRects() {
-        addCursorRect(bounds, cursor: .pointingHand)
     }
 }

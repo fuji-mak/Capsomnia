@@ -150,12 +150,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         if isInitialSetup {
             window?.title = strings.welcomeTitle
         } else if isAdvancedSettings {
-            window?.title = strings.advancedSettingsTitle
+            window?.title = strings.advancedSettings
         } else {
             window?.title = strings.settingsTitle
         }
         titleLabel.stringValue = isInitialSetup ? strings.welcomeTitle : "Capsomnia"
-        advancedTitleLabel.stringValue = strings.advancedSettingsTitle
+        advancedTitleLabel.stringValue = strings.advancedSettings
         updateBackButtonText(strings)
 
         explainerOnTitle.stringValue = strings.explainerOnTitle
@@ -201,8 +201,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
 
         appHeader.isHidden = isAdvancedSettings
-        explainerCard.isHidden = page != .initialPreferences
-        noteLabel.isHidden = page != .initialPreferences
 
         updateValues()
     }

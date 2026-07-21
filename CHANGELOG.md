@@ -4,6 +4,14 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 2.0.0 - 2026-07-21
+
+- Add reliable Caps Lock toggling from the menu bar by using the real IOHID modifier-lock state as the single source of truth for the physical LED, menu bar status, and sleep prevention.
+- Add a persistent global toggle shortcut with conflict handling, support for Command, Option, or Control combinations, and Shift with F1–F20.
+- Redesign Settings with a focused main page and a larger Advanced Settings page that keeps every preference in one window.
+- Clarify Capsomnia-on behavior across all four app languages and add a high-resolution shortcut-settings preview to every localized landing page.
+- Remove redundant security explanation cards from the landing page while retaining the helper restrictions and heat and battery guidance.
+
 ## 1.1.0 - 2026-07-19
 
 - Add the optional "Prevent all-caps typing" setting. When enabled, the Caps Lock indicator continues to control Capsomnia while normal typing is no longer locked to uppercase. Shift and other modifiers continue to work normally.

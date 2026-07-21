@@ -167,6 +167,30 @@ test("explicit Korean choice sets a Korean cookie and cleans the URL", async () 
   assert.equal(origin.requests.length, 0);
 });
 
+test("legacy English paths redirect permanently and remember English", async () => {
+  for (const path of ["/en", "/en/"]) {
+    const origin = originRecorder();
+    const response = await handleRequest(
+      new Request(`https://capsomnia.com${path}?utm_source=legacy`, {
+        headers: { "Accept-Language": "ja-JP" }
+      }),
+      origin.fetch
+    );
+
+    assert.equal(response.status, 301);
+    assert.equal(
+      response.headers.get("Location"),
+      "https://capsomnia.com/?utm_source=legacy"
+    );
+    assert.equal(response.headers.get("Cache-Control"), "private, no-store");
+    assert.match(
+      response.headers.get("Set-Cookie"),
+      /^capsomnia_locale=en; Path=\/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax$/
+    );
+    assert.equal(origin.requests.length, 0);
+  }
+});
+
 test("localized paths and non-navigation methods pass through", async () => {
   const localizedOrigin = originRecorder();
   const localizedResponse = await handleRequest(

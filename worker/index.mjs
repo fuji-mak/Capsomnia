@@ -114,6 +114,20 @@ function redirectToLocale(sourceUrl, locale, rememberChoice = false) {
   });
 }
 
+function redirectLegacyEnglishPath(sourceUrl) {
+  const destination = new URL(sourceUrl);
+  destination.pathname = "/";
+
+  return new Response(null, {
+    status: 301,
+    headers: {
+      "Cache-Control": "private, no-store",
+      Location: destination.toString(),
+      "Set-Cookie": languageCookie("en")
+    }
+  });
+}
+
 async function fetchRootWithVary(request, fetchOrigin) {
   const response = await fetchOrigin(request);
   const headers = new Headers(response.headers);
@@ -136,6 +150,10 @@ export async function handleRequest(request, fetchOrigin = fetch) {
 
   if (requestedLocale) {
     return redirectToLocale(url, requestedLocale, true);
+  }
+
+  if (url.pathname === "/en" || url.pathname === "/en/") {
+    return redirectLegacyEnglishPath(url);
   }
 
   if (url.pathname !== "/") {

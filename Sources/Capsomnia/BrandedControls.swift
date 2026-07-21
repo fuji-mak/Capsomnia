@@ -30,10 +30,18 @@ final class LEDToggle: NSView {
         knob.shadowOffset = CGSize(width: 0, height: -1)
         layer?.addSublayer(knob)
 
+        setAccessibilityElement(true)
+        setAccessibilityRole(.checkBox)
+        setAccessibilityEnabled(true)
+        focusRingType = .exterior
         apply(animated: false)
     }
 
     required init?(coder: NSCoder) { nil }
+
+    override var acceptsFirstResponder: Bool {
+        true
+    }
 
     func setOn(_ value: Bool) {
         isOn = value
@@ -41,6 +49,48 @@ final class LEDToggle: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        toggle()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 36 || event.charactersIgnoringModifiers == " " {
+            toggle()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        toggle()
+        return true
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let result = super.becomeFirstResponder()
+        needsDisplay = true
+        return result
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let result = super.resignFirstResponder()
+        needsDisplay = true
+        return result
+    }
+
+    override func drawFocusRingMask() {
+        NSBezierPath(
+            roundedRect: bounds,
+            xRadius: bounds.height / 2,
+            yRadius: bounds.height / 2
+        ).fill()
+    }
+
+    override var focusRingMaskBounds: NSRect {
+        bounds
+    }
+
+    private func toggle() {
         isOn.toggle()
         apply(animated: true)
         onToggle?(isOn)
@@ -57,6 +107,7 @@ final class LEDToggle: NSView {
         track.backgroundColor = (isOn ? Brand.led : Brand.offDot).cgColor
         knob.frame.origin.x = isOn ? 21 : 3
         CATransaction.commit()
+        setAccessibilityValue(isOn ? 1 : 0)
     }
 }
 
@@ -111,6 +162,525 @@ final class LanguagePopUpButton: NSPopUpButton {
     }
 }
 
+/// A full-width navigation card used to reveal a deeper settings page.
+final class DisclosureButton: NSView {
+    private let titleLabel = NSTextField(labelWithString: "")
+    private let chevronHolder = NSView()
+    private let chevronView = NSImageView()
+    private var isHovered = false
+
+    var onClick: (() -> Void)?
+
+    init() {
+        super.init(frame: .zero)
+
+        translatesAutoresizingMaskIntoConstraints = false
+        wantsLayer = true
+        layer?.cornerRadius = 12
+        layer?.borderWidth = 1
+        focusRingType = .exterior
+
+        setAccessibilityElement(true)
+        setAccessibilityRole(.button)
+        setAccessibilityEnabled(true)
+
+        titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        titleLabel.textColor = Brand.text
+        titleLabel.lineBreakMode = .byTruncatingTail
+
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        chevronHolder.translatesAutoresizingMaskIntoConstraints = false
+        chevronHolder.wantsLayer = true
+        chevronHolder.layer?.cornerRadius = 9
+
+        chevronView.image = NSImage(
+            systemSymbolName: "chevron.forward",
+            accessibilityDescription: nil
+        )
+        chevronView.symbolConfiguration = NSImage.SymbolConfiguration(
+            pointSize: 11,
+            weight: .semibold
+        )
+        chevronView.translatesAutoresizingMaskIntoConstraints = false
+        chevronHolder.addSubview(chevronView)
+
+        let content = NSStackView(views: [titleLabel, chevronHolder])
+        content.orientation = .horizontal
+        content.alignment = .centerY
+        content.distribution = .fill
+        content.spacing = 12
+        content.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(content)
+
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: 52),
+            chevronHolder.widthAnchor.constraint(equalToConstant: 30),
+            chevronHolder.heightAnchor.constraint(equalToConstant: 30),
+            chevronView.centerXAnchor.constraint(equalTo: chevronHolder.centerXAnchor),
+            chevronView.centerYAnchor.constraint(equalTo: chevronHolder.centerYAnchor),
+            content.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            content.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+            content.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+
+        addTrackingArea(NSTrackingArea(
+            rect: .zero,
+            options: [.activeInActiveApp, .inVisibleRect, .mouseEnteredAndExited],
+            owner: self
+        ))
+        refreshAppearance()
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override var acceptsFirstResponder: Bool {
+        true
+    }
+
+    func setTitle(_ title: String) {
+        titleLabel.stringValue = title
+        setAccessibilityLabel(title)
+        setAccessibilityHelp(nil)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        onClick?()
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+        refreshAppearance()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+        refreshAppearance()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 36 || event.charactersIgnoringModifiers == " " {
+            onClick?()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        onClick?()
+        return true
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let result = super.becomeFirstResponder()
+        needsDisplay = true
+        return result
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let result = super.resignFirstResponder()
+        needsDisplay = true
+        return result
+    }
+
+    override func drawFocusRingMask() {
+        NSBezierPath(
+            roundedRect: bounds,
+            xRadius: 12,
+            yRadius: 12
+        ).fill()
+    }
+
+    override var focusRingMaskBounds: NSRect {
+        bounds
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    private func refreshAppearance() {
+        layer?.backgroundColor = (isHovered ? Brand.surface2 : Brand.surface).cgColor
+        layer?.borderColor = (
+            isHovered ? Brand.led.withAlphaComponent(0.38) : Brand.border
+        ).cgColor
+        chevronHolder.layer?.backgroundColor = (
+            isHovered ? Brand.led.withAlphaComponent(0.13) : Brand.surface2
+        ).cgColor
+        chevronView.contentTintColor = isHovered ? Brand.led : Brand.textDim
+    }
+}
+
+/// A keycap-style recorder for Capsomnia's persisted global shortcut.
+final class ShortcutRecorderButton: NSView {
+    private var placeholderTitle: String
+    private var recordingTitle: String
+    private var actionTitle: String
+    private var registrationFailedTitle: String
+    private var shortcut: KeyboardShortcut?
+    private var isRecording = false
+    private var isHovered = false
+    private var isShowingRegistrationError = false
+    private var renderedKeycapTokens: [String] = []
+
+    var onShortcutChange: ((KeyboardShortcut?) -> Bool)?
+    var onRecordingChange: ((Bool) -> Void)?
+
+    private let iconHolder = NSView()
+    private let iconView = NSImageView()
+    private let valueLabel = NSTextField(labelWithString: "")
+    private let flexibleSpace = NSView()
+    private let keycapStack = NSStackView()
+    private let actionPill = NSView()
+    private let actionLabel = NSTextField(labelWithString: "")
+
+    init(
+        placeholder: String,
+        recording: String,
+        action: String,
+        registrationFailed: String
+    ) {
+        placeholderTitle = placeholder
+        recordingTitle = recording
+        actionTitle = action
+        registrationFailedTitle = registrationFailed
+        super.init(frame: .zero)
+
+        translatesAutoresizingMaskIntoConstraints = false
+        wantsLayer = true
+        layer?.cornerRadius = 12
+        layer?.backgroundColor = Brand.surface2.cgColor
+        layer?.borderWidth = 1
+        layer?.borderColor = Brand.borderStrong.cgColor
+        focusRingType = .exterior
+
+        setAccessibilityElement(true)
+        setAccessibilityRole(.button)
+        setAccessibilityEnabled(true)
+
+        iconHolder.translatesAutoresizingMaskIntoConstraints = false
+        iconHolder.wantsLayer = true
+        iconHolder.layer?.cornerRadius = 10
+        iconHolder.layer?.backgroundColor = Brand.led.withAlphaComponent(0.09).cgColor
+        iconHolder.layer?.borderWidth = 1
+        iconHolder.layer?.borderColor = Brand.led.withAlphaComponent(0.2).cgColor
+
+        iconView.image = NSImage(
+            systemSymbolName: "keyboard",
+            accessibilityDescription: nil
+        )
+        iconView.symbolConfiguration = NSImage.SymbolConfiguration(
+            pointSize: 16,
+            weight: .medium
+        )
+        iconView.contentTintColor = Brand.led
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        iconHolder.addSubview(iconView)
+
+        valueLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        valueLabel.textColor = Brand.textDim
+        valueLabel.lineBreakMode = .byTruncatingTail
+        valueLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        flexibleSpace.translatesAutoresizingMaskIntoConstraints = false
+        flexibleSpace.setContentHuggingPriority(
+            NSLayoutConstraint.Priority(rawValue: 1),
+            for: .horizontal
+        )
+
+        keycapStack.orientation = .horizontal
+        keycapStack.alignment = .centerY
+        keycapStack.spacing = 7
+        keycapStack.translatesAutoresizingMaskIntoConstraints = false
+        keycapStack.setContentHuggingPriority(.required, for: .horizontal)
+
+        actionPill.translatesAutoresizingMaskIntoConstraints = false
+        actionPill.wantsLayer = true
+        actionPill.layer?.cornerRadius = 8
+        actionPill.layer?.backgroundColor = Brand.led.withAlphaComponent(0.1).cgColor
+        actionPill.layer?.borderWidth = 1
+        actionPill.layer?.borderColor = Brand.led.withAlphaComponent(0.28).cgColor
+
+        actionLabel.font = .systemFont(ofSize: 11, weight: .semibold)
+        actionLabel.textColor = Brand.led
+        actionLabel.alignment = .center
+        actionLabel.translatesAutoresizingMaskIntoConstraints = false
+        actionPill.addSubview(actionLabel)
+
+        let content = NSStackView(views: [
+            iconHolder,
+            valueLabel,
+            flexibleSpace,
+            keycapStack,
+            actionPill
+        ])
+        content.orientation = .horizontal
+        content.alignment = .centerY
+        content.spacing = 12
+        content.detachesHiddenViews = true
+        content.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(content)
+
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: 68),
+            iconHolder.widthAnchor.constraint(equalToConstant: 40),
+            iconHolder.heightAnchor.constraint(equalToConstant: 40),
+            iconView.centerXAnchor.constraint(equalTo: iconHolder.centerXAnchor),
+            iconView.centerYAnchor.constraint(equalTo: iconHolder.centerYAnchor),
+            actionLabel.leadingAnchor.constraint(equalTo: actionPill.leadingAnchor, constant: 11),
+            actionLabel.trailingAnchor.constraint(equalTo: actionPill.trailingAnchor, constant: -11),
+            actionLabel.topAnchor.constraint(equalTo: actionPill.topAnchor, constant: 7),
+            actionLabel.bottomAnchor.constraint(equalTo: actionPill.bottomAnchor, constant: -7),
+            content.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 13),
+            content.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -13),
+            content.topAnchor.constraint(equalTo: topAnchor, constant: 12),
+            content.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12)
+        ])
+
+        addTrackingArea(NSTrackingArea(
+            rect: .zero,
+            options: [.activeInActiveApp, .inVisibleRect, .mouseEnteredAndExited],
+            owner: self
+        ))
+        refreshAppearance()
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    var title: String {
+        isRecording ? recordingTitle : shortcut?.displayValue ?? placeholderTitle
+    }
+
+    override var acceptsFirstResponder: Bool {
+        true
+    }
+
+    func setStrings(
+        placeholder: String,
+        recording: String,
+        action: String,
+        registrationFailed: String
+    ) {
+        placeholderTitle = placeholder
+        recordingTitle = recording
+        actionTitle = action
+        registrationFailedTitle = registrationFailed
+        refreshAppearance()
+    }
+
+    func setShortcut(_ shortcut: KeyboardShortcut?) {
+        self.shortcut = shortcut
+        isShowingRegistrationError = false
+        refreshAppearance()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        beginRecording()
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+        refreshAppearance()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+        refreshAppearance()
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    private func beginRecording() {
+        guard !isRecording else { return }
+        isShowingRegistrationError = false
+        isRecording = true
+        onRecordingChange?(true)
+        window?.makeFirstResponder(self)
+        refreshAppearance()
+    }
+
+    private func endRecording() {
+        guard isRecording else { return }
+        isRecording = false
+        onRecordingChange?(false)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        guard isRecording else {
+            if event.keyCode == 36 || event.charactersIgnoringModifiers == " " {
+                beginRecording()
+                return
+            }
+            super.keyDown(with: event)
+            return
+        }
+
+        if event.keyCode == 53 {
+            endRecording()
+            refreshAppearance()
+            return
+        }
+
+        if event.keyCode == 51 || event.keyCode == 117 {
+            commit(nil)
+            return
+        }
+
+        guard let candidate = KeyboardShortcut(event: event) else {
+            NSSound.beep()
+            return
+        }
+
+        commit(candidate)
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        beginRecording()
+        return true
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let result = super.becomeFirstResponder()
+        needsDisplay = true
+        return result
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let result = super.resignFirstResponder()
+        if isRecording {
+            endRecording()
+            refreshAppearance()
+        }
+        needsDisplay = true
+        return result
+    }
+
+    override func drawFocusRingMask() {
+        NSBezierPath(
+            roundedRect: bounds,
+            xRadius: 12,
+            yRadius: 12
+        ).fill()
+    }
+
+    override var focusRingMaskBounds: NSRect {
+        bounds
+    }
+
+    private func commit(_ candidate: KeyboardShortcut?) {
+        endRecording()
+        if onShortcutChange?(candidate) ?? true {
+            shortcut = candidate
+            isShowingRegistrationError = false
+        } else {
+            isShowingRegistrationError = true
+            NSSound.beep()
+        }
+        refreshAppearance()
+    }
+
+    private func refreshAppearance() {
+        valueLabel.stringValue = isShowingRegistrationError
+            ? registrationFailedTitle
+            : title
+        valueLabel.textColor = isShowingRegistrationError
+            ? .systemRed
+            : isRecording ? Brand.led : Brand.textDim
+        actionLabel.stringValue = isRecording ? "Esc" : actionTitle
+
+        let tokens = shortcut?.displayTokens ?? []
+        let hasRecordedShortcut = !tokens.isEmpty
+            && !isRecording
+            && !isShowingRegistrationError
+        valueLabel.isHidden = hasRecordedShortcut
+        keycapStack.isHidden = !hasRecordedShortcut
+        actionPill.isHidden = hasRecordedShortcut
+
+        if hasRecordedShortcut, tokens != renderedKeycapTokens {
+            renderedKeycapTokens = tokens
+            rebuildKeycaps()
+        }
+
+        let highlighted = isRecording || isHovered
+        if isShowingRegistrationError {
+            layer?.borderColor = NSColor.systemRed.withAlphaComponent(0.72).cgColor
+        } else {
+            layer?.borderColor = (
+                highlighted
+                    ? Brand.led.withAlphaComponent(isRecording ? 0.72 : 0.42)
+                    : Brand.borderStrong
+            ).cgColor
+        }
+        layer?.backgroundColor = (
+            isShowingRegistrationError
+                ? NSColor.systemRed.withAlphaComponent(0.055)
+                : highlighted
+                ? Brand.led.withAlphaComponent(isRecording ? 0.075 : 0.035)
+                : Brand.surface2
+        ).cgColor
+        iconHolder.layer?.backgroundColor = Brand.led.withAlphaComponent(
+            highlighted ? 0.15 : 0.09
+        ).cgColor
+        setAccessibilityValue(
+            isShowingRegistrationError ? registrationFailedTitle : title
+        )
+    }
+
+    private func rebuildKeycaps() {
+        for view in keycapStack.arrangedSubviews {
+            keycapStack.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+        for token in renderedKeycapTokens {
+            keycapStack.addArrangedSubview(ShortcutKeycapView(value: token))
+        }
+    }
+}
+
+private final class ShortcutKeycapView: NSView {
+    init(value: String) {
+        super.init(frame: .zero)
+
+        wantsLayer = true
+        layer?.cornerRadius = 7
+        layer?.backgroundColor = Brand.surface.cgColor
+        layer?.borderWidth = 1
+        layer?.borderColor = Brand.borderStrong.cgColor
+        layer?.shadowColor = NSColor.black.cgColor
+        layer?.shadowOpacity = 0.45
+        layer?.shadowRadius = 0
+        layer?.shadowOffset = CGSize(width: 0, height: -2)
+        translatesAutoresizingMaskIntoConstraints = false
+
+        let label = NSTextField(labelWithString: value)
+        label.font = .systemFont(
+            ofSize: value.count > 1 ? 10 : 15,
+            weight: .semibold
+        )
+        label.textColor = Brand.text
+        label.alignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(label)
+
+        NSLayoutConstraint.activate([
+            widthAnchor.constraint(
+                equalToConstant: max(32, label.intrinsicContentSize.width + 17)
+            ),
+            heightAnchor.constraint(equalToConstant: 32),
+            label.centerXAnchor.constraint(equalTo: centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -1)
+        ])
+    }
+
+    required init?(coder: NSCoder) { nil }
+}
+
 /// LED-green primary button matching the landing-page CTA.
 final class LEDButton: NSView {
     private let label = NSTextField(labelWithString: "")
@@ -118,7 +688,10 @@ final class LEDButton: NSView {
 
     var title: String {
         get { label.stringValue }
-        set { label.stringValue = newValue }
+        set {
+            label.stringValue = newValue
+            setAccessibilityLabel(newValue)
+        }
     }
 
     init() {
@@ -127,6 +700,10 @@ final class LEDButton: NSView {
         layer?.cornerRadius = 11
         layer?.backgroundColor = Brand.led.cgColor
         translatesAutoresizingMaskIntoConstraints = false
+        setAccessibilityElement(true)
+        setAccessibilityRole(.button)
+        setAccessibilityEnabled(true)
+        focusRingType = .exterior
 
         label.font = .systemFont(ofSize: 13, weight: .semibold)
         label.textColor = .black
@@ -149,8 +726,50 @@ final class LEDButton: NSView {
 
     required init?(coder: NSCoder) { nil }
 
+    override var acceptsFirstResponder: Bool {
+        true
+    }
+
     override func mouseDown(with event: NSEvent) {
-        onClick?()
+        window?.makeFirstResponder(self)
+        performAction()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 36 || event.charactersIgnoringModifiers == " " {
+            performAction()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        performAction()
+        return true
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let result = super.becomeFirstResponder()
+        needsDisplay = true
+        return result
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let result = super.resignFirstResponder()
+        needsDisplay = true
+        return result
+    }
+
+    override func drawFocusRingMask() {
+        NSBezierPath(
+            roundedRect: bounds,
+            xRadius: 11,
+            yRadius: 11
+        ).fill()
+    }
+
+    override var focusRingMaskBounds: NSRect {
+        bounds
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -164,17 +783,8 @@ final class LEDButton: NSView {
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .pointingHand)
     }
-}
 
-/// A plain view that forwards a click as a closure.
-final class ClickableView: NSView {
-    var onClick: (() -> Void)?
-
-    override func mouseDown(with event: NSEvent) {
+    private func performAction() {
         onClick?()
-    }
-
-    override func resetCursorRects() {
-        addCursorRect(bounds, cursor: .pointingHand)
     }
 }

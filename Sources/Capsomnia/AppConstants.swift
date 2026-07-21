@@ -82,13 +82,22 @@ enum AppLanguage: String, CaseIterable {
 struct AppStrings {
     let dedicatedCapsLockMode: String
     let dedicatedCapsLockModeDesc: String
+    let toggleCapsLock: String
     let showMenuBarIcon: String
     let showMenuBarIconDesc: String
     let language: String
+    let advancedSettings: String
+    let systemBehavior: String
     let openAtLogin: String
     let openAtLoginDesc: String
     let displaySleepOnLidClose: String
     let displaySleepOnLidCloseDesc: String
+    let keyboardShortcut: String
+    let keyboardShortcutDesc: String
+    let shortcutRecorderPlaceholder: String
+    let shortcutRecorderRecording: String
+    let shortcutRecorderAction: String
+    let shortcutRegistrationFailed: String
     let openCapsomnia: String
     let quit: String
     let settingsTitle: String
@@ -116,14 +125,23 @@ struct AppStrings {
         case .english:
             AppStrings(
                 dedicatedCapsLockMode: "Prevent all-caps typing",
-                dedicatedCapsLockModeDesc: "When the indicator is on, Caps Lock no longer forces uppercase input. Shift still types uppercase letters. Requires Accessibility permission.",
+                dedicatedCapsLockModeDesc: "When Capsomnia is on, Caps Lock no longer forces uppercase input. Shift still types uppercase letters. Requires Accessibility permission.",
+                toggleCapsLock: "Toggle Caps Lock",
                 showMenuBarIcon: "Show menu bar icon",
                 showMenuBarIconDesc: "Display the LED status dot in the menu bar.",
                 language: "Language",
+                advancedSettings: "Advanced Settings",
+                systemBehavior: "System Behavior",
                 openAtLogin: "Open at login",
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
                 displaySleepOnLidClose: "Turn display off when lid closes",
-                displaySleepOnLidCloseDesc: "When Caps Lock is on, let the display sleep after closing the lid only if no external display is connected.",
+                displaySleepOnLidCloseDesc: "When Capsomnia is on, let the display sleep after closing the lid only if no external display is connected.",
+                keyboardShortcut: "Toggle shortcut",
+                keyboardShortcutDesc: "If you’ve assigned Caps Lock to another key, you can use a shortcut to turn Capsomnia on and off. While Capsomnia is on, the green Caps Lock light stays lit.",
+                shortcutRecorderPlaceholder: "Not Set",
+                shortcutRecorderRecording: "Press keys…",
+                shortcutRecorderAction: "Record",
+                shortcutRegistrationFailed: "That shortcut is unavailable",
                 openCapsomnia: "Open Capsomnia",
                 quit: "Quit",
                 settingsTitle: "Settings",
@@ -145,14 +163,23 @@ struct AppStrings {
         case .korean:
             AppStrings(
                 dedicatedCapsLockMode: "대문자 고정 방지",
-                dedicatedCapsLockModeDesc: "표시등이 켜져 있어도 입력이 대문자로 고정되지 않도록 합니다. Shift를 누른 대문자 입력은 그대로 사용할 수 있습니다. 손쉬운 사용 권한이 필요합니다.",
+                dedicatedCapsLockModeDesc: "Capsomnia가 켜져 있을 때 입력이 대문자로 고정되지 않도록 합니다. Shift를 누른 대문자 입력은 그대로 사용할 수 있습니다. 손쉬운 사용 권한이 필요합니다.",
+                toggleCapsLock: "Caps Lock 전환",
                 showMenuBarIcon: "메뉴 막대에 표시",
                 showMenuBarIconDesc: "메뉴 막대에 LED 상태 표시를 보여 줍니다.",
                 language: "언어",
+                advancedSettings: "고급 설정",
+                systemBehavior: "시스템 동작",
                 openAtLogin: "로그인할 때 열기",
                 openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
                 displaySleepOnLidClose: "덮개를 닫을 때 화면 끄기",
-                displaySleepOnLidCloseDesc: "Caps Lock이 켜진 상태에서 덮개를 닫으면 외부 디스플레이가 연결되지 않은 경우에만 화면을 끕니다.",
+                displaySleepOnLidCloseDesc: "Capsomnia가 켜진 상태에서 덮개를 닫으면 외부 디스플레이가 연결되지 않은 경우에만 화면을 끕니다.",
+                keyboardShortcut: "전환 단축키",
+                keyboardShortcutDesc: "Caps Lock을 다른 키에 할당한 경우에도 원하는 단축키로 Capsomnia를 켜거나 끌 수 있습니다. Capsomnia가 켜져 있는 동안에는 초록색 Caps Lock 표시등이 켜집니다.",
+                shortcutRecorderPlaceholder: "미설정",
+                shortcutRecorderRecording: "입력 대기…",
+                shortcutRecorderAction: "입력",
+                shortcutRegistrationFailed: "사용할 수 없는 단축키입니다",
                 openCapsomnia: "Capsomnia 열기",
                 quit: "종료",
                 settingsTitle: "설정",
@@ -174,14 +201,23 @@ struct AppStrings {
         case .japanese:
             AppStrings(
                 dedicatedCapsLockMode: "大文字固定を防ぐ",
-                dedicatedCapsLockModeDesc: "インジケーターがオンの時に入力が大文字固定になるのを無効化します。Shiftでの大文字入力は維持します。アクセシビリティ権限が必要です。",
+                dedicatedCapsLockModeDesc: "Capsomniaがオンのときに、入力が大文字になるのを無効化します。Shiftでの大文字入力は維持します。アクセシビリティ権限が必要です。",
+                toggleCapsLock: "Caps Lockを切り替え",
                 showMenuBarIcon: "メニューバーに表示",
                 showMenuBarIconDesc: "メニューバーにLEDステータスを表示します。",
                 language: "言語",
+                advancedSettings: "詳細設定",
+                systemBehavior: "システム動作",
                 openAtLogin: "ログイン時に起動",
                 openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
                 displaySleepOnLidClose: "蓋を閉じたら画面をオフ",
-                displaySleepOnLidCloseDesc: "Caps Lock ON中は、外部ディスプレイが接続されていない場合のみ、蓋を閉じたら画面を暗くします。",
+                displaySleepOnLidCloseDesc: "Capsomnia ON中は、外部ディスプレイが接続されていない場合のみ、蓋を閉じたら画面を暗くします。",
+                keyboardShortcut: "切り替えショートカット",
+                keyboardShortcutDesc: "Caps Lockを別のキーに割り当てている場合でも、お好みのショートカットでCapsomniaをオン／オフできます。Capsomniaがオンの間は、Caps Lockの緑のライトが点灯します。",
+                shortcutRecorderPlaceholder: "未設定",
+                shortcutRecorderRecording: "入力待ち…",
+                shortcutRecorderAction: "入力する",
+                shortcutRegistrationFailed: "そのショートカットは使用できません",
                 openCapsomnia: "Capsomniaを開く",
                 quit: "終了",
                 settingsTitle: "設定",
@@ -203,14 +239,23 @@ struct AppStrings {
         case .simplifiedChinese:
             AppStrings(
                 dedicatedCapsLockMode: "防止输入锁定为大写",
-                dedicatedCapsLockModeDesc: "指示灯亮起时，防止输入被锁定为大写。仍可按住 Shift 输入大写字母。需要辅助功能权限。",
+                dedicatedCapsLockModeDesc: "Capsomnia 开启时，防止输入被锁定为大写。仍可按住 Shift 输入大写字母。需要辅助功能权限。",
+                toggleCapsLock: "切换 Caps Lock",
                 showMenuBarIcon: "显示菜单栏图标",
                 showMenuBarIconDesc: "在菜单栏中显示 LED 状态指示灯。",
                 language: "语言",
+                advancedSettings: "高级设置",
+                systemBehavior: "系统行为",
                 openAtLogin: "登录时启动",
                 openAtLoginDesc: "登录后自动启动 Capsomnia。",
                 displaySleepOnLidClose: "合盖时关闭显示屏",
-                displaySleepOnLidCloseDesc: "Caps Lock 开启时，仅在未连接外接显示器的情况下，合盖后让显示屏进入睡眠。",
+                displaySleepOnLidCloseDesc: "Capsomnia 开启时，仅在未连接外接显示器的情况下，合盖后让显示屏进入睡眠。",
+                keyboardShortcut: "切换快捷键",
+                keyboardShortcutDesc: "即使已将 Caps Lock 分配给其他按键，也可以使用自定义快捷键开启或关闭 Capsomnia。Capsomnia 开启期间，绿色 Caps Lock 指示灯会保持亮起。",
+                shortcutRecorderPlaceholder: "未设置",
+                shortcutRecorderRecording: "等待输入…",
+                shortcutRecorderAction: "录入",
+                shortcutRegistrationFailed: "该快捷键不可用",
                 openCapsomnia: "打开 Capsomnia",
                 quit: "退出",
                 settingsTitle: "设置",
@@ -239,6 +284,9 @@ private enum PreferenceKey {
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
     static let displaySleepOnLidClose = "DisplaySleepOnLidClose"
+    static let shortcutKeyCode = "ShortcutKeyCode"
+    static let shortcutModifiers = "ShortcutModifiers"
+    static let shortcutKey = "ShortcutKey"
     static let didCompleteInitialSetup = "DidCompleteInitialSetup"
     static let forceWelcomeOnNextLaunch = "ForceWelcomeOnNextLaunch"
 }
@@ -284,6 +332,33 @@ enum Preferences {
     static var displaySleepOnLidClose: Bool {
         get { defaults.bool(forKey: PreferenceKey.displaySleepOnLidClose) }
         set { defaults.set(newValue, forKey: PreferenceKey.displaySleepOnLidClose) }
+    }
+
+    static var keyboardShortcut: KeyboardShortcut? {
+        get {
+            guard let keyCode = defaults.object(forKey: PreferenceKey.shortcutKeyCode) as? NSNumber,
+                  let modifiers = defaults.object(forKey: PreferenceKey.shortcutModifiers) as? NSNumber,
+                  let key = defaults.string(forKey: PreferenceKey.shortcutKey),
+                  !key.isEmpty else {
+                return nil
+            }
+            return KeyboardShortcut(
+                keyCode: keyCode.uint32Value,
+                modifiers: ShortcutModifiers(rawValue: modifiers.uint32Value),
+                key: key
+            )
+        }
+        set {
+            guard let newValue else {
+                defaults.removeObject(forKey: PreferenceKey.shortcutKeyCode)
+                defaults.removeObject(forKey: PreferenceKey.shortcutModifiers)
+                defaults.removeObject(forKey: PreferenceKey.shortcutKey)
+                return
+            }
+            defaults.set(newValue.keyCode, forKey: PreferenceKey.shortcutKeyCode)
+            defaults.set(newValue.modifiers.rawValue, forKey: PreferenceKey.shortcutModifiers)
+            defaults.set(newValue.key, forKey: PreferenceKey.shortcutKey)
+        }
     }
 
     static var didCompleteInitialSetup: Bool {

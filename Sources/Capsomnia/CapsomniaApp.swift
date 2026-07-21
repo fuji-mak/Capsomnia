@@ -1,5 +1,4 @@
 import AppKit
-import CoreGraphics
 import Foundation
 
 final class Capsomnia: NSObject, NSApplicationDelegate {
@@ -10,6 +9,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var nextDisplaySleepRetryAt = Date.distantPast
     private var didRequestDisplaySleepForClosedLid = false
     private var hasLoggedMissingClamshellState = false
+    private var hasLoggedMissingCapsLockState = false
     private var hasLoggedMissingDisplayState = false
     private var hasLoggedMissingSleepState = false
     private var dedicatedModeError = false
@@ -21,7 +21,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let onImage = DotImage.make(color: Brand.led)
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
     private let errorImage = DotImage.make(color: .systemRed)
+    private let capsLockStateReader = SystemCapsLockStateReader()
     private let dedicatedCapsLockFilter = DedicatedCapsLockFilter()
+    private let capsLockToggleCoordinator = CapsLockToggleCoordinator()
+    private let globalHotKeyManager = GlobalHotKeyManager()
     private var nextDedicatedModeRetryAt = Date.distantPast
     private let helperRetryInterval: TimeInterval = 5
     private let dedicatedModeRetryInterval: TimeInterval = 5
@@ -33,6 +36,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         Preferences.registerDefaults()
+        configureGlobalHotKey()
         let shouldShowInitialSetup = Preferences.consumeForceWelcomeOnNextLaunch()
             || !Preferences.didCompleteInitialSetup
 
@@ -101,7 +105,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     /// The state Capsomnia is acting on: the last state it applied, falling
     /// back to the live hardware Caps Lock state before the first apply.
     private var currentCapsLockState: Bool {
-        lastAppliedState ?? CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        lastAppliedState ?? capsLockStateReader.currentState() ?? false
     }
 
     private func syncStatusItemVisibility() {
@@ -136,6 +140,15 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         let strings = AppStrings.current()
         let menu = NSMenu()
+        let toggleCapsLockItem = NSMenuItem(
+            title: strings.toggleCapsLock,
+            action: #selector(toggleCapsLockFromMenu),
+            keyEquivalent: ""
+        )
+        toggleCapsLockItem.target = self
+        menu.addItem(toggleCapsLockItem)
+        menu.addItem(NSMenuItem.separator())
+
         let showMenuBarItem = NSMenuItem(
             title: strings.showMenuBarIcon,
             action: #selector(toggleShowMenuBarIcon),
@@ -177,6 +190,44 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         setShowMenuBarIcon(!Preferences.showMenuBarIcon)
     }
 
+    @objc private func toggleCapsLockFromMenu() {
+        // NSMenu tracks in a non-default run loop mode. Scheduling in the
+        // default mode lets the action return and menu tracking finish before
+        // changing the real modifier-lock state.
+        RunLoop.main.perform(inModes: [.default]) { [weak self] in
+            self?.requestCapsLockToggle(source: "menu")
+        }
+    }
+
+    private func requestCapsLockToggle(source: String) {
+        log("\(source)_toggle_capslock requested")
+        capsLockToggleCoordinator.requestToggle { [weak self] result in
+            self?.handleCapsLockToggleResult(result, source: source)
+        }
+    }
+
+    private func handleCapsLockToggleResult(
+        _ result: CapsLockToggleResult,
+        source: String
+    ) {
+        switch result {
+        case let .changed(target):
+            log("\(source)_toggle_capslock target=\(target ? "on" : "off") succeeded=true")
+        case .unavailable:
+            log("\(source)_toggle_capslock failed=hid_system_unavailable")
+        case .readFailed:
+            log("\(source)_toggle_capslock failed=read_state")
+        case let .writeFailed(target):
+            log("\(source)_toggle_capslock target=\(target ? "on" : "off") failed=write_state")
+        case let .verificationFailed(target, actual):
+            let actualValue = actual.map { $0 ? "on" : "off" } ?? "unknown"
+            log(
+                "\(source)_toggle_capslock target=\(target ? "on" : "off")"
+                    + " failed=verification actual=\(actualValue)"
+            )
+        }
+    }
+
     @objc private func selectLanguage(_ sender: NSMenuItem) {
         guard let rawValue = sender.representedObject as? String,
               let language = AppLanguage(rawValue: rawValue) else {
@@ -212,6 +263,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 },
                 onDisplaySleepOnLidCloseChange: { [weak self] enabled in
                     self?.setDisplaySleepOnLidClose(enabled)
+                },
+                onKeyboardShortcutChange: { [weak self] shortcut in
+                    self?.setKeyboardShortcut(shortcut) ?? false
+                },
+                onKeyboardShortcutRecordingChange: { [weak self] isRecording in
+                    self?.setKeyboardShortcutRecording(isRecording)
                 },
                 onFinishInitialSetup: { [weak self] in
                     Preferences.didCompleteInitialSetup = true
@@ -290,6 +347,55 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         log("preference display_sleep_on_lid_close=\(enabled ? "on" : "off")")
     }
 
+    private func configureGlobalHotKey() {
+        globalHotKeyManager.onTrigger = { [weak self] in
+            self?.requestCapsLockToggle(source: "shortcut")
+        }
+
+        let shortcut = Preferences.keyboardShortcut
+        let status = globalHotKeyManager.replaceShortcut(with: shortcut)
+        guard status == noErr else {
+            Preferences.keyboardShortcut = nil
+            log("shortcut_register startup_failed status=\(status)")
+            return
+        }
+
+        if let shortcut {
+            log("shortcut_register startup=\(shortcut.displayValue) succeeded=true")
+        }
+    }
+
+    private func setKeyboardShortcut(_ shortcut: KeyboardShortcut?) -> Bool {
+        let status = globalHotKeyManager.replaceShortcut(with: shortcut)
+        guard status == noErr else {
+            log(
+                "shortcut_register value=\(shortcut?.displayValue ?? "none")"
+                    + " failed_status=\(status)"
+            )
+            return false
+        }
+
+        Preferences.keyboardShortcut = shortcut
+        log("preference keyboard_shortcut=\(shortcut?.displayValue ?? "none")")
+        return true
+    }
+
+    private func setKeyboardShortcutRecording(_ isRecording: Bool) {
+        if isRecording {
+            globalHotKeyManager.suspend()
+            return
+        }
+
+        let status = globalHotKeyManager.replaceShortcut(
+            with: Preferences.keyboardShortcut
+        )
+        guard status != noErr else { return }
+
+        Preferences.keyboardShortcut = nil
+        settingsWindowController?.reloadText()
+        log("shortcut_register resume_failed status=\(status)")
+    }
+
     private func installPollingMonitor() {
         pollingTimer?.invalidate()
         let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
@@ -315,8 +421,18 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             return
         }
 
-        let flags = CGEventSource.flagsState(.hidSystemState)
-        apply(capsLockOn: flags.contains(.maskAlphaShift), reason: reason)
+        guard let capsLockOn = capsLockStateReader.currentState() else {
+            if !hasLoggedMissingCapsLockState {
+                log("\(reason) capslock_state_unavailable")
+                hasLoggedMissingCapsLockState = true
+            }
+            apply(capsLockOn: false, reason: "\(reason)_capslock_unavailable")
+            updateStatusError()
+            return
+        }
+
+        hasLoggedMissingCapsLockState = false
+        apply(capsLockOn: capsLockOn, reason: reason)
     }
 
     private func ensureDedicatedCapsLockFilter(

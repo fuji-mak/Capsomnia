@@ -63,7 +63,7 @@
             "applicationCategory": "UtilitiesApplication",
             "applicationSubCategory": "DeveloperTool",
             "operatingSystem": "macOS 14 or later on Apple silicon",
-            "softwareVersion": "1.1.0",
+            "softwareVersion": "2.0.0",
             "license": "https://github.com/fuji-mak/Capsomnia/blob/main/LICENSE",
             "isAccessibleForFree": true,
             "offers": {
@@ -329,6 +329,39 @@
       </section>
 
       <section
+        class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24"
+        aria-labelledby="custom-shortcut-title"
+      >
+        <div class="relative overflow-hidden rounded-[24px] border border-[var(--border-strong)] bg-[var(--surface)] px-5 py-8 sm:px-8 sm:py-10 lg:px-12">
+          <div class="relative grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12">
+            <div class="max-w-[620px]">
+              <p class="mb-3 font-mono text-sm font-semibold uppercase tracking-normal text-[var(--led)]">사용자 지정 단축키</p>
+              <h2 id="custom-shortcut-title" class="mb-5 text-[clamp(1.8rem,4vw,2.7rem)] font-bold leading-[1.12]">원하는 키로 자유롭게</h2>
+              <p class="text-[1.08rem] leading-relaxed text-[var(--text-dim)]">Caps Lock에 이미 다른 기능을 할당했어도 원하는 단축키로 Capsomnia를 켜거나 끌 수 있습니다. Capsomnia가 켜져 있는 동안에는 키보드의 초록색 Caps Lock 표시등이 켜집니다.</p>
+            </div>
+            <div class="mx-auto w-full max-w-[540px]">
+              <div class="overflow-hidden rounded-[18px] border border-[var(--border-strong)] bg-black shadow-[0_18px_50px_-28px_rgba(0,0,0,0.9)]">
+                <div class="flex h-9 items-center gap-2 border-b border-[var(--border)] bg-[#0d0d0d] px-4" aria-hidden="true">
+                  <span class="h-3 w-3 rounded-full bg-[#ff5f57]"></span>
+                  <span class="h-3 w-3 rounded-full bg-[#febc2e]"></span>
+                  <span class="h-3 w-3 rounded-full bg-[#28c840]"></span>
+                </div>
+                <img
+                  class="block h-auto w-full"
+                  src="/app-preview-shortcut-en.png"
+                  alt="Capsomnia 고급 설정의 전환 단축키 화면"
+                  width="1080"
+                  height="400"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
         class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-12 sm:px-10 sm:py-20"
         aria-label="Capsomnia 다운로드"
       >
@@ -402,16 +435,6 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
 /usr/bin/pmset -a disablesleep 0
 /usr/bin/pmset displaysleepnow</code></pre>
             <p class="text-sm text-[var(--text-faint)]"><code>on</code>, <code>off</code>, <code>display-sleep</code> 외에는 받아들이지 않습니다.</p>
-          </div>
-        </div>
-        <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">손쉬운 사용 권한은 선택 사항</h3>
-            <p class="text-sm text-[var(--text-faint)]">‘대문자 고정 방지’를 활성화할 때만 손쉬운 사용 권한이 필요합니다. 비활성화하면 키보드 이벤트를 확인하지 않고 로컬 Caps Lock 상태만 250밀리초마다 확인합니다. 활성화하면 로컬 Core Graphics 이벤트 필터가 텍스트 입력에서 Caps Lock modifier를 제거하며 이벤트 내용을 기록·저장하거나 전송하지 않습니다.</p>
-          </div>
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">백그라운드 항목 안내</h3>
-            <p class="text-sm text-[var(--text-faint)]">macOS에 ‘Taketo Fujimaki’ 백그라운드 항목이 표시될 수 있습니다. 로그인할 때 Capsomnia를 시작하고 충돌 후 다시 실행하는 LaunchAgent입니다.</p>
           </div>
         </div>
         <p class="mt-7 max-w-[760px] text-sm text-[var(--text-faint)]">앱을 종료하면 평소 잠자기 동작으로 돌아갑니다. 잠자기를 막은 채 덮개를 닫으면 발열과 배터리 소모가 늘 수 있으니 통풍, 전원, 실행 시간을 확인하세요.</p>

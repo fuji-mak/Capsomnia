@@ -10,7 +10,9 @@ const pages = [
     path: "",
     currentHref: "/?lang=en",
     title: "Capsomnia — Caps Lock as a physical keep-awake switch for macOS",
-    content: "Give Caps Lock"
+    content: "Give Caps Lock",
+    shortcutHeading: "Use the key that works for you",
+    shortcutPreview: "/app-preview-shortcut-en.png"
   },
   {
     code: "ja",
@@ -18,7 +20,9 @@ const pages = [
     path: "ja/",
     currentHref: "/ja/?lang=ja",
     title: "Capsomnia — Caps LockをMacの物理スリープ防止スイッチに",
-    content: "Macの<span class=\"catch-accent\">最も無駄なキー</span>"
+    content: "Macの<span class=\"catch-accent\">最も無駄なキー</span>",
+    shortcutHeading: "自由にキー設定",
+    shortcutPreview: "/app-preview-shortcut-ja.png"
   },
   {
     code: "zh-Hans",
@@ -26,7 +30,9 @@ const pages = [
     path: "zh-hans/",
     currentHref: "/zh-hans/?lang=zh-hans",
     title: "Capsomnia — 把 Caps Lock 变成 macOS 实体防休眠开关",
-    content: "让 Caps Lock"
+    content: "让 Caps Lock",
+    shortcutHeading: "自由设置按键",
+    shortcutPreview: "/app-preview-shortcut-en.png"
   },
   {
     code: "ko",
@@ -34,7 +40,9 @@ const pages = [
     path: "ko/",
     currentHref: "/ko/?lang=ko",
     title: "Capsomnia — Caps Lock을 macOS 잠자기 방지 스위치로",
-    content: "Caps Lock에<br><span class=\"catch-accent\">제대로 된 일을 맡기세요</span>"
+    content: "Caps Lock에<br><span class=\"catch-accent\">제대로 된 일을 맡기세요</span>",
+    shortcutHeading: "원하는 키로 자유롭게",
+    shortcutPreview: "/app-preview-shortcut-en.png"
   }
 ];
 
@@ -57,6 +65,13 @@ for (const page of pages) {
     assert.ok(html.includes(`rel="canonical" href="${pageUrl}"`));
     assert.ok(html.includes(`property="og:url" content="${pageUrl}"`));
     assert.ok(html.includes(page.content));
+    assert.ok(html.includes(page.shortcutHeading));
+    assert.ok(html.includes(`src="${page.shortcutPreview}"`));
+    assert.equal((html.match(/aria-labelledby="custom-shortcut-title"/g) ?? []).length, 1);
+    assert.doesNotMatch(html, /Actual settings screen|実際の設定画面|实际设置界面|실제 설정 화면/);
+    for (const trafficLight of ["#ff5f57", "#febc2e", "#28c840"]) {
+      assert.ok(html.includes(trafficLight));
+    }
     assert.doesNotMatch(html, /data-i18n|capsomnia\.js/);
     assert.ok(html.includes('<details class="language-menu relative shrink-0">'));
     assert.ok(html.includes("<span>Capsomnia</span>"));

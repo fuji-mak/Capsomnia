@@ -63,7 +63,7 @@
             "applicationCategory": "UtilitiesApplication",
             "applicationSubCategory": "DeveloperTool",
             "operatingSystem": "macOS 14 or later on Apple silicon",
-            "softwareVersion": "1.1.0",
+            "softwareVersion": "2.0.0",
             "license": "https://github.com/fuji-mak/Capsomnia/blob/main/LICENSE",
             "isAccessibleForFree": true,
             "offers": {
@@ -329,6 +329,39 @@
       </section>
 
       <section
+        class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24"
+        aria-labelledby="custom-shortcut-title"
+      >
+        <div class="relative overflow-hidden rounded-[24px] border border-[var(--border-strong)] bg-[var(--surface)] px-5 py-8 sm:px-8 sm:py-10 lg:px-12">
+          <div class="relative grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12">
+            <div class="max-w-[620px]">
+              <p class="mb-3 font-mono text-sm font-semibold uppercase tracking-normal text-[var(--led)]">Custom shortcut</p>
+              <h2 id="custom-shortcut-title" class="mb-5 text-[clamp(1.8rem,4vw,2.7rem)] font-bold leading-[1.12]">Use the key that works for you</h2>
+              <p class="text-[1.08rem] leading-relaxed text-[var(--text-dim)]">Already using Caps Lock for something else? Assign your preferred shortcut to turn Capsomnia on and off. While Capsomnia is on, the keyboard’s green Caps Lock light stays lit.</p>
+            </div>
+            <div class="mx-auto w-full max-w-[540px]">
+              <div class="overflow-hidden rounded-[18px] border border-[var(--border-strong)] bg-black shadow-[0_18px_50px_-28px_rgba(0,0,0,0.9)]">
+                <div class="flex h-9 items-center gap-2 border-b border-[var(--border)] bg-[#0d0d0d] px-4" aria-hidden="true">
+                  <span class="h-3 w-3 rounded-full bg-[#ff5f57]"></span>
+                  <span class="h-3 w-3 rounded-full bg-[#febc2e]"></span>
+                  <span class="h-3 w-3 rounded-full bg-[#28c840]"></span>
+                </div>
+                <img
+                  class="block h-auto w-full"
+                  src="/app-preview-shortcut-en.png"
+                  alt="Toggle shortcut controls in Capsomnia Advanced Settings"
+                  width="1080"
+                  height="400"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
         class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-12 sm:px-10 sm:py-20"
         aria-label="Download Capsomnia"
       >
@@ -402,16 +435,6 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
 /usr/bin/pmset -a disablesleep 0
 /usr/bin/pmset displaysleepnow</code></pre>
             <p class="text-sm text-[var(--text-faint)]">It accepts <code>on</code>, <code>off</code>, and <code>display-sleep</code> and nothing else.</p>
-          </div>
-        </div>
-        <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">Optional Accessibility permission</h3>
-            <p class="text-sm text-[var(--text-faint)]">Accessibility permission is required only when “Prevent all-caps typing” is enabled. When it is off, Capsomnia does not inspect keyboard events and checks only the local Caps Lock state every 250 milliseconds. When it is on, Core Graphics event handling removes the Caps Lock modifier from text input; event data is never logged, stored, or transmitted.</p>
-          </div>
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">Background item prompt</h3>
-            <p class="text-sm text-[var(--text-faint)]">macOS may show “Taketo Fujimaki” as a background item. This is the LaunchAgent that starts Capsomnia at login and recovers after crashes.</p>
           </div>
         </div>
         <p class="mt-7 max-w-[760px] text-sm text-[var(--text-faint)]">Quitting the app restores normal sleep behavior. Sleep-disabled closed-lid use can increase heat and battery drain — mind airflow, power, and runtime.</p>

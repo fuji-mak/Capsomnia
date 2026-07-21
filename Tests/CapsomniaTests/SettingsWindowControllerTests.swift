@@ -6,8 +6,13 @@ import XCTest
 final class SettingsWindowControllerTests: XCTestCase {
     func testJapaneseInitialSetupHidesDefaultOnSettings() throws {
         let previousLanguage = Preferences.language
+        let previousShortcut = Preferences.keyboardShortcut
         Preferences.language = .japanese
-        defer { Preferences.language = previousLanguage }
+        Preferences.keyboardShortcut = nil
+        defer {
+            Preferences.language = previousLanguage
+            Preferences.keyboardShortcut = previousShortcut
+        }
         let strings = AppStrings.localized(for: .japanese)
 
         _ = NSApplication.shared
@@ -24,14 +29,30 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertFalse(renderedText.contains(strings.preferencesHeading))
         XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
         XCTAssertFalse(renderedText.contains(strings.openAtLogin))
+        var visibleButtons: [DisclosureButton] = visibleDescendants(of: contentView)
+        XCTAssertFalse(
+            visibleButtons.contains {
+                $0.accessibilityLabel() == strings.advancedSettings
+            }
+        )
 
         controller.show(page: .settings)
         contentView.layoutSubtreeIfNeeded()
 
         renderedText = Set(visibleDescendants(of: contentView).map(\NSTextField.stringValue))
         XCTAssertTrue(renderedText.contains(strings.preferencesHeading))
-        XCTAssertTrue(renderedText.contains(strings.displaySleepOnLidClose))
-        XCTAssertTrue(renderedText.contains(strings.openAtLogin))
+        XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
+        XCTAssertFalse(renderedText.contains(strings.openAtLogin))
+        visibleButtons = visibleDescendants(of: contentView)
+        XCTAssertTrue(
+            visibleButtons.contains {
+                $0.accessibilityLabel() == strings.advancedSettings
+            }
+        )
+        let advancedSettingsButton = try XCTUnwrap(visibleButtons.first)
+        XCTAssertNil(advancedSettingsButton.accessibilityHelp())
+        XCTAssertTrue(advancedSettingsButton.accessibilityPerformPress())
+        XCTAssertEqual(controller.window?.title, strings.advancedSettings)
     }
 
     func testKoreanSettingsRenderWithinTheWindow() throws {
@@ -51,13 +72,21 @@ final class SettingsWindowControllerTests: XCTestCase {
         for expected in [
             strings.dedicatedCapsLockMode,
             strings.showMenuBarIcon,
-            strings.displaySleepOnLidClose,
-            strings.openAtLogin,
-            "Language",
+            strings.language,
+            strings.advancedSettings,
             strings.done
         ] {
             XCTAssertTrue(renderedText.contains(expected), "Missing rendered text: \(expected)")
         }
+        XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
+        XCTAssertFalse(renderedText.contains(strings.openAtLogin))
+
+        let buttons: [DisclosureButton] = descendants(of: contentView)
+        XCTAssertTrue(
+            buttons.contains {
+                $0.accessibilityLabel() == strings.advancedSettings
+            }
+        )
 
         let languagePopUp: LanguagePopUpButton = try XCTUnwrap(descendants(of: contentView).first)
         XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.korean.rawValue)
@@ -95,6 +124,68 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertEqual(languagePopUp.titleOfSelectedItem, AppLanguage.korean.displayName)
     }
 
+    func testAdvancedSettingsReplacesContentInTheSameLargerWindow() throws {
+        let previousLanguage = Preferences.language
+        let previousShortcut = Preferences.keyboardShortcut
+        Preferences.language = .japanese
+        Preferences.keyboardShortcut = nil
+        defer {
+            Preferences.language = previousLanguage
+            Preferences.keyboardShortcut = previousShortcut
+        }
+        let strings = AppStrings.localized(for: .japanese)
+
+        _ = NSApplication.shared
+        let controller = makeController()
+        defer { controller.close() }
+
+        controller.show(page: .settings)
+        let originalWindow = try XCTUnwrap(controller.window)
+        let basicWidth = originalWindow.contentView?.bounds.width ?? 0
+
+        controller.show(page: .advancedSettings)
+        let advancedWindow = try XCTUnwrap(controller.window)
+        let contentView = try XCTUnwrap(advancedWindow.contentView)
+        contentView.layoutSubtreeIfNeeded()
+
+        XCTAssertTrue(originalWindow === advancedWindow)
+        XCTAssertGreaterThan(contentView.bounds.width, basicWidth)
+        XCTAssertEqual(advancedWindow.title, strings.advancedSettings)
+
+        let renderedText = Set(
+            visibleDescendants(of: contentView).map(\NSTextField.stringValue)
+        )
+        for expected in [
+            strings.advancedSettings,
+            strings.preferencesHeading.uppercased(),
+            strings.showMenuBarIcon,
+            strings.dedicatedCapsLockMode,
+            strings.language,
+            strings.systemBehavior.uppercased(),
+            strings.displaySleepOnLidClose,
+            strings.openAtLogin,
+            strings.keyboardShortcut.uppercased(),
+            strings.keyboardShortcut,
+            strings.keyboardShortcutDesc
+        ] {
+            XCTAssertTrue(renderedText.contains(expected), "Missing rendered text: \(expected)")
+        }
+
+        let recorder: ShortcutRecorderButton = try XCTUnwrap(
+            visibleDescendants(of: contentView).first
+        )
+        XCTAssertEqual(recorder.title, strings.shortcutRecorderPlaceholder)
+        XCTAssertEqual(recorder.accessibilityLabel(), strings.keyboardShortcut)
+        XCTAssertEqual(recorder.accessibilityHelp(), strings.keyboardShortcutDesc)
+
+        let backButtons: [NSButton] = visibleDescendants(of: contentView)
+        XCTAssertTrue(
+            backButtons.contains {
+                $0.accessibilityLabel() == strings.settingsTitle
+            }
+        )
+    }
+
     private func makeController() -> SettingsWindowController {
         SettingsWindowController(
             onDedicatedCapsLockModeChange: { _ in },
@@ -102,6 +193,8 @@ final class SettingsWindowControllerTests: XCTestCase {
             onLanguageChange: { _ in },
             onLaunchAtLoginChange: { _ in },
             onDisplaySleepOnLidCloseChange: { _ in },
+            onKeyboardShortcutChange: { _ in true },
+            onKeyboardShortcutRecordingChange: { _ in },
             onFinishInitialSetup: {}
         )
     }

@@ -404,16 +404,6 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
             <p class="text-sm text-[var(--text-faint)]">仅接受 <code>on</code>、<code>off</code> 和 <code>display-sleep</code>，不会接受其他参数。</p>
           </div>
         </div>
-        <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">辅助功能权限为可选项</h3>
-            <p class="text-sm text-[var(--text-faint)]">只有启用“防止输入锁定为大写”时，才需要“辅助功能”权限。禁用时，Capsomnia 不会检查键盘事件，只会每 250 毫秒检查一次本机 Caps Lock 状态。启用时，本地 Core Graphics 事件过滤器会从文本输入中移除 Caps Lock 修饰键，但不会记录、存储或传输事件内容。</p>
-          </div>
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">后台项目提示</h3>
-            <p class="text-sm text-[var(--text-faint)]">macOS 可能会将“Taketo Fujimaki”显示为后台项目。这是用于在登录时启动 Capsomnia，并在崩溃后重新启动应用的 LaunchAgent。</p>
-          </div>
-        </div>
         <p class="mt-7 max-w-[760px] text-sm text-[var(--text-faint)]">退出应用会恢复正常睡眠。停用睡眠并合盖使用可能会增加发热和耗电量，请留意通风、电源和运行时长。</p>
       </section>
 

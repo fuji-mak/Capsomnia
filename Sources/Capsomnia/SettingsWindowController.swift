@@ -38,7 +38,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         items: AppLanguage.allCases.map { (title: $0.displayName, value: $0.rawValue) },
         selected: Preferences.language.rawValue
     )
-    private let advancedSettingsButton = NSButton()
+    private let advancedSettingsButton = DisclosureButton()
 
     private let systemBehaviorHeading = brandLabel(
         size: 11,
@@ -630,38 +630,19 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func configureAdvancedSettingsButton() {
-        advancedSettingsButton.translatesAutoresizingMaskIntoConstraints = false
-        advancedSettingsButton.bezelStyle = .rounded
-        advancedSettingsButton.controlSize = .large
-        advancedSettingsButton.alignment = .left
-        advancedSettingsButton.image = NSImage(
-            systemSymbolName: "chevron.forward",
-            accessibilityDescription: nil
-        )
-        advancedSettingsButton.imagePosition = .imageTrailing
-        advancedSettingsButton.imageHugsTitle = false
-        advancedSettingsButton.contentTintColor = Brand.textDim
-        advancedSettingsButton.bezelColor = Brand.surface2
-        advancedSettingsButton.font = .systemFont(ofSize: 13, weight: .semibold)
-        advancedSettingsButton.target = self
-        advancedSettingsButton.action = #selector(showAdvancedSettings)
-        advancedSettingsButton.focusRingType = .exterior
-        advancedSettingsButton.heightAnchor.constraint(equalToConstant: 46).isActive = true
+        advancedSettingsButton.onClick = { [weak self] in
+            self?.showAdvancedSettings()
+        }
     }
 
     private func updateAdvancedSettingsButtonText(_ strings: AppStrings) {
-        advancedSettingsButton.attributedTitle = NSAttributedString(
-            string: strings.advancedSettings,
-            attributes: [
-                .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
-                .foregroundColor: Brand.text
-            ]
+        advancedSettingsButton.setStrings(
+            title: strings.advancedSettings,
+            subtitle: strings.advancedSettingsDesc
         )
-        advancedSettingsButton.setAccessibilityLabel(strings.advancedSettings)
-        advancedSettingsButton.setAccessibilityHelp(strings.advancedSettingsDesc)
     }
 
-    @objc func showAdvancedSettings() {
+    func showAdvancedSettings() {
         show(page: .advancedSettings)
     }
 

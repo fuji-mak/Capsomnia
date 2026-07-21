@@ -29,7 +29,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertFalse(renderedText.contains(strings.preferencesHeading))
         XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
         XCTAssertFalse(renderedText.contains(strings.openAtLogin))
-        var visibleButtons: [NSButton] = visibleDescendants(of: contentView)
+        var visibleButtons: [DisclosureButton] = visibleDescendants(of: contentView)
         XCTAssertFalse(
             visibleButtons.contains {
                 $0.accessibilityLabel() == strings.advancedSettings
@@ -49,6 +49,13 @@ final class SettingsWindowControllerTests: XCTestCase {
                 $0.accessibilityLabel() == strings.advancedSettings
             }
         )
+        let advancedSettingsButton = try XCTUnwrap(visibleButtons.first)
+        XCTAssertEqual(
+            advancedSettingsButton.accessibilityHelp(),
+            strings.advancedSettingsDesc
+        )
+        XCTAssertTrue(advancedSettingsButton.accessibilityPerformPress())
+        XCTAssertEqual(controller.window?.title, strings.advancedSettings)
     }
 
     func testKoreanSettingsRenderWithinTheWindow() throws {
@@ -69,6 +76,7 @@ final class SettingsWindowControllerTests: XCTestCase {
             strings.dedicatedCapsLockMode,
             strings.showMenuBarIcon,
             strings.language,
+            strings.advancedSettingsDesc,
             strings.done
         ] {
             XCTAssertTrue(renderedText.contains(expected), "Missing rendered text: \(expected)")
@@ -76,7 +84,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
         XCTAssertFalse(renderedText.contains(strings.openAtLogin))
 
-        let buttons: [NSButton] = descendants(of: contentView)
+        let buttons: [DisclosureButton] = descendants(of: contentView)
         XCTAssertTrue(
             buttons.contains {
                 $0.accessibilityLabel() == strings.advancedSettings

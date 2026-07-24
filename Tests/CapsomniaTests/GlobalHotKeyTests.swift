@@ -154,7 +154,6 @@ final class GlobalHotKeyTests: XCTestCase {
             placeholder: "Not Set",
             recording: "Press keys…",
             action: "Record",
-            clear: "Clear",
             registrationFailed: "Unavailable"
         )
         var changes: [KeyboardShortcut?] = []
@@ -201,7 +200,6 @@ final class GlobalHotKeyTests: XCTestCase {
             placeholder: "Not Set",
             recording: "Press keys…",
             action: "Record",
-            clear: "Clear",
             registrationFailed: "Unavailable"
         )
         recorder.setShortcut(shortcut)
@@ -224,7 +222,7 @@ final class GlobalHotKeyTests: XCTestCase {
     }
 
     @MainActor
-    func testRecorderShowsClearButtonWhileEditingRecordedShortcut() throws {
+    func testRecorderShowsDeleteHintWhileEditingRecordedShortcut() throws {
         _ = NSApplication.shared
         let shortcut = KeyboardShortcut(
             keyCode: UInt32(kVK_ANSI_C),
@@ -235,7 +233,6 @@ final class GlobalHotKeyTests: XCTestCase {
             placeholder: "Not Set",
             recording: "Press keys…",
             action: "Record",
-            clear: "Clear",
             registrationFailed: "Unavailable"
         )
         recorder.setShortcut(shortcut)
@@ -246,33 +243,21 @@ final class GlobalHotKeyTests: XCTestCase {
             return true
         }
         recorder.onRecordingChange = { recordingStates.append($0) }
-        let clearButton: NSButton = try XCTUnwrap(
+        let deleteLabel: NSTextField = try XCTUnwrap(
             descendants(of: recorder).first {
-                $0.accessibilityLabel() == "Clear"
+                $0.stringValue == "Del"
             }
         )
-        XCTAssertTrue(clearButton.isHidden)
+        XCTAssertTrue(deleteLabel.superview?.isHidden == true)
 
         XCTAssertTrue(recorder.accessibilityPerformPress())
 
-        XCTAssertFalse(clearButton.isHidden)
-        clearButton.frame = NSRect(
-            origin: .zero,
-            size: clearButton.intrinsicContentSize
-        )
-        XCTAssertTrue(
-            clearButton.hitTest(
-                NSPoint(
-                    x: clearButton.bounds.midX,
-                    y: clearButton.bounds.midY
-                )
-            ) === clearButton
-        )
-        clearButton.performClick(nil)
+        XCTAssertFalse(deleteLabel.superview?.isHidden == true)
+        recorder.keyDown(with: try XCTUnwrap(makeDeleteEvent()))
         XCTAssertEqual(recorder.title, "Not Set")
         XCTAssertNil(changes.last!)
         XCTAssertEqual(recordingStates, [true, false])
-        XCTAssertTrue(clearButton.isHidden)
+        XCTAssertTrue(deleteLabel.superview?.isHidden == true)
     }
 
     @MainActor
@@ -287,7 +272,6 @@ final class GlobalHotKeyTests: XCTestCase {
             placeholder: "Not Set",
             recording: "Press keys…",
             action: "Record",
-            clear: "Clear",
             registrationFailed: "Unavailable"
         )
         recorder.setShortcut(previous)

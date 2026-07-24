@@ -72,7 +72,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         placeholder: "",
         recording: "",
         action: "",
-        clear: "",
         registrationFailed: ""
     )
 
@@ -193,7 +192,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             placeholder: strings.shortcutRecorderPlaceholder,
             recording: strings.shortcutRecorderRecording,
             action: strings.shortcutRecorderAction,
-            clear: strings.shortcutRecorderClear,
             registrationFailed: strings.shortcutRegistrationFailed
         )
         shortcutRecorder.setAccessibilityLabel(strings.keyboardShortcut)

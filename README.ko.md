@@ -16,7 +16,7 @@
   <a href="LICENSE"><img alt="MIT 라이선스" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-현재 버전: `2.0.1`
+현재 버전: `2.0.2`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md)
 

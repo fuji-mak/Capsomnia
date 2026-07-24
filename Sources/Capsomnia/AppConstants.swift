@@ -97,6 +97,7 @@ struct AppStrings {
     let shortcutRecorderPlaceholder: String
     let shortcutRecorderRecording: String
     let shortcutRecorderAction: String
+    let shortcutRecorderClear: String
     let shortcutRegistrationFailed: String
     let openCapsomnia: String
     let quit: String
@@ -141,6 +142,7 @@ struct AppStrings {
                 shortcutRecorderPlaceholder: "Not Set",
                 shortcutRecorderRecording: "Press keys…",
                 shortcutRecorderAction: "Record",
+                shortcutRecorderClear: "Clear",
                 shortcutRegistrationFailed: "That shortcut is unavailable",
                 openCapsomnia: "Open Capsomnia",
                 quit: "Quit",
@@ -179,6 +181,7 @@ struct AppStrings {
                 shortcutRecorderPlaceholder: "미설정",
                 shortcutRecorderRecording: "입력 대기…",
                 shortcutRecorderAction: "입력",
+                shortcutRecorderClear: "삭제",
                 shortcutRegistrationFailed: "사용할 수 없는 단축키입니다",
                 openCapsomnia: "Capsomnia 열기",
                 quit: "종료",
@@ -217,6 +220,7 @@ struct AppStrings {
                 shortcutRecorderPlaceholder: "未設定",
                 shortcutRecorderRecording: "入力待ち…",
                 shortcutRecorderAction: "入力する",
+                shortcutRecorderClear: "削除",
                 shortcutRegistrationFailed: "そのショートカットは使用できません",
                 openCapsomnia: "Capsomniaを開く",
                 quit: "終了",
@@ -255,6 +259,7 @@ struct AppStrings {
                 shortcutRecorderPlaceholder: "未设置",
                 shortcutRecorderRecording: "等待输入…",
                 shortcutRecorderAction: "录入",
+                shortcutRecorderClear: "删除",
                 shortcutRegistrationFailed: "该快捷键不可用",
                 openCapsomnia: "打开 Capsomnia",
                 quit: "退出",

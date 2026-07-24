@@ -154,6 +154,7 @@ final class GlobalHotKeyTests: XCTestCase {
             placeholder: "Not Set",
             recording: "Press keys…",
             action: "Record",
+            clear: "Clear",
             registrationFailed: "Unavailable"
         )
         var changes: [KeyboardShortcut?] = []
@@ -189,6 +190,92 @@ final class GlobalHotKeyTests: XCTestCase {
     }
 
     @MainActor
+    func testRecorderCancelEndsRecordingWithoutChangingShortcut() {
+        _ = NSApplication.shared
+        let shortcut = KeyboardShortcut(
+            keyCode: UInt32(kVK_ANSI_C),
+            modifiers: [.command],
+            key: "C"
+        )
+        let recorder = ShortcutRecorderButton(
+            placeholder: "Not Set",
+            recording: "Press keys…",
+            action: "Record",
+            clear: "Clear",
+            registrationFailed: "Unavailable"
+        )
+        recorder.setShortcut(shortcut)
+        var changes: [KeyboardShortcut?] = []
+        var recordingStates: [Bool] = []
+        recorder.onShortcutChange = {
+            changes.append($0)
+            return true
+        }
+        recorder.onRecordingChange = { recordingStates.append($0) }
+
+        XCTAssertTrue(recorder.accessibilityPerformPress())
+        XCTAssertEqual(recorder.title, "Press keys…")
+
+        recorder.cancelRecording()
+
+        XCTAssertEqual(recorder.title, shortcut.displayValue)
+        XCTAssertTrue(changes.isEmpty)
+        XCTAssertEqual(recordingStates, [true, false])
+    }
+
+    @MainActor
+    func testRecorderShowsClearButtonWhileEditingRecordedShortcut() throws {
+        _ = NSApplication.shared
+        let shortcut = KeyboardShortcut(
+            keyCode: UInt32(kVK_ANSI_C),
+            modifiers: [.command],
+            key: "C"
+        )
+        let recorder = ShortcutRecorderButton(
+            placeholder: "Not Set",
+            recording: "Press keys…",
+            action: "Record",
+            clear: "Clear",
+            registrationFailed: "Unavailable"
+        )
+        recorder.setShortcut(shortcut)
+        var changes: [KeyboardShortcut?] = []
+        var recordingStates: [Bool] = []
+        recorder.onShortcutChange = {
+            changes.append($0)
+            return true
+        }
+        recorder.onRecordingChange = { recordingStates.append($0) }
+        let clearButton: NSButton = try XCTUnwrap(
+            descendants(of: recorder).first {
+                $0.accessibilityLabel() == "Clear"
+            }
+        )
+        XCTAssertTrue(clearButton.isHidden)
+
+        XCTAssertTrue(recorder.accessibilityPerformPress())
+
+        XCTAssertFalse(clearButton.isHidden)
+        clearButton.frame = NSRect(
+            origin: .zero,
+            size: clearButton.intrinsicContentSize
+        )
+        XCTAssertTrue(
+            clearButton.hitTest(
+                NSPoint(
+                    x: clearButton.bounds.midX,
+                    y: clearButton.bounds.midY
+                )
+            ) === clearButton
+        )
+        clearButton.performClick(nil)
+        XCTAssertEqual(recorder.title, "Not Set")
+        XCTAssertNil(changes.last!)
+        XCTAssertEqual(recordingStates, [true, false])
+        XCTAssertTrue(clearButton.isHidden)
+    }
+
+    @MainActor
     func testRecorderKeepsPreviousShortcutWhenRegistrationFails() throws {
         _ = NSApplication.shared
         let previous = KeyboardShortcut(
@@ -200,6 +287,7 @@ final class GlobalHotKeyTests: XCTestCase {
             placeholder: "Not Set",
             recording: "Press keys…",
             action: "Record",
+            clear: "Clear",
             registrationFailed: "Unavailable"
         )
         recorder.setShortcut(previous)
@@ -267,5 +355,12 @@ final class GlobalHotKeyTests: XCTestCase {
             isARepeat: false,
             keyCode: 51
         )
+    }
+
+    private func descendants<T: NSView>(of view: NSView) -> [T] {
+        view.subviews.flatMap { child -> [T] in
+            let current = (child as? T).map { [$0] } ?? []
+            return current + descendants(of: child)
+        }
     }
 }

@@ -72,6 +72,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         placeholder: "",
         recording: "",
         action: "",
+        clear: "",
         registrationFailed: ""
     )
 
@@ -192,6 +193,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             placeholder: strings.shortcutRecorderPlaceholder,
             recording: strings.shortcutRecorderRecording,
             action: strings.shortcutRecorderAction,
+            clear: strings.shortcutRecorderClear,
             registrationFailed: strings.shortcutRegistrationFailed
         )
         shortcutRecorder.setAccessibilityLabel(strings.keyboardShortcut)
@@ -219,6 +221,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        // The controller and window are reused after closing, so transient
+        // recording state must not survive into the next presentation.
+        shortcutRecorder.cancelRecording()
         guard page == .initialPreferences else { return }
         finishInitialSetup()
     }

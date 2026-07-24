@@ -4,6 +4,12 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 2.0.1 - 2026-07-24
+
+- Cancel shortcut recording when Settings closes so reopening Capsomnia cannot preserve a stale “Press keys…” state or leave the saved global shortcut suspended.
+- Add an explicit localized Clear button while editing an assigned shortcut, with language-independent padding that matches the adjacent Esc action.
+- Keep Delete and Forward Delete as keyboard alternatives for clearing an assigned shortcut.
+
 ## 2.0.0 - 2026-07-21
 
 - Add reliable Caps Lock toggling from the menu bar by using the real IOHID modifier-lock state as the single source of truth for the physical LED, menu bar status, and sleep prevention.

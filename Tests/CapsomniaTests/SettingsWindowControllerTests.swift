@@ -186,7 +186,30 @@ final class SettingsWindowControllerTests: XCTestCase {
         )
     }
 
-    private func makeController() -> SettingsWindowController {
+    func testClosingWindowCancelsShortcutRecording() throws {
+        _ = NSApplication.shared
+        var recordingStates: [Bool] = []
+        let controller = makeController(
+            onKeyboardShortcutRecordingChange: {
+                recordingStates.append($0)
+            }
+        )
+
+        controller.show(page: .advancedSettings)
+        let contentView = try XCTUnwrap(controller.window?.contentView)
+        let recorder: ShortcutRecorderButton = try XCTUnwrap(
+            visibleDescendants(of: contentView).first
+        )
+        XCTAssertTrue(recorder.accessibilityPerformPress())
+
+        controller.close()
+
+        XCTAssertEqual(recordingStates, [true, false])
+    }
+
+    private func makeController(
+        onKeyboardShortcutRecordingChange: @escaping (Bool) -> Void = { _ in }
+    ) -> SettingsWindowController {
         SettingsWindowController(
             onDedicatedCapsLockModeChange: { _ in },
             onShowMenuBarIconChange: { _ in },
@@ -194,7 +217,7 @@ final class SettingsWindowControllerTests: XCTestCase {
             onLaunchAtLoginChange: { _ in },
             onDisplaySleepOnLidCloseChange: { _ in },
             onKeyboardShortcutChange: { _ in true },
-            onKeyboardShortcutRecordingChange: { _ in },
+            onKeyboardShortcutRecordingChange: onKeyboardShortcutRecordingChange,
             onFinishInitialSetup: {}
         )
     }

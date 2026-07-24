@@ -16,7 +16,7 @@
   <a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-当前版本：`2.0.1`
+当前版本：`2.0.2`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [한국어 README](README.ko.md)
 

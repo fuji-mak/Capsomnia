@@ -4,6 +4,11 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 2.0.2 - 2026-07-24
+
+- Replace the nonfunctional clickable Clear control with concise Del and Esc keyboard hints while editing an assigned shortcut.
+- Keep both the Mac Delete key and Forward Delete available for clearing the shortcut, while Esc cancels without changing it.
+
 ## 2.0.1 - 2026-07-24
 
 - Cancel shortcut recording when Settings closes so reopening Capsomnia cannot preserve a stale “Press keys…” state or leave the saved global shortcut suspended.

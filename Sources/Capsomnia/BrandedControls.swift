@@ -314,82 +314,11 @@ final class DisclosureButton: NSView {
     }
 }
 
-private final class PaddedPillButton: NSButton {
-    private let pillLabel = NSTextField(labelWithString: "")
-    private let horizontalPadding: CGFloat
-    private let verticalPadding: CGFloat
-
-    init(horizontalPadding: CGFloat, verticalPadding: CGFloat) {
-        self.horizontalPadding = horizontalPadding
-        self.verticalPadding = verticalPadding
-        super.init(frame: .zero)
-
-        isBordered = false
-        title = ""
-        pillLabel.translatesAutoresizingMaskIntoConstraints = false
-        pillLabel.setAccessibilityElement(false)
-        addSubview(pillLabel)
-
-        NSLayoutConstraint.activate([
-            pillLabel.leadingAnchor.constraint(
-                equalTo: leadingAnchor,
-                constant: horizontalPadding
-            ),
-            pillLabel.trailingAnchor.constraint(
-                equalTo: trailingAnchor,
-                constant: -horizontalPadding
-            ),
-            pillLabel.topAnchor.constraint(
-                equalTo: topAnchor,
-                constant: verticalPadding
-            ),
-            pillLabel.bottomAnchor.constraint(
-                equalTo: bottomAnchor,
-                constant: -verticalPadding
-            )
-        ])
-    }
-
-    required init?(coder: NSCoder) { nil }
-
-    override var intrinsicContentSize: NSSize {
-        let labelSize = pillLabel.intrinsicContentSize
-        return NSSize(
-            width: ceil(labelSize.width) + horizontalPadding * 2,
-            height: ceil(labelSize.height) + verticalPadding * 2
-        )
-    }
-
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        guard !isHidden, alphaValue > 0, bounds.contains(point) else {
-            return nil
-        }
-        return self
-    }
-
-    func setPillTitle(_ title: String) {
-        pillLabel.stringValue = title
-        toolTip = title
-        setAccessibilityLabel(title)
-        invalidateIntrinsicContentSize()
-    }
-
-    func setPillFont(_ font: NSFont) {
-        pillLabel.font = font
-        invalidateIntrinsicContentSize()
-    }
-
-    func setPillColor(_ color: NSColor) {
-        pillLabel.textColor = color
-    }
-}
-
 /// A keycap-style recorder for Capsomnia's persisted global shortcut.
 final class ShortcutRecorderButton: NSView {
     private var placeholderTitle: String
     private var recordingTitle: String
     private var actionTitle: String
-    private var clearTitle: String
     private var registrationFailedTitle: String
     private var shortcut: KeyboardShortcut?
     private var isRecording = false
@@ -405,24 +334,20 @@ final class ShortcutRecorderButton: NSView {
     private let valueLabel = NSTextField(labelWithString: "")
     private let flexibleSpace = NSView()
     private let keycapStack = NSStackView()
+    private let deletePill = NSView()
+    private let deleteLabel = NSTextField(labelWithString: "Del")
     private let actionPill = NSView()
     private let actionLabel = NSTextField(labelWithString: "")
-    private let clearButton = PaddedPillButton(
-        horizontalPadding: 11,
-        verticalPadding: 7
-    )
 
     init(
         placeholder: String,
         recording: String,
         action: String,
-        clear: String,
         registrationFailed: String
     ) {
         placeholderTitle = placeholder
         recordingTitle = recording
         actionTitle = action
-        clearTitle = clear
         registrationFailedTitle = registrationFailed
         super.init(frame: .zero)
 
@@ -488,25 +413,25 @@ final class ShortcutRecorderButton: NSView {
         actionLabel.translatesAutoresizingMaskIntoConstraints = false
         actionPill.addSubview(actionLabel)
 
-        clearButton.isBordered = false
-        clearButton.setPillFont(.systemFont(ofSize: 11, weight: .semibold))
-        clearButton.setPillColor(.systemRed)
-        clearButton.focusRingType = .exterior
-        clearButton.target = self
-        clearButton.action = #selector(clearRecordedShortcut)
-        clearButton.translatesAutoresizingMaskIntoConstraints = false
-        clearButton.wantsLayer = true
-        clearButton.layer?.cornerRadius = 8
-        clearButton.layer?.backgroundColor = NSColor.systemRed.withAlphaComponent(0.1).cgColor
-        clearButton.layer?.borderWidth = 1
-        clearButton.layer?.borderColor = NSColor.systemRed.withAlphaComponent(0.28).cgColor
+        deletePill.translatesAutoresizingMaskIntoConstraints = false
+        deletePill.wantsLayer = true
+        deletePill.layer?.cornerRadius = 8
+        deletePill.layer?.backgroundColor = NSColor.systemRed.withAlphaComponent(0.1).cgColor
+        deletePill.layer?.borderWidth = 1
+        deletePill.layer?.borderColor = NSColor.systemRed.withAlphaComponent(0.28).cgColor
+
+        deleteLabel.font = .systemFont(ofSize: 11, weight: .semibold)
+        deleteLabel.textColor = .systemRed
+        deleteLabel.alignment = .center
+        deleteLabel.translatesAutoresizingMaskIntoConstraints = false
+        deletePill.addSubview(deleteLabel)
 
         let content = NSStackView(views: [
             iconHolder,
             valueLabel,
             flexibleSpace,
             keycapStack,
-            clearButton,
+            deletePill,
             actionPill
         ])
         content.orientation = .horizontal
@@ -526,6 +451,10 @@ final class ShortcutRecorderButton: NSView {
             actionLabel.trailingAnchor.constraint(equalTo: actionPill.trailingAnchor, constant: -11),
             actionLabel.topAnchor.constraint(equalTo: actionPill.topAnchor, constant: 7),
             actionLabel.bottomAnchor.constraint(equalTo: actionPill.bottomAnchor, constant: -7),
+            deleteLabel.leadingAnchor.constraint(equalTo: deletePill.leadingAnchor, constant: 11),
+            deleteLabel.trailingAnchor.constraint(equalTo: deletePill.trailingAnchor, constant: -11),
+            deleteLabel.topAnchor.constraint(equalTo: deletePill.topAnchor, constant: 7),
+            deleteLabel.bottomAnchor.constraint(equalTo: deletePill.bottomAnchor, constant: -7),
             content.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 13),
             content.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -13),
             content.topAnchor.constraint(equalTo: topAnchor, constant: 12),
@@ -554,13 +483,11 @@ final class ShortcutRecorderButton: NSView {
         placeholder: String,
         recording: String,
         action: String,
-        clear: String,
         registrationFailed: String
     ) {
         placeholderTitle = placeholder
         recordingTitle = recording
         actionTitle = action
-        clearTitle = clear
         registrationFailedTitle = registrationFailed
         refreshAppearance()
     }
@@ -681,11 +608,6 @@ final class ShortcutRecorderButton: NSView {
         refreshAppearance()
     }
 
-    @objc private func clearRecordedShortcut() {
-        guard isRecording, shortcut != nil else { return }
-        commit(nil)
-    }
-
     private func refreshAppearance() {
         valueLabel.stringValue = isShowingRegistrationError
             ? registrationFailedTitle
@@ -694,7 +616,6 @@ final class ShortcutRecorderButton: NSView {
             ? .systemRed
             : isRecording ? Brand.led : Brand.textDim
         actionLabel.stringValue = isRecording ? "Esc" : actionTitle
-        clearButton.setPillTitle(clearTitle)
 
         let tokens = shortcut?.displayTokens ?? []
         let hasRecordedShortcut = !tokens.isEmpty
@@ -703,7 +624,7 @@ final class ShortcutRecorderButton: NSView {
         valueLabel.isHidden = hasRecordedShortcut
         keycapStack.isHidden = !hasRecordedShortcut
         actionPill.isHidden = hasRecordedShortcut
-        clearButton.isHidden = !(isRecording && shortcut != nil)
+        deletePill.isHidden = !(isRecording && shortcut != nil)
 
         if hasRecordedShortcut, tokens != renderedKeycapTokens {
             renderedKeycapTokens = tokens

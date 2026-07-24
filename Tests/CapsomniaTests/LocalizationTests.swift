@@ -36,7 +36,6 @@ final class LocalizationTests: XCTestCase {
             XCTAssertFalse(strings.shortcutRecorderPlaceholder.isEmpty)
             XCTAssertFalse(strings.shortcutRecorderRecording.isEmpty)
             XCTAssertFalse(strings.shortcutRecorderAction.isEmpty)
-            XCTAssertFalse(strings.shortcutRecorderClear.isEmpty)
             XCTAssertFalse(strings.shortcutRegistrationFailed.isEmpty)
             XCTAssertFalse(strings.initialPreferencesHeading.isEmpty)
             XCTAssertFalse(strings.done.isEmpty)

@@ -12,7 +12,9 @@ const pages = [
     title: "Capsomnia — Caps Lock as a physical keep-awake switch for macOS",
     content: "Give Caps Lock",
     shortcutHeading: "Use the key that works for you",
-    shortcutPreview: "/app-preview-shortcut-en.png"
+    shortcutPreview: "/app-preview-shortcut-en.png",
+    productHuntAria: "View Capsomnia on Product Hunt",
+    productHuntAlt: "Capsomnia on Product Hunt"
   },
   {
     code: "ja",
@@ -22,7 +24,9 @@ const pages = [
     title: "Capsomnia — Caps LockをMacの物理スリープ防止スイッチに",
     content: "Macの<span class=\"catch-accent\">最も無駄なキー</span>",
     shortcutHeading: "自由にキー設定",
-    shortcutPreview: "/app-preview-shortcut-ja.png"
+    shortcutPreview: "/app-preview-shortcut-ja.png",
+    productHuntAria: "Product HuntでCapsomniaを見る",
+    productHuntAlt: "Product HuntのCapsomnia"
   },
   {
     code: "zh-Hans",
@@ -32,7 +36,9 @@ const pages = [
     title: "Capsomnia — 把 Caps Lock 变成 macOS 实体防休眠开关",
     content: "让 Caps Lock",
     shortcutHeading: "自由设置按键",
-    shortcutPreview: "/app-preview-shortcut-en.png"
+    shortcutPreview: "/app-preview-shortcut-en.png",
+    productHuntAria: "在 Product Hunt 上查看 Capsomnia",
+    productHuntAlt: "Product Hunt 上的 Capsomnia"
   },
   {
     code: "ko",
@@ -42,7 +48,9 @@ const pages = [
     title: "Capsomnia — Caps Lock을 macOS 잠자기 방지 스위치로",
     content: "Caps Lock에<br><span class=\"catch-accent\">제대로 된 일을 맡기세요</span>",
     shortcutHeading: "원하는 키로 자유롭게",
-    shortcutPreview: "/app-preview-shortcut-en.png"
+    shortcutPreview: "/app-preview-shortcut-en.png",
+    productHuntAria: "Product Hunt에서 Capsomnia 보기",
+    productHuntAlt: "Product Hunt의 Capsomnia"
   }
 ];
 
@@ -67,6 +75,9 @@ for (const page of pages) {
     assert.ok(html.includes(page.content));
     assert.ok(html.includes(page.shortcutHeading));
     assert.ok(html.includes(`src="${page.shortcutPreview}"`));
+    assert.ok(html.includes(`aria-label="${page.productHuntAria}"`));
+    assert.ok(html.includes(`alt="${page.productHuntAlt}"`));
+    assert.ok(html.includes("post_id=1200286&amp;theme=dark"));
     assert.equal((html.match(/aria-labelledby="custom-shortcut-title"/g) ?? []).length, 1);
     assert.doesNotMatch(html, /Actual settings screen|実際の設定画面|实际设置界面|실제 설정 화면/);
     for (const trafficLight of ["#ff5f57", "#febc2e", "#28c840"]) {

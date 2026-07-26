@@ -14,7 +14,7 @@ const pages = [
     shortcutHeading: "Use the key that works for you",
     shortcutPreview: "/app-preview-shortcut-en.png",
     productHuntAria: "View Capsomnia on Product Hunt",
-    productHuntAlt: "Capsomnia on Product Hunt"
+    productHuntAlt: "Capsomnia — Caps Lock keeps your Mac awake, even with the lid closed | Product Hunt"
   },
   {
     code: "ja",
@@ -26,7 +26,7 @@ const pages = [
     shortcutHeading: "自由にキー設定",
     shortcutPreview: "/app-preview-shortcut-ja.png",
     productHuntAria: "Product HuntでCapsomniaを見る",
-    productHuntAlt: "Product HuntのCapsomnia"
+    productHuntAlt: "Capsomnia — 蓋を閉じてもMacを起こしておく | Product Hunt"
   },
   {
     code: "zh-Hans",
@@ -38,7 +38,7 @@ const pages = [
     shortcutHeading: "自由设置按键",
     shortcutPreview: "/app-preview-shortcut-en.png",
     productHuntAria: "在 Product Hunt 上查看 Capsomnia",
-    productHuntAlt: "Product Hunt 上的 Capsomnia"
+    productHuntAlt: "Capsomnia — 即使合盖也能让 Mac 保持唤醒 | Product Hunt"
   },
   {
     code: "ko",
@@ -50,7 +50,7 @@ const pages = [
     shortcutHeading: "원하는 키로 자유롭게",
     shortcutPreview: "/app-preview-shortcut-en.png",
     productHuntAria: "Product Hunt에서 Capsomnia 보기",
-    productHuntAlt: "Product Hunt의 Capsomnia"
+    productHuntAlt: "Capsomnia — 덮개를 닫아도 Mac을 깨워 두기 | Product Hunt"
   }
 ];
 
@@ -77,7 +77,7 @@ for (const page of pages) {
     assert.ok(html.includes(`src="${page.shortcutPreview}"`));
     assert.ok(html.includes(`aria-label="${page.productHuntAria}"`));
     assert.ok(html.includes(`alt="${page.productHuntAlt}"`));
-    assert.ok(html.includes("post_id=1200286&amp;theme=dark"));
+    assert.ok(html.includes("post_id=1200286&amp;theme=light&amp;period=daily"));
     assert.equal((html.match(/aria-labelledby="custom-shortcut-title"/g) ?? []).length, 1);
     assert.doesNotMatch(html, /Actual settings screen|実際の設定画面|实际设置界面|실제 설정 화면/);
     for (const trafficLight of ["#ff5f57", "#febc2e", "#28c840"]) {
@@ -146,6 +146,7 @@ for (const readme of readmes) {
     const markdown = readFileSync(new URL(readme, import.meta.url), "utf8");
 
     assert.ok(markdown.includes("img.shields.io/badge/Download-Capsomnia.pkg-"));
+    assert.ok(markdown.includes("top-post-badge.svg?post_id=1200286&amp;theme=light&amp;period=daily"));
     assert.doesNotMatch(markdown, /img\.shields\.io\/badge\/README-(?:EN|JA|ZH|KO)-/);
   });
 }

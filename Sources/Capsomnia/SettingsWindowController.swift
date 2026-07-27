@@ -40,6 +40,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     )
     private let advancedSettingsButton = DisclosureButton()
 
+    private let autoOffHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
+    private let autoOffControl = AutoOffTimerControl(minutes: Preferences.autoOffMinutes)
+
     private let systemBehaviorHeading = brandLabel(
         size: 11,
         weight: .semibold,
@@ -62,6 +65,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         isOn: Preferences.displaySleepOnLidClose
     )
 
+    private let autoOffRestartTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
+    private let autoOffRestartDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let autoOffRestartToggle = LEDToggle(isOn: Preferences.autoOffRestartOnReenable)
+    private let autoOffMenuBarTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
+    private let autoOffMenuBarDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let autoOffMenuBarToggle = LEDToggle(isOn: Preferences.autoOffShowInMenuBar)
+
     private let shortcutHeading = brandLabel(
         size: 11,
         weight: .semibold,
@@ -83,6 +93,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private var preferencesCard = NSView()
     private var systemCard = NSView()
     private var shortcutCard = NSView()
+    private var autoOffCard = NSView()
     private var initialPreferencesLayoutConstraints: [NSLayoutConstraint] = []
     private var settingsLayoutConstraints: [NSLayoutConstraint] = []
     private var advancedSettingsLayoutConstraints: [NSLayoutConstraint] = []
@@ -92,6 +103,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let onLanguageChange: (AppLanguage) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
     private let onDisplaySleepOnLidCloseChange: (Bool) -> Void
+    private let onAutoOffMinutesChange: (Int) -> Void
+    private let onAutoOffRestart: () -> Void
+    private let onAutoOffRestartOnReenableChange: (Bool) -> Void
+    private let onShowTimerInMenuBarChange: (Bool) -> Void
+    private let autoOffDisplayProvider: () -> AutoOffDisplayState
     private let onKeyboardShortcutChange: (KeyboardShortcut?) -> Bool
     private let onKeyboardShortcutRecordingChange: (Bool) -> Void
     private let onFinishInitialSetup: () -> Void
@@ -103,6 +119,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onLanguageChange: @escaping (AppLanguage) -> Void,
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
         onDisplaySleepOnLidCloseChange: @escaping (Bool) -> Void,
+        onAutoOffMinutesChange: @escaping (Int) -> Void,
+        onAutoOffRestart: @escaping () -> Void,
+        onAutoOffRestartOnReenableChange: @escaping (Bool) -> Void,
+        onShowTimerInMenuBarChange: @escaping (Bool) -> Void,
+        autoOffDisplayProvider: @escaping () -> AutoOffDisplayState,
         onKeyboardShortcutChange: @escaping (KeyboardShortcut?) -> Bool,
         onKeyboardShortcutRecordingChange: @escaping (Bool) -> Void,
         onFinishInitialSetup: @escaping () -> Void
@@ -112,6 +133,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onLanguageChange = onLanguageChange
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
         self.onDisplaySleepOnLidCloseChange = onDisplaySleepOnLidCloseChange
+        self.onAutoOffMinutesChange = onAutoOffMinutesChange
+        self.onAutoOffRestart = onAutoOffRestart
+        self.onAutoOffRestartOnReenableChange = onAutoOffRestartOnReenableChange
+        self.onShowTimerInMenuBarChange = onShowTimerInMenuBarChange
+        self.autoOffDisplayProvider = autoOffDisplayProvider
         self.onKeyboardShortcutChange = onKeyboardShortcutChange
         self.onKeyboardShortcutRecordingChange = onKeyboardShortcutRecordingChange
         self.onFinishInitialSetup = onFinishInitialSetup
@@ -186,6 +212,23 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         openAtLoginDesc.stringValue = strings.openAtLoginDesc
         openAtLoginToggle.setAccessibilityLabel(strings.openAtLogin)
 
+        autoOffHeading.stringValue = strings.autoOffTimer.uppercased()
+        autoOffControl.setStrings(
+            desc: strings.autoOffTimerDesc,
+            off: strings.autoOffOff,
+            custom: strings.autoOffCustom,
+            turnsOffIn: strings.autoOffTurnsOffIn,
+            hours: strings.autoOffHours,
+            minutesUnit: strings.autoOffMinutesUnit,
+            restart: strings.autoOffRestart
+        )
+        autoOffRestartTitle.stringValue = strings.autoOffRestartOnReenable
+        autoOffRestartDesc.stringValue = strings.autoOffRestartOnReenableDesc
+        autoOffRestartToggle.setAccessibilityLabel(strings.autoOffRestartOnReenable)
+        autoOffMenuBarTitle.stringValue = strings.autoOffShowInMenuBar
+        autoOffMenuBarDesc.stringValue = strings.autoOffShowInMenuBarDesc
+        autoOffMenuBarToggle.setAccessibilityLabel(strings.autoOffShowInMenuBar)
+
         shortcutHeading.stringValue = strings.keyboardShortcut.uppercased()
         shortcutDesc.stringValue = strings.keyboardShortcutDesc
         shortcutRecorder.setStrings(
@@ -216,12 +259,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         }
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        autoOffControl.startDisplayUpdates()
     }
 
     func windowWillClose(_ notification: Notification) {
         // The controller and window are reused after closing, so transient
         // recording state must not survive into the next presentation.
         shortcutRecorder.cancelRecording()
+        autoOffControl.stopDisplayUpdates()
         guard page == .initialPreferences else { return }
         finishInitialSetup()
     }
@@ -269,6 +314,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         preferencesCard = buildPreferencesCard()
         systemCard = buildSystemCard()
         shortcutCard = buildShortcutCard()
+        autoOffCard = buildAutoOffCard()
         configureAdvancedHeader()
         configureAdvancedSettingsButton()
 
@@ -293,6 +339,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         ]
         settingsLayoutConstraints = [
             preferencesCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            autoOffCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             advancedSettingsButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
         ]
@@ -337,10 +384,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         case .settings:
             bodyStack.addArrangedSubview(preferencesHeading)
             bodyStack.addArrangedSubview(preferencesCard)
+            bodyStack.addArrangedSubview(autoOffHeading)
+            bodyStack.addArrangedSubview(autoOffCard)
             bodyStack.addArrangedSubview(advancedSettingsButton)
             bodyStack.addArrangedSubview(doneButton)
             bodyStack.setCustomSpacing(8, after: preferencesHeading)
-            bodyStack.setCustomSpacing(12, after: preferencesCard)
+            bodyStack.setCustomSpacing(20, after: preferencesCard)
+            bodyStack.setCustomSpacing(8, after: autoOffHeading)
+            bodyStack.setCustomSpacing(20, after: autoOffCard)
             bodyStack.setCustomSpacing(20, after: advancedSettingsButton)
             NSLayoutConstraint.activate(settingsLayoutConstraints)
 
@@ -517,6 +568,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onLaunchAtLoginChange(enabled)
             self?.updateValues()
         }
+        autoOffRestartToggle.onToggle = { [weak self] enabled in
+            self?.onAutoOffRestartOnReenableChange(enabled)
+            self?.updateValues()
+        }
+        autoOffMenuBarToggle.onToggle = { [weak self] enabled in
+            self?.onShowTimerInMenuBarChange(enabled)
+            self?.updateValues()
+        }
 
         let displayRow = settingRow(
             title: displaySleepOnLidCloseTitle,
@@ -528,10 +587,25 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             desc: openAtLoginDesc,
             accessory: openAtLoginToggle
         )
-        let divider = brandDivider()
+        let restartRow = settingRow(
+            title: autoOffRestartTitle,
+            desc: autoOffRestartDesc,
+            accessory: autoOffRestartToggle
+        )
+        let menuBarRow = settingRow(
+            title: autoOffMenuBarTitle,
+            desc: autoOffMenuBarDesc,
+            accessory: autoOffMenuBarToggle
+        )
 
         let card = brandCard()
-        let stack = NSStackView(views: [displayRow, divider, openAtLoginRow])
+        let rows: [NSView] = [
+            displayRow, brandDivider(),
+            openAtLoginRow, brandDivider(),
+            restartRow, brandDivider(),
+            menuBarRow
+        ]
+        let stack = NSStackView(views: rows)
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 14
@@ -542,11 +616,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
             stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
             stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
-            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
-            displayRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            divider.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            openAtLoginRow.widthAnchor.constraint(equalTo: stack.widthAnchor)
+            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
         ])
+        for row in rows {
+            row.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        }
         return card
     }
 
@@ -578,6 +652,35 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         return card
     }
 
+    private func buildAutoOffCard() -> NSView {
+        autoOffControl.onMinutesChange = { [weak self] minutes in
+            self?.onAutoOffMinutesChange(minutes)
+        }
+        autoOffControl.displayProvider = autoOffDisplayProvider
+        autoOffControl.onNeedsResize = { [weak self] in
+            self?.handleAutoOffLayoutChange()
+        }
+        autoOffControl.onRestart = { [weak self] in
+            self?.onAutoOffRestart()
+        }
+
+        let card = brandCard()
+        card.addSubview(autoOffControl)
+        NSLayoutConstraint.activate([
+            autoOffControl.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+            autoOffControl.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
+            autoOffControl.topAnchor.constraint(equalTo: card.topAnchor, constant: 18),
+            autoOffControl.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -18)
+        ])
+        return card
+    }
+
+    /// Re-fit the window when the custom stepper section is shown or hidden.
+    private func handleAutoOffLayoutChange() {
+        guard page == .settings, window?.isVisible == true else { return }
+        resizeToFit()
+    }
+
     private func updateValues() {
         dedicatedCapsLockModeToggle.setOn(Preferences.dedicatedCapsLockMode)
         menuBarToggle.setOn(Preferences.showMenuBarIcon)
@@ -585,6 +688,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         displaySleepOnLidCloseToggle.setOn(Preferences.displaySleepOnLidClose)
         openAtLoginToggle.setOn(Preferences.launchAtLogin)
         shortcutRecorder.setShortcut(Preferences.keyboardShortcut)
+        autoOffControl.setMinutes(Preferences.autoOffMinutes)
+        autoOffRestartToggle.setOn(Preferences.autoOffRestartOnReenable)
+        autoOffMenuBarToggle.setOn(Preferences.autoOffShowInMenuBar)
     }
 
     private func configureAdvancedHeader() {

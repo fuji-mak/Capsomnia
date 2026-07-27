@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import Foundation
 
 final class Capsomnia: NSObject, NSApplicationDelegate {
@@ -15,6 +16,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var dedicatedModeError = false
     private var shouldRestoreSleepOnTerminate = true
     private var pollingTimer: Timer?
+    private var pendingCapsLockOffWorkItem: DispatchWorkItem?
+    private var pendingInputSourceRecoveryWorkItem: DispatchWorkItem?
+    private var globalCapsLockEventMonitor: Any?
+    private var localCapsLockEventMonitor: Any?
     private var signalSources: [DispatchSourceSignal] = []
     private var statusItem: NSStatusItem?
     private var settingsWindowController: SettingsWindowController?
@@ -29,6 +34,15 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let helperRetryInterval: TimeInterval = 5
     private let dedicatedModeRetryInterval: TimeInterval = 5
     private let sleepStateVerificationInterval: TimeInterval = 10
+    private let capsLockOffDebounceInterval: TimeInterval = 0.35
+    private let inputSourceNotificationDebounceInterval: TimeInterval = 0.1
+    private let inputSourceInternalNotificationSuppression: TimeInterval = 0.5
+    private let userCapsLockEventSuppressionInterval: TimeInterval = 0.5
+    private var suppressInputSourceNotificationsUntil = Date.distantPast
+    private var suppressInputSourceRecoveryUntil = Date.distantPast
+    private let selectedKeyboardInputSourceChangedNotificationName = Notification.Name(
+        kTISNotifySelectedKeyboardInputSourceChanged as String
+    )
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if terminateIfNewerInteractiveDuplicate() {
@@ -46,9 +60,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             name: openSettingsNotificationName,
             object: appLabel
         )
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(handleSelectedKeyboardInputSourceChanged),
+            name: selectedKeyboardInputSourceChangedNotificationName,
+            object: nil
+        )
 
         NSApp.setActivationPolicy(.accessory)
         syncStatusItemVisibility()
+        installCapsLockEventMonitors()
         installSignalHandlers()
         installPollingMonitor()
         log("start")
@@ -66,6 +87,19 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         dedicatedCapsLockFilter.stop()
+        if let globalCapsLockEventMonitor {
+            NSEvent.removeMonitor(globalCapsLockEventMonitor)
+        }
+        if let localCapsLockEventMonitor {
+            NSEvent.removeMonitor(localCapsLockEventMonitor)
+        }
+        globalCapsLockEventMonitor = nil
+        localCapsLockEventMonitor = nil
+        pendingCapsLockOffWorkItem?.cancel()
+        pendingCapsLockOffWorkItem = nil
+        pendingInputSourceRecoveryWorkItem?.cancel()
+        pendingInputSourceRecoveryWorkItem = nil
+        DistributedNotificationCenter.default().removeObserver(self)
         guard shouldRestoreSleepOnTerminate else { return }
 
         let result = runHelper("off")
@@ -102,10 +136,127 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         showSettingsWindow(page: currentSettingsPage())
     }
 
-    /// The state Capsomnia is acting on: the last state it applied, falling
-    /// back to the live hardware Caps Lock state before the first apply.
+    @objc private func handleSelectedKeyboardInputSourceChanged(_ notification: Notification) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.handleSelectedKeyboardInputSourceChanged(notification)
+            }
+            return
+        }
+
+        let now = Date()
+        guard now >= suppressInputSourceNotificationsUntil,
+              now >= suppressInputSourceRecoveryUntil,
+              lastAppliedState == true else { return }
+
+        cancelPendingCapsLockOff()
+        if pendingInputSourceRecoveryWorkItem == nil {
+            log("input_source_changed recovery_scheduled")
+        }
+        scheduleInputSourceRecovery()
+    }
+
+    private func installCapsLockEventMonitors() {
+        let capsLockKeyCode = UInt16(kVK_CapsLock)
+        globalCapsLockEventMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: .flagsChanged
+        ) { [weak self] event in
+            guard event.keyCode == capsLockKeyCode else { return }
+            DispatchQueue.main.async {
+                self?.handleUserCapsLockKeyEvent()
+            }
+        }
+        localCapsLockEventMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: .flagsChanged
+        ) { [weak self] event in
+            if event.keyCode == capsLockKeyCode {
+                self?.handleUserCapsLockKeyEvent()
+            }
+            return event
+        }
+        log(
+            "capslock_key_monitor global=\(globalCapsLockEventMonitor != nil ? "active" : "unavailable")"
+        )
+    }
+
+    private func handleUserCapsLockKeyEvent() {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.handleUserCapsLockKeyEvent()
+            }
+            return
+        }
+
+        suppressInputSourceRecoveryForUserAction(reason: "capslock_key")
+    }
+
+    private func suppressInputSourceRecoveryForUserAction(reason: String) {
+        cancelInputSourceRecovery()
+        suppressInputSourceRecoveryUntil = Date().addingTimeInterval(
+            userCapsLockEventSuppressionInterval
+        )
+        log("\(reason) user_action input_source_recovery_suppressed")
+    }
+
+    private func scheduleInputSourceRecovery() {
+        pendingInputSourceRecoveryWorkItem?.cancel()
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.pendingInputSourceRecoveryWorkItem = nil
+            self.reassertCapsLockAfterInputSourceChange(reason: "input_source_changed")
+        }
+        pendingInputSourceRecoveryWorkItem = workItem
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + inputSourceNotificationDebounceInterval,
+            execute: workItem
+        )
+    }
+
+    private func reassertCapsLockAfterInputSourceChange(reason: String) {
+        guard lastAppliedState == true else { return }
+
+        guard let capsLockOn = capsLockStateReader.currentState() else {
+            log("\(reason) capslock_state_unavailable recovery_pending")
+            updateStatusError()
+            return
+        }
+
+        guard !capsLockOn else {
+            refreshStatus(capsLockOn: true)
+            return
+        }
+
+        suppressInputSourceNotificationsUntil = Date().addingTimeInterval(
+            inputSourceInternalNotificationSuppression
+        )
+        let result = SystemCapsLockController.set(true)
+        log("\(reason) reassert_capslock result=\(String(describing: result))")
+        guard result == .changed(to: true) else {
+            updateStatusError()
+            return
+        }
+
+        apply(capsLockOn: true, reason: "\(reason)_reasserted")
+    }
+
+    private func cancelInputSourceRecovery() {
+        cancelPendingCapsLockOff()
+        pendingInputSourceRecoveryWorkItem?.cancel()
+        pendingInputSourceRecoveryWorkItem = nil
+        suppressInputSourceNotificationsUntil = .distantPast
+    }
+
+    private func cancelPendingCapsLockOff() {
+        pendingCapsLockOffWorkItem?.cancel()
+        pendingCapsLockOffWorkItem = nil
+    }
+
+    /// The live Caps Lock state used for the status indicator, falling back
+    /// to the last applied sleep state only when the hardware state is
+    /// temporarily unavailable.
     private var currentCapsLockState: Bool {
-        lastAppliedState ?? capsLockStateReader.currentState() ?? false
+        capsLockStateReader.currentState() ?? lastAppliedState ?? false
     }
 
     private func syncStatusItemVisibility() {
@@ -200,6 +351,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func requestCapsLockToggle(source: String) {
+        suppressInputSourceRecoveryForUserAction(reason: source)
         log("\(source)_toggle_capslock requested")
         capsLockToggleCoordinator.requestToggle { [weak self] result in
             self?.handleCapsLockToggleResult(result, source: source)
@@ -212,6 +364,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     ) {
         switch result {
         case let .changed(target):
+            cancelInputSourceRecovery()
             log("\(source)_toggle_capslock target=\(target ? "on" : "off") succeeded=true")
         case .unavailable:
             log("\(source)_toggle_capslock failed=hid_system_unavailable")
@@ -422,6 +575,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         guard let capsLockOn = capsLockStateReader.currentState() else {
+            if pendingInputSourceRecoveryWorkItem != nil {
+                return
+            }
             if !hasLoggedMissingCapsLockState {
                 log("\(reason) capslock_state_unavailable")
                 hasLoggedMissingCapsLockState = true
@@ -432,7 +588,45 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         hasLoggedMissingCapsLockState = false
+        if pendingInputSourceRecoveryWorkItem != nil, lastAppliedState == true {
+            return
+        }
+
+        if lastAppliedState == true, !capsLockOn {
+            scheduleCapsLockOff(reason: reason)
+            return
+        }
+
+        cancelPendingCapsLockOff()
         apply(capsLockOn: capsLockOn, reason: reason)
+    }
+
+    private func scheduleCapsLockOff(reason: String) {
+        guard pendingCapsLockOffWorkItem == nil else { return }
+
+        log("\(reason) capslock=off debounce_ms=350")
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.pendingCapsLockOffWorkItem = nil
+
+            guard self.capsLockStateReader.currentState() == false else {
+                return
+            }
+
+            if self.pendingInputSourceRecoveryWorkItem != nil,
+               self.lastAppliedState == true {
+                return
+            }
+
+            self.apply(capsLockOn: false, reason: "\(reason)_debounced")
+        }
+
+        pendingCapsLockOffWorkItem = workItem
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + capsLockOffDebounceInterval,
+            execute: workItem
+        )
     }
 
     private func ensureDedicatedCapsLockFilter(

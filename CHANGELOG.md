@@ -4,6 +4,12 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 2.0.3 - 2026-07-27
+
+- Preserve sleep prevention when macOS clears Caps Lock while switching from an IME to a keyboard layout such as ABC or U.S.
+- Re-assert Caps Lock after selected input source changes while honoring intentional physical-key, menu, and registered-shortcut toggles.
+- Coalesce input-source notifications and tolerate transient HID readback delays during Caps Lock recovery.
+
 ## 2.0.2 - 2026-07-24
 
 - Replace the nonfunctional clickable Clear control with concise Del and Esc keyboard hints while editing an assigned shortcut.

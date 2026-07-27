@@ -187,14 +187,6 @@ enum SystemCapsLockController {
             return .writeFailed(target: target)
         }
 
-        let immediateState = CapsLockHIDSystem.readState(connection: connection)
-        guard immediateState == target else {
-            return .verificationFailed(
-                target: target,
-                actual: immediateState
-            )
-        }
-
         let confirmation = CapsLockStateConfirmation(
             readState: {
                 CapsLockHIDSystem.readState(connection: connection)

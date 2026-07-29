@@ -17,6 +17,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var shouldRestoreSleepOnTerminate = true
     private var pollingTimer: Timer?
     private var pendingCapsLockOffWorkItem: DispatchWorkItem?
+    private var cachedBattery: BatteryReader.Snapshot?
+    private var cachedBatteryReadAt = Date.distantPast
+    private var batteryFloorLatched = false
+    private let batteryCacheInterval: TimeInterval = 5
+    private let batteryFloorRecoverMargin = 5
+    private let batteryFloorChoices = [10, 15, 20, 30]
     private var pendingInputSourceRecoveryWorkItem: DispatchWorkItem?
     private var globalCapsLockEventMonitor: Any?
     private var localCapsLockEventMonitor: Any?
@@ -309,6 +315,41 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         showMenuBarItem.state = Preferences.showMenuBarIcon ? .on : .off
         menu.addItem(showMenuBarItem)
 
+        let batteryFloorValue = Preferences.batteryFloorEnabled
+            ? "\(Preferences.batteryFloorPercent)%"
+            : strings.batteryFloorOff
+        let batteryFloorItem = NSMenuItem(
+            title: "\(strings.batteryFloorMenu) (\(batteryFloorValue))",
+            action: nil,
+            keyEquivalent: ""
+        )
+        batteryFloorItem.toolTip = strings.batteryFloorDesc
+        let batteryFloorMenu = NSMenu(title: strings.batteryFloorMenu)
+        let batteryFloorOffItem = NSMenuItem(
+            title: strings.batteryFloorOff,
+            action: #selector(selectBatteryFloor),
+            keyEquivalent: ""
+        )
+        batteryFloorOffItem.target = self
+        batteryFloorOffItem.representedObject = "off"
+        batteryFloorOffItem.state = Preferences.batteryFloorEnabled ? .off : .on
+        batteryFloorMenu.addItem(batteryFloorOffItem)
+        for percent in batteryFloorChoices {
+            let item = NSMenuItem(
+                title: "\(percent)%",
+                action: #selector(selectBatteryFloor),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = "\(percent)"
+            item.state = (Preferences.batteryFloorEnabled && Preferences.batteryFloorPercent == percent)
+                ? .on
+                : .off
+            batteryFloorMenu.addItem(item)
+        }
+        menu.setSubmenu(batteryFloorMenu, for: batteryFloorItem)
+        menu.addItem(batteryFloorItem)
+
         let languageItem = NSMenuItem(title: strings.language, action: nil, keyEquivalent: "")
         let languageMenu = NSMenu(title: strings.language)
         for language in AppLanguage.allCases {
@@ -335,6 +376,26 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         menu.addItem(quitItem)
 
         item.menu = menu
+    }
+
+    @objc private func selectBatteryFloor(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String else { return }
+        if rawValue == "off" {
+            setBatteryFloor(enabled: false, percent: nil)
+        } else if let percent = Int(rawValue) {
+            setBatteryFloor(enabled: true, percent: percent)
+        }
+    }
+
+    private func setBatteryFloor(enabled: Bool, percent: Int?) {
+        Preferences.batteryFloorEnabled = enabled
+        if let percent {
+            Preferences.batteryFloorPercent = percent
+        }
+        batteryFloorLatched = false
+        rebuildStatusMenu()
+        applyCurrentCapsLockState(reason: "battery_floor_change")
+        log("preference battery_floor=\(enabled ? "\(Preferences.batteryFloorPercent)%" : "off")")
     }
 
     @objc private func toggleShowMenuBarIcon() {
@@ -560,6 +621,41 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         log("polling_ready interval_ms=250 tolerance_ms=50")
     }
 
+    /// Cached power-source read (refreshed every `batteryCacheInterval`) so the 250ms
+    /// poll never spins IOKit needlessly.
+    private func batterySnapshot() -> BatteryReader.Snapshot? {
+        let now = Date()
+        if let cachedBattery, now.timeIntervalSince(cachedBatteryReadAt) < batteryCacheInterval {
+            return cachedBattery
+        }
+        if let fresh = BatteryReader.read() {
+            cachedBattery = fresh
+            cachedBatteryReadAt = now
+            return fresh
+        }
+        return cachedBattery
+    }
+
+    /// Applies the battery-floor safety override to the Caps Lock intent. On battery at
+    /// or below the floor it releases keep-awake so the Mac can sleep before the battery
+    /// is fully drained; a recover margin keeps it from flapping. Unreadable power state
+    /// stays awake, so the floor can never make things worse than today.
+    private func keepAwakeAfterBatteryFloor(intent: Bool) -> Bool {
+        let battery = batterySnapshot()
+        let result = BatteryFloorPolicy.decide(
+            intent: intent,
+            floorEnabled: Preferences.batteryFloorEnabled,
+            floorPercent: Preferences.batteryFloorPercent,
+            recoverMargin: batteryFloorRecoverMargin,
+            onAC: battery?.onAC ?? false,
+            percent: battery?.percent,
+            batteryReadable: battery != nil,
+            latched: batteryFloorLatched
+        )
+        batteryFloorLatched = result.latched
+        return result.keepAwake
+    }
+
     private func applyCurrentCapsLockState(reason: String) {
         let filterReady = ensureDedicatedCapsLockFilter(
             promptForPermission: false,
@@ -598,7 +694,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         cancelPendingCapsLockOff()
-        apply(capsLockOn: capsLockOn, reason: reason)
+        apply(capsLockOn: keepAwakeAfterBatteryFloor(intent: capsLockOn), reason: reason)
     }
 
     private func scheduleCapsLockOff(reason: String) {

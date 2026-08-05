@@ -212,20 +212,37 @@ enum SystemCapsLockController {
 final class CapsLockToggleCoordinator {
     private let queue: OperationQueue
     private let toggle: () -> CapsLockToggleResult
+    private let setState: (Bool) -> CapsLockToggleResult
 
-    init(toggle: @escaping () -> CapsLockToggleResult = SystemCapsLockController.toggle) {
+    init(
+        toggle: @escaping () -> CapsLockToggleResult = SystemCapsLockController.toggle,
+        setState: @escaping (Bool) -> CapsLockToggleResult = SystemCapsLockController.set
+    ) {
         let queue = OperationQueue()
         queue.name = "\(appLabel).caps-lock-toggle"
         queue.qualityOfService = .userInitiated
         queue.maxConcurrentOperationCount = 1
         self.queue = queue
         self.toggle = toggle
+        self.setState = setState
     }
 
     func requestToggle(completion: @escaping (CapsLockToggleResult) -> Void) {
         let toggle = self.toggle
         queue.addOperation {
             let result = toggle()
+            OperationQueue.main.addOperation {
+                completion(result)
+            }
+        }
+    }
+
+    /// Set Caps Lock to an explicit state on the same serialized queue as
+    /// `requestToggle`, so an auto-off never races a manual toggle.
+    func requestSet(_ target: Bool, completion: @escaping (CapsLockToggleResult) -> Void) {
+        let setState = self.setState
+        queue.addOperation {
+            let result = setState(target)
             OperationQueue.main.addOperation {
                 completion(result)
             }

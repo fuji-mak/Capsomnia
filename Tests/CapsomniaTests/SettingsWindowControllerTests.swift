@@ -164,6 +164,8 @@ final class SettingsWindowControllerTests: XCTestCase {
             strings.systemBehavior.uppercased(),
             strings.displaySleepOnLidClose,
             strings.openAtLogin,
+            strings.autoOffRestartOnReenable,
+            strings.autoOffShowInMenuBar,
             strings.keyboardShortcut.uppercased(),
             strings.keyboardShortcut,
             strings.keyboardShortcutDesc
@@ -207,8 +209,91 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertEqual(recordingStates, [true, false])
     }
 
+    func testAutoOffCustomSectionAndCountdownRenderWithinTheWindow() throws {
+        let previousLanguage = Preferences.language
+        let previousMinutes = Preferences.autoOffMinutes
+        Preferences.language = .english
+        Preferences.autoOffMinutes = 45 // a custom value reveals the H/M steppers
+        defer {
+            Preferences.language = previousLanguage
+            Preferences.autoOffMinutes = previousMinutes
+        }
+        let strings = AppStrings.localized(for: .english)
+
+        _ = NSApplication.shared
+        let controller = makeController(
+            autoOffDisplayProvider: { .counting(remaining: 45 * 60) }
+        )
+        defer { controller.close() }
+
+        controller.show(page: .settings)
+        let contentView = try XCTUnwrap(controller.window?.contentView)
+        contentView.layoutSubtreeIfNeeded()
+
+        let labels: [NSTextField] = descendants(of: contentView)
+        let renderedText = Set(labels.map(\.stringValue))
+
+        // Section heading, chips, custom stepper labels, and the live countdown.
+        XCTAssertTrue(renderedText.contains(strings.autoOffTimer.uppercased()))
+        XCTAssertTrue(renderedText.contains(strings.autoOffOff))
+        XCTAssertTrue(renderedText.contains(strings.autoOffCustom))
+        XCTAssertTrue(renderedText.contains(strings.autoOffHours))
+        XCTAssertTrue(renderedText.contains(strings.autoOffMinutesUnit))
+        XCTAssertTrue(renderedText.contains("1h"))
+        XCTAssertTrue(renderedText.contains("8h"))
+        XCTAssertTrue(renderedText.contains("00:45:00"))
+
+        for label in labels where !label.stringValue.isEmpty {
+            let frame = label.convert(label.bounds, to: contentView)
+            XCTAssertGreaterThanOrEqual(frame.minX, -1, "\(label.stringValue) starts outside the window")
+            XCTAssertLessThanOrEqual(
+                frame.maxX,
+                contentView.bounds.maxX + 1,
+                "\(label.stringValue) extends outside the window"
+            )
+        }
+    }
+
+    func testRestartButtonShownWhenTimerIsSetAndHiddenWhenOff() throws {
+        let previousLanguage = Preferences.language
+        let previousMinutes = Preferences.autoOffMinutes
+        Preferences.language = .english
+        defer {
+            Preferences.language = previousLanguage
+            Preferences.autoOffMinutes = previousMinutes
+        }
+        let restartLabel = AppStrings.localized(for: .english).autoOffRestart
+        _ = NSApplication.shared
+
+        // A finite timer -> the restart icon is available.
+        Preferences.autoOffMinutes = 45
+        let onController = makeController()
+        defer { onController.close() }
+        onController.show(page: .settings)
+        let onContent = try XCTUnwrap(onController.window?.contentView)
+        onContent.layoutSubtreeIfNeeded()
+        let shown = try XCTUnwrap(view(in: onContent, accessibilityLabel: restartLabel))
+        XCTAssertFalse(shown.isHidden, "Restart icon should be available when a timer is set")
+
+        // No timer (Off) -> the restart icon is hidden.
+        Preferences.autoOffMinutes = 0
+        let offController = makeController()
+        defer { offController.close() }
+        offController.show(page: .settings)
+        let offContent = try XCTUnwrap(offController.window?.contentView)
+        offContent.layoutSubtreeIfNeeded()
+        let hidden = try XCTUnwrap(view(in: offContent, accessibilityLabel: restartLabel))
+        XCTAssertTrue(hidden.isHidden, "Restart icon should be hidden when the timer is Off")
+    }
+
+    private func view(in view: NSView, accessibilityLabel: String) -> NSView? {
+        let all: [NSView] = descendants(of: view)
+        return all.first { $0.accessibilityLabel() == accessibilityLabel }
+    }
+
     private func makeController(
-        onKeyboardShortcutRecordingChange: @escaping (Bool) -> Void = { _ in }
+        onKeyboardShortcutRecordingChange: @escaping (Bool) -> Void = { _ in },
+        autoOffDisplayProvider: @escaping () -> AutoOffDisplayState = { .idle(minutes: 0) }
     ) -> SettingsWindowController {
         SettingsWindowController(
             onDedicatedCapsLockModeChange: { _ in },
@@ -216,6 +301,11 @@ final class SettingsWindowControllerTests: XCTestCase {
             onLanguageChange: { _ in },
             onLaunchAtLoginChange: { _ in },
             onDisplaySleepOnLidCloseChange: { _ in },
+            onAutoOffMinutesChange: { _ in },
+            onAutoOffRestart: {},
+            onAutoOffRestartOnReenableChange: { _ in },
+            onShowTimerInMenuBarChange: { _ in },
+            autoOffDisplayProvider: autoOffDisplayProvider,
             onKeyboardShortcutChange: { _ in true },
             onKeyboardShortcutRecordingChange: onKeyboardShortcutRecordingChange,
             onFinishInitialSetup: {}

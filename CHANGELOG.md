@@ -4,6 +4,11 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 2.0.4 - 2026-08-05
+
+- Prevent command execution deadlocks by draining standard output and standard error concurrently.
+- Prevent main run-loop re-entry from launching nested `pmset` processes during sleep-state polling.
+
 ## 2.0.3 - 2026-07-27
 
 - Preserve sleep prevention when macOS clears Caps Lock while switching from an IME to a keyboard layout such as ABC or U.S.

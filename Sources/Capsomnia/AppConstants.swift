@@ -92,6 +92,9 @@ struct AppStrings {
     let openAtLoginDesc: String
     let displaySleepOnLidClose: String
     let displaySleepOnLidCloseDesc: String
+    let batteryFloorMenu: String
+    let batteryFloorDesc: String
+    let batteryFloorOff: String
     let keyboardShortcut: String
     let keyboardShortcutDesc: String
     let shortcutRecorderPlaceholder: String
@@ -136,6 +139,9 @@ struct AppStrings {
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
                 displaySleepOnLidClose: "Turn display off when lid closes",
                 displaySleepOnLidCloseDesc: "When Capsomnia is on, let the display sleep after closing the lid only if no external display is connected.",
+                batteryFloorMenu: "Battery floor",
+                batteryFloorDesc: "On battery, allow sleep at or below this level so the battery is never fully drained.",
+                batteryFloorOff: "Off",
                 keyboardShortcut: "Toggle shortcut",
                 keyboardShortcutDesc: "If you’ve assigned Caps Lock to another key, you can use a shortcut to turn Capsomnia on and off. While Capsomnia is on, the green Caps Lock light stays lit.",
                 shortcutRecorderPlaceholder: "Not Set",
@@ -174,6 +180,9 @@ struct AppStrings {
                 openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
                 displaySleepOnLidClose: "덮개를 닫을 때 화면 끄기",
                 displaySleepOnLidCloseDesc: "Capsomnia가 켜진 상태에서 덮개를 닫으면 외부 디스플레이가 연결되지 않은 경우에만 화면을 끕니다.",
+                batteryFloorMenu: "배터리 하한",
+                batteryFloorDesc: "배터리 사용 중에는 이 수준 이하에서 잠자기를 허용해 배터리가 완전히 방전되지 않게 합니다.",
+                batteryFloorOff: "끄기",
                 keyboardShortcut: "전환 단축키",
                 keyboardShortcutDesc: "Caps Lock을 다른 키에 할당한 경우에도 원하는 단축키로 Capsomnia를 켜거나 끌 수 있습니다. Capsomnia가 켜져 있는 동안에는 초록색 Caps Lock 표시등이 켜집니다.",
                 shortcutRecorderPlaceholder: "미설정",
@@ -212,6 +221,9 @@ struct AppStrings {
                 openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
                 displaySleepOnLidClose: "蓋を閉じたら画面をオフ",
                 displaySleepOnLidCloseDesc: "Capsomnia ON中は、外部ディスプレイが接続されていない場合のみ、蓋を閉じたら画面を暗くします。",
+                batteryFloorMenu: "バッテリー下限",
+                batteryFloorDesc: "バッテリー駆動時、この残量以下でスリープを許可。電池が完全に尽きるのを防ぎます。",
+                batteryFloorOff: "オフ",
                 keyboardShortcut: "切り替えショートカット",
                 keyboardShortcutDesc: "Caps Lockを別のキーに割り当てている場合でも、お好みのショートカットでCapsomniaをオン／オフできます。Capsomniaがオンの間は、Caps Lockの緑のライトが点灯します。",
                 shortcutRecorderPlaceholder: "未設定",
@@ -250,6 +262,9 @@ struct AppStrings {
                 openAtLoginDesc: "登录后自动启动 Capsomnia。",
                 displaySleepOnLidClose: "合盖时关闭显示屏",
                 displaySleepOnLidCloseDesc: "Capsomnia 开启时，仅在未连接外接显示器的情况下，合盖后让显示屏进入睡眠。",
+                batteryFloorMenu: "电量下限",
+                batteryFloorDesc: "使用电池时，在此电量或以下允许睡眠，避免电池彻底耗尽。",
+                batteryFloorOff: "关闭",
                 keyboardShortcut: "切换快捷键",
                 keyboardShortcutDesc: "即使已将 Caps Lock 分配给其他按键，也可以使用自定义快捷键开启或关闭 Capsomnia。Capsomnia 开启期间，绿色 Caps Lock 指示灯会保持亮起。",
                 shortcutRecorderPlaceholder: "未设置",
@@ -284,6 +299,8 @@ private enum PreferenceKey {
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
     static let displaySleepOnLidClose = "DisplaySleepOnLidClose"
+    static let batteryFloorEnabled = "BatteryFloorEnabled"
+    static let batteryFloorPercent = "BatteryFloorPercent"
     static let shortcutKeyCode = "ShortcutKeyCode"
     static let shortcutModifiers = "ShortcutModifiers"
     static let shortcutKey = "ShortcutKey"
@@ -301,6 +318,8 @@ enum Preferences {
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
             PreferenceKey.displaySleepOnLidClose: true,
+            PreferenceKey.batteryFloorEnabled: false,
+            PreferenceKey.batteryFloorPercent: 15,
             PreferenceKey.didCompleteInitialSetup: false,
             PreferenceKey.forceWelcomeOnNextLaunch: false
         ])
@@ -332,6 +351,20 @@ enum Preferences {
     static var displaySleepOnLidClose: Bool {
         get { defaults.bool(forKey: PreferenceKey.displaySleepOnLidClose) }
         set { defaults.set(newValue, forKey: PreferenceKey.displaySleepOnLidClose) }
+    }
+
+    static var batteryFloorEnabled: Bool {
+        get { defaults.bool(forKey: PreferenceKey.batteryFloorEnabled) }
+        set { defaults.set(newValue, forKey: PreferenceKey.batteryFloorEnabled) }
+    }
+
+    /// Battery percentage at or below which keep-awake is released (0 = fall back to 15).
+    static var batteryFloorPercent: Int {
+        get {
+            let value = defaults.integer(forKey: PreferenceKey.batteryFloorPercent)
+            return (value >= 5 && value <= 90) ? value : 15
+        }
+        set { defaults.set(newValue, forKey: PreferenceKey.batteryFloorPercent) }
     }
 
     static var keyboardShortcut: KeyboardShortcut? {

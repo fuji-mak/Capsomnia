@@ -44,7 +44,8 @@ Capsomnia itself does not make network requests, collect telemetry, or require a
 
 Requirements:
 
-- Apple silicon Mac with macOS 14 or later
+- Signed upstream package: Apple silicon Mac with macOS 14 or later
+- Source build on an Intel Mac with macOS 13.5 or later
 - Administrator access during installation
 
 Install the signed package:
@@ -58,15 +59,16 @@ The package build and install scripts are public in [`scripts/build-pkg.sh`](scr
 
 ## Build From Source
 
-Developer source install still works and requires a Swift 6 toolchain:
+Source builds on Intel macOS 13.5 or later require the Swift 5.9 toolchain included with Xcode 15:
 
 ```sh
 git clone https://github.com/fuji-mak/Capsomnia.git
 cd Capsomnia
-./scripts/install.sh
+swift build -c release
 ```
 
-The source installer builds `Capsomnia.app` locally, places it in `~/Applications/`, installs the same helper and sudoers rule, and starts a user LaunchAgent.
+This builds the `Capsomnia` app executable and the restricted `capsomnia-pmset` helper locally. The signed and notarized release package remains available for Apple silicon Macs running macOS 14 or later.
+
 
 ## What It Does
 

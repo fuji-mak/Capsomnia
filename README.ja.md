@@ -44,7 +44,8 @@ Capsomnia 本体はネットワーク通信を行わず、テレメトリを収�
 
 必要なもの:
 
-- Apple silicon Mac（macOS 14以降）
+- 署名済み upstream パッケージ: macOS 14 以降の Apple silicon Mac
+- ソースビルド: macOS 13.5 以降の Intel Mac
 - インストール時の管理者権限
 
 署名済みパッケージでインストール:
@@ -58,15 +59,16 @@ Capsomnia 本体はネットワーク通信を行わず、テレメトリを収�
 
 ## ソースからビルド
 
-開発者向けのソースインストールも利用できます。こちらは Swift 6 toolchain が必要です。
+Intel macOS 13.5 以降でソースをビルドするには、Xcode 15 に含まれる Swift 5.9 toolchain が必要です。
 
 ```sh
 git clone https://github.com/fuji-mak/Capsomnia.git
 cd Capsomnia
-./scripts/install.sh
+swift build -c release
 ```
 
-ソースインストーラはローカルで `Capsomnia.app` をビルドし、`~/Applications/` に配置します。あわせて、同じ helper、sudoers rule、ユーザー LaunchAgent を設定します。
+このコマンドは `Capsomnia` アプリ実行ファイルと限定的な `capsomnia-pmset` helper をローカルでビルドします。署名・公証済みのリリースパッケージは、引き続き macOS 14 以降の Apple silicon Mac を対象とします。
+
 
 ## できること
 

@@ -44,7 +44,8 @@ Capsomnia 자체는 네트워크 요청을 보내지 않고, 텔레메트리를 
 
 필요한 환경:
 
-- macOS 14 이상을 실행하는 Apple silicon Mac
+- 업스트림 서명 패키지: macOS 14 이상을 실행하는 Apple silicon Mac
+- 소스 빌드: macOS 13.5 이상을 실행하는 Intel Mac
 - 설치할 때 사용할 관리자 권한
 
 서명된 패키지 설치 방법:
@@ -58,15 +59,16 @@ Capsomnia 자체는 네트워크 요청을 보내지 않고, 텔레메트리를 
 
 ## 소스에서 빌드하기
 
-개발자용 소스 설치도 지원하며 Swift 6 툴체인이 필요합니다.
+Intel macOS 13.5 이상에서 소스를 빌드하려면 Xcode 15에 포함된 Swift 5.9 툴체인이 필요합니다.
 
 ```sh
 git clone https://github.com/fuji-mak/Capsomnia.git
 cd Capsomnia
-./scripts/install.sh
+swift build -c release
 ```
 
-소스 설치 프로그램은 `Capsomnia.app`을 로컬에서 빌드해 `~/Applications/`에 넣고, 같은 helper와 sudoers 규칙을 설치한 뒤 사용자 LaunchAgent를 시작합니다.
+이 명령은 `Capsomnia` 앱 실행 파일과 제한된 `capsomnia-pmset` helper를 로컬에서 빌드합니다. 서명 및 공증된 릴리스 패키지는 계속 macOS 14 이상을 실행하는 Apple silicon Mac을 대상으로 합니다.
+
 
 ## 작동 방식
 

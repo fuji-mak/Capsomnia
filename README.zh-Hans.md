@@ -46,7 +46,8 @@ Capsomnia本身不会发起网络请求、收集遥测数据，也不需要账�
 
 要求：
 
-- 搭载Apple芯片、运行macOS 14或更高版本的Mac
+- 上游签名软件包：运行macOS 14或更高版本的Apple芯片Mac
+- 源代码构建：运行macOS 13.5或更高版本的Intel Mac
 - 安装时拥有管理员权限
 
 安装已签名的软件包：
@@ -60,15 +61,16 @@ Capsomnia本身不会发起网络请求、收集遥测数据，也不需要账�
 
 ## 从源代码构建
 
-开发者仍可从源代码安装，需要Swift 6工具链：
+在Intel macOS 13.5或更高版本上从源代码构建，需要Xcode 15附带的Swift 5.9工具链：
 
 ```sh
 git clone https://github.com/fuji-mak/Capsomnia.git
 cd Capsomnia
-./scripts/install.sh
+swift build -c release
 ```
 
-源代码安装器会在本地构建`Capsomnia.app`，将其放入`~/Applications/`，安装同样的辅助程序和sudoers规则，并启动用户LaunchAgent。
+此命令会在本地构建`Capsomnia`应用程序可执行文件和权限受限的`capsomnia-pmset`辅助程序。已签名并经过公证的发布软件包仍面向运行macOS 14或更高版本的Apple芯片Mac。
+
 
 ## 功能
 

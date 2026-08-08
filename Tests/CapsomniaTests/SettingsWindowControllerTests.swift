@@ -23,7 +23,9 @@ final class SettingsWindowControllerTests: XCTestCase {
         let contentView = try XCTUnwrap(controller.window?.contentView)
         contentView.layoutSubtreeIfNeeded()
 
-        var renderedText = Set(visibleDescendants(of: contentView).map(\NSTextField.stringValue))
+        var renderedText = Set(
+            (visibleDescendants(of: contentView) as [NSTextField]).map(\.stringValue)
+        )
         XCTAssertTrue(renderedText.contains(strings.initialPreferencesHeading))
         XCTAssertTrue(renderedText.contains(strings.dedicatedCapsLockMode))
         XCTAssertFalse(renderedText.contains(strings.preferencesHeading))
@@ -39,7 +41,9 @@ final class SettingsWindowControllerTests: XCTestCase {
         controller.show(page: .settings)
         contentView.layoutSubtreeIfNeeded()
 
-        renderedText = Set(visibleDescendants(of: contentView).map(\NSTextField.stringValue))
+        renderedText = Set(
+            (visibleDescendants(of: contentView) as [NSTextField]).map(\.stringValue)
+        )
         XCTAssertTrue(renderedText.contains(strings.preferencesHeading))
         XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
         XCTAssertFalse(renderedText.contains(strings.openAtLogin))
@@ -153,7 +157,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertEqual(advancedWindow.title, strings.advancedSettings)
 
         let renderedText = Set(
-            visibleDescendants(of: contentView).map(\NSTextField.stringValue)
+            (visibleDescendants(of: contentView) as [NSTextField]).map(\.stringValue)
         )
         for expected in [
             strings.advancedSettings,

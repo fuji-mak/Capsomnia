@@ -8,6 +8,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var nextSleepStateRetryAt = Date.distantPast
     private var nextSleepStateVerificationAt = Date.distantPast
     private var nextDisplaySleepRetryAt = Date.distantPast
+    private var autoOffState = AutoOffState()
+    private var isAutoOffToggleInFlight = false
     private var didRequestDisplaySleepForClosedLid = false
     private var hasLoggedMissingClamshellState = false
     private var hasLoggedMissingCapsLockState = false
@@ -273,12 +275,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func installStatusItem() {
-        let item = NSStatusBar.system.statusItem(withLength: 24)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem = item
 
         if let button = item.button {
             button.title = ""
             button.imagePosition = .imageOnly
+            button.font = .monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
             button.toolTip = appName
         }
 
@@ -417,6 +420,21 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 onDisplaySleepOnLidCloseChange: { [weak self] enabled in
                     self?.setDisplaySleepOnLidClose(enabled)
                 },
+                onAutoOffMinutesChange: { [weak self] minutes in
+                    self?.setAutoOffMinutes(minutes)
+                },
+                onAutoOffRestart: { [weak self] in
+                    self?.restartAutoOff()
+                },
+                onAutoOffRestartOnReenableChange: { [weak self] enabled in
+                    self?.setAutoOffRestartOnReenable(enabled)
+                },
+                onShowTimerInMenuBarChange: { [weak self] enabled in
+                    self?.setShowTimerInMenuBar(enabled)
+                },
+                autoOffDisplayProvider: { [weak self] in
+                    self?.autoOffDisplayState() ?? .idle(minutes: 0)
+                },
                 onKeyboardShortcutChange: { [weak self] shortcut in
                     self?.setKeyboardShortcut(shortcut) ?? false
                 },
@@ -500,6 +518,125 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         log("preference display_sleep_on_lid_close=\(enabled ? "on" : "off")")
     }
 
+    /// Advance the auto-off timer and, if it has elapsed, turn awake mode off.
+    /// Returns `true` when an auto-off was triggered this call.
+    @discardableResult
+    private func evaluateAutoOff(capsLockOn: Bool, reason: String) -> Bool {
+        let result = AutoOffPolicy.evaluate(
+            capsLockOn: capsLockOn,
+            autoOffMinutes: Preferences.autoOffMinutes,
+            restartOnReenable: Preferences.autoOffRestartOnReenable,
+            now: Date(),
+            state: autoOffState
+        )
+        autoOffState = result.state
+        let didFire = result.shouldFire
+        if didFire {
+            fireAutoOff(reason: reason)
+        }
+        updateMenuBarCountdown()
+        return didFire
+    }
+
+    private func fireAutoOff(reason: String) {
+        guard !isAutoOffToggleInFlight else { return }
+        isAutoOffToggleInFlight = true
+        // Prevent input-source-change recovery from re-asserting Caps Lock and
+        // undoing the auto-off while the off is being applied.
+        suppressInputSourceRecoveryForUserAction(reason: "auto_off")
+        autoOffState = AutoOffState()
+        log("auto_off elapsed reason=\(reason)")
+        capsLockToggleCoordinator.requestSet(false) { [weak self] result in
+            guard let self else { return }
+            self.isAutoOffToggleInFlight = false
+            self.handleCapsLockToggleResult(result, source: "auto_off")
+            self.applyCurrentCapsLockState(reason: "auto_off")
+        }
+    }
+
+    private func setAutoOffMinutes(_ minutes: Int) {
+        Preferences.autoOffMinutes = minutes
+        // Start fresh with the newly chosen duration.
+        autoOffState = AutoOffState()
+        log("preference auto_off_minutes=\(minutes)")
+        applyCurrentCapsLockState(reason: "preference")
+        updateMenuBarCountdown()
+    }
+
+    private func restartAutoOff() {
+        let minutes = Preferences.autoOffMinutes
+        guard minutes > 0 else { return }
+        autoOffState = AutoOffPolicy.restarted(
+            capsLockOn: currentCapsLockState,
+            autoOffMinutes: minutes,
+            now: Date()
+        )
+        log("auto_off restart minutes=\(minutes)")
+        applyCurrentCapsLockState(reason: "restart")
+        updateMenuBarCountdown()
+    }
+
+    private func setAutoOffRestartOnReenable(_ enabled: Bool) {
+        Preferences.autoOffRestartOnReenable = enabled
+        log("preference auto_off_restart_on_reenable=\(enabled ? "on" : "off")")
+    }
+
+    private func setShowTimerInMenuBar(_ enabled: Bool) {
+        Preferences.autoOffShowInMenuBar = enabled
+        updateMenuBarCountdown()
+        log("preference auto_off_show_in_menu_bar=\(enabled ? "on" : "off")")
+    }
+
+    private func autoOffDisplayState() -> AutoOffDisplayState {
+        let minutes = Preferences.autoOffMinutes
+        guard currentCapsLockState else {
+            // Awake mode off: show the banked remaining time if paused mid-countdown.
+            if minutes > 0, let paused = autoOffState.pausedRemaining {
+                return .idle(minutes: max(1, Int((paused / 60).rounded(.up))))
+            }
+            return .idle(minutes: minutes)
+        }
+        guard minutes > 0 else {
+            return .infinite
+        }
+        if let deadline = autoOffState.deadline {
+            return .counting(remaining: max(0, deadline.timeIntervalSinceNow))
+        }
+        return .counting(remaining: autoOffState.pausedRemaining ?? TimeInterval(minutes) * 60)
+    }
+
+    /// Update the remaining-time readout shown next to the menu bar icon.
+    /// Driven by the existing 250 ms poll (via `evaluateAutoOff`), so it adds no
+    /// new timers or wake-ups.
+    private func updateMenuBarCountdown() {
+        guard let button = statusItem?.button else { return }
+
+        let minutes = Preferences.autoOffMinutes
+        let shouldShow = Preferences.showMenuBarIcon
+            && Preferences.autoOffShowInMenuBar
+            && currentCapsLockState
+            && minutes > 0
+            && failedSleepState == nil
+            && !dedicatedModeError
+
+        if shouldShow, let deadline = autoOffState.deadline {
+            let text = AutoOffFormatter.menuBar(max(0, deadline.timeIntervalSinceNow))
+            if button.title != text {
+                button.title = text
+            }
+            if button.imagePosition != .imageLeading {
+                button.imagePosition = .imageLeading
+            }
+        } else {
+            if !button.title.isEmpty {
+                button.title = ""
+            }
+            if button.imagePosition != .imageOnly {
+                button.imagePosition = .imageOnly
+            }
+        }
+    }
+
     private func configureGlobalHotKey() {
         globalHotKeyManager.onTrigger = { [weak self] in
             self?.requestCapsLockToggle(source: "shortcut")
@@ -561,6 +698,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func applyCurrentCapsLockState(reason: String) {
+        // While an auto-off toggle is being applied on the background queue,
+        // pause state application; the toggle's completion re-syncs afterward.
+        if isAutoOffToggleInFlight {
+            return
+        }
+
         let filterReady = ensureDedicatedCapsLockFilter(
             promptForPermission: false,
             reason: reason
@@ -569,6 +712,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             dedicatedModeEnabled: Preferences.dedicatedCapsLockMode,
             filterActive: filterReady
         ) else {
+            _ = evaluateAutoOff(capsLockOn: false, reason: "\(reason)_dedicated_fail_closed")
             apply(capsLockOn: false, reason: "\(reason)_dedicated_fail_closed")
             updateStatusError()
             return
@@ -582,6 +726,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 log("\(reason) capslock_state_unavailable")
                 hasLoggedMissingCapsLockState = true
             }
+            _ = evaluateAutoOff(capsLockOn: false, reason: "\(reason)_capslock_unavailable")
             apply(capsLockOn: false, reason: "\(reason)_capslock_unavailable")
             updateStatusError()
             return
@@ -598,6 +743,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         cancelPendingCapsLockOff()
+        if evaluateAutoOff(capsLockOn: capsLockOn, reason: reason) {
+            // Auto-off fired: the toggle-off is now applying asynchronously.
+            return
+        }
         apply(capsLockOn: capsLockOn, reason: reason)
     }
 
@@ -619,6 +768,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 return
             }
 
+            _ = self.evaluateAutoOff(capsLockOn: false, reason: "\(reason)_debounced")
             self.apply(capsLockOn: false, reason: "\(reason)_debounced")
         }
 
@@ -807,6 +957,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         } else {
             updateStatusError()
         }
+        updateMenuBarCountdown()
     }
 
     private func updateStatusError() {

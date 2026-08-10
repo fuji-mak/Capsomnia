@@ -10,7 +10,6 @@ final class AutoOffPolicyTests: XCTestCase {
         let onResult = AutoOffPolicy.evaluate(
             capsLockOn: true,
             autoOffMinutes: 0,
-            restartOnReenable: false,
             now: now,
             state: AutoOffState(deadline: now.addingTimeInterval(-1))
         )
@@ -24,12 +23,10 @@ final class AutoOffPolicyTests: XCTestCase {
         let result = AutoOffPolicy.evaluate(
             capsLockOn: true,
             autoOffMinutes: 30,
-            restartOnReenable: false,
             now: now,
             state: AutoOffState()
         )
         XCTAssertEqual(result.state.deadline, now.addingTimeInterval(30 * 60))
-        XCTAssertNil(result.state.pausedRemaining)
         XCTAssertFalse(result.shouldFire)
     }
 
@@ -38,7 +35,6 @@ final class AutoOffPolicyTests: XCTestCase {
         let result = AutoOffPolicy.evaluate(
             capsLockOn: true,
             autoOffMinutes: 30,
-            restartOnReenable: false,
             now: now,
             state: AutoOffState(deadline: deadline)
         )
@@ -50,7 +46,6 @@ final class AutoOffPolicyTests: XCTestCase {
         let result = AutoOffPolicy.evaluate(
             capsLockOn: true,
             autoOffMinutes: 30,
-            restartOnReenable: false,
             now: now,
             state: AutoOffState(deadline: now)
         )
@@ -58,80 +53,25 @@ final class AutoOffPolicyTests: XCTestCase {
         XCTAssertTrue(result.shouldFire)
     }
 
-    // MARK: Pause / resume (preserve mode)
+    // MARK: Re-enable behavior
 
-    func testPausesRemainingWhenAwakeTurnsOff() {
-        let deadline = now.addingTimeInterval(40 * 60)
+    func testTurningOffClearsTheCurrentCountdown() {
         let result = AutoOffPolicy.evaluate(
             capsLockOn: false,
             autoOffMinutes: 60,
-            restartOnReenable: false,
-            now: now,
-            state: AutoOffState(deadline: deadline)
-        )
-        XCTAssertNil(result.state.deadline)
-        XCTAssertEqual(result.state.pausedRemaining, 40 * 60)
-        XCTAssertFalse(result.shouldFire)
-    }
-
-    func testResumesFromPausedRemainingInsteadOfRestarting() {
-        // Awake mode comes back on with 40 minutes banked from before.
-        let result = AutoOffPolicy.evaluate(
-            capsLockOn: true,
-            autoOffMinutes: 60,
-            restartOnReenable: false,
-            now: now,
-            state: AutoOffState(pausedRemaining: 40 * 60)
-        )
-        XCTAssertEqual(result.state.deadline, now.addingTimeInterval(40 * 60))
-        XCTAssertNil(result.state.pausedRemaining)
-        XCTAssertFalse(result.shouldFire)
-    }
-
-    func testKeepsPausedRemainingWhileStillOff() {
-        let result = AutoOffPolicy.evaluate(
-            capsLockOn: false,
-            autoOffMinutes: 60,
-            restartOnReenable: false,
-            now: now,
-            state: AutoOffState(pausedRemaining: 40 * 60)
-        )
-        XCTAssertNil(result.state.deadline)
-        XCTAssertEqual(result.state.pausedRemaining, 40 * 60)
-    }
-
-    func testResumingWithNoTimeLeftFires() {
-        let result = AutoOffPolicy.evaluate(
-            capsLockOn: true,
-            autoOffMinutes: 60,
-            restartOnReenable: false,
-            now: now,
-            state: AutoOffState(pausedRemaining: 0)
-        )
-        XCTAssertEqual(result.state, AutoOffState())
-        XCTAssertTrue(result.shouldFire)
-    }
-
-    // MARK: Restart-on-reenable mode (old behavior)
-
-    func testRestartModeForgetsRemainingWhenOff() {
-        let result = AutoOffPolicy.evaluate(
-            capsLockOn: false,
-            autoOffMinutes: 60,
-            restartOnReenable: true,
             now: now,
             state: AutoOffState(deadline: now.addingTimeInterval(40 * 60))
         )
         XCTAssertEqual(result.state, AutoOffState())
+        XCTAssertFalse(result.shouldFire)
     }
 
-    func testRestartModeArmsFullDurationOnReenable() {
+    func testReenableAlwaysStartsTheFullDuration() {
         let result = AutoOffPolicy.evaluate(
             capsLockOn: true,
             autoOffMinutes: 60,
-            restartOnReenable: true,
             now: now,
-            state: AutoOffState(pausedRemaining: 40 * 60)
+            state: AutoOffState()
         )
         XCTAssertEqual(result.state.deadline, now.addingTimeInterval(60 * 60))
         XCTAssertFalse(result.shouldFire)
@@ -142,13 +82,11 @@ final class AutoOffPolicyTests: XCTestCase {
     func testRestartedArmsFullDurationWhenAwake() {
         let state = AutoOffPolicy.restarted(capsLockOn: true, autoOffMinutes: 120, now: now)
         XCTAssertEqual(state.deadline, now.addingTimeInterval(120 * 60))
-        XCTAssertNil(state.pausedRemaining)
     }
 
-    func testRestartedBanksFullDurationWhenOff() {
+    func testRestartedWhileOffLeavesTheNextEnableFresh() {
         let state = AutoOffPolicy.restarted(capsLockOn: false, autoOffMinutes: 120, now: now)
-        XCTAssertNil(state.deadline)
-        XCTAssertEqual(state.pausedRemaining, 120 * 60)
+        XCTAssertEqual(state, AutoOffState())
     }
 
     func testRestartedIsEmptyWhenTimerDisabled() {
@@ -156,6 +94,57 @@ final class AutoOffPolicyTests: XCTestCase {
             AutoOffPolicy.restarted(capsLockOn: true, autoOffMinutes: 0, now: now),
             AutoOffState()
         )
+    }
+}
+
+final class AutoOffSleepCoordinatorTests: XCTestCase {
+    func testSuccessfulAutoOffSleepsOnceAfterConfirmedOff() {
+        var sleepRequestCount = 0
+        let coordinator = AutoOffSleepCoordinator {
+            sleepRequestCount += 1
+            return (0, "", "")
+        }
+
+        coordinator.recordCapsLockResult(.changed(to: false))
+
+        XCTAssertTrue(coordinator.isPending)
+        XCTAssertEqual(
+            coordinator.requestSleepIfReady(capsLockOn: false)?.status,
+            0
+        )
+        XCTAssertFalse(coordinator.isPending)
+        XCTAssertEqual(sleepRequestCount, 1)
+        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: false))
+        XCTAssertEqual(sleepRequestCount, 1)
+    }
+
+    func testFailedCapsLockOffNeverSleeps() {
+        var sleepRequestCount = 0
+        let coordinator = AutoOffSleepCoordinator {
+            sleepRequestCount += 1
+            return (0, "", "")
+        }
+
+        coordinator.recordCapsLockResult(.writeFailed(target: false))
+
+        XCTAssertFalse(coordinator.isPending)
+        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: false))
+        XCTAssertEqual(sleepRequestCount, 0)
+    }
+
+    func testConfirmedOnCancelsPendingSleep() {
+        var sleepRequestCount = 0
+        let coordinator = AutoOffSleepCoordinator {
+            sleepRequestCount += 1
+            return (0, "", "")
+        }
+
+        coordinator.recordCapsLockResult(.changed(to: false))
+
+        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: true))
+        XCTAssertFalse(coordinator.isPending)
+        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: false))
+        XCTAssertEqual(sleepRequestCount, 0)
     }
 }
 
@@ -169,13 +158,6 @@ final class AutoOffFormatterTests: XCTestCase {
 
     func testCountdownClampsNegativeToZero() {
         XCTAssertEqual(AutoOffFormatter.countdown(-42), "00:00:00")
-    }
-
-    func testMenuBarIsCompactAndDropsLeadingZeroHour() {
-        XCTAssertEqual(AutoOffFormatter.menuBar(9), "0:09")
-        XCTAssertEqual(AutoOffFormatter.menuBar(59 * 60 + 5), "59:05")
-        XCTAssertEqual(AutoOffFormatter.menuBar(3600 + 2 * 60 + 5), "1:02:05")
-        XCTAssertEqual(AutoOffFormatter.menuBar(-10), "0:00")
     }
 
     func testDurationLabelIsCompactAndLanguageNeutral() {
@@ -199,6 +181,15 @@ final class AutoOffPresetTests: XCTestCase {
     func testCustomBoundsAreSane() {
         XCTAssertEqual(AutoOffPreset.minCustomMinutes, 1)
         XCTAssertEqual(AutoOffPreset.maxCustomMinutes, 24 * 60)
+        XCTAssertEqual(AutoOffPreset.customHourStep, 60)
+        XCTAssertEqual(AutoOffPreset.customMinuteStep, 1)
         XCTAssertEqual(AutoOffPreset.minuteOptions, [15, 30, 60, 120, 240, 480])
+    }
+
+    func testCustomMinuteAdjustmentUsesOneMinuteStepsAndClamps() {
+        XCTAssertEqual(AutoOffPreset.adjustedCustomMinutes(45, by: 1), 46)
+        XCTAssertEqual(AutoOffPreset.adjustedCustomMinutes(45, by: -1), 44)
+        XCTAssertEqual(AutoOffPreset.adjustedCustomMinutes(1, by: -1), 1)
+        XCTAssertEqual(AutoOffPreset.adjustedCustomMinutes(24 * 60, by: 1), 24 * 60)
     }
 }

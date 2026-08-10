@@ -12,17 +12,24 @@ enum AutoOffPreset {
     /// Lower/upper bounds for the custom picker.
     static let minCustomMinutes = 1
     static let maxCustomMinutes = 24 * 60
+    static let customHourStep = 60
+    static let customMinuteStep = 1
 
     /// Whether `minutes` maps to one of the fixed quick-pick chips.
     static func isQuickPick(_ minutes: Int) -> Bool {
         minuteOptions.contains(minutes)
+    }
+
+    /// Apply a custom-picker step while keeping the result within its bounds.
+    static func adjustedCustomMinutes(_ minutes: Int, by delta: Int) -> Int {
+        min(max(minutes + delta, minCustomMinutes), maxCustomMinutes)
     }
 }
 
 /// What the auto-off readout should show. Computed by the app delegate from the
 /// live Caps Lock state and the pending timer state; rendered by the UI control.
 enum AutoOffDisplayState: Equatable {
-    /// Awake mode is off. Shows the remaining/armed duration (or infinity when `minutes == 0`).
+    /// Awake mode is off. Shows the configured duration (or infinity when `minutes == 0`).
     case idle(minutes: Int)
     /// Awake mode is on with no timer configured.
     case infinite
@@ -33,15 +40,49 @@ enum AutoOffDisplayState: Equatable {
 /// The timer bookkeeping the app delegate keeps between polls.
 ///
 /// - `deadline` is set while awake mode is counting down.
-/// - `pausedRemaining` holds the time left when awake mode is switched off, so
-///   the countdown can resume where it left off (preserve mode).
 struct AutoOffState: Equatable {
     var deadline: Date?
-    var pausedRemaining: TimeInterval?
 
-    init(deadline: Date? = nil, pausedRemaining: TimeInterval? = nil) {
+    init(deadline: Date? = nil) {
         self.deadline = deadline
-        self.pausedRemaining = pausedRemaining
+    }
+}
+
+/// Carries an elapsed auto-off through the existing Caps Lock and helper
+/// synchronization path, then requests immediate system sleep exactly once.
+///
+/// The app only calls `requestSleepIfReady` after `SleepDisabled` has been
+/// confirmed to match the current Caps Lock state. Keeping the pending bit here
+/// makes that ordering explicit and testable without sleeping the test Mac.
+final class AutoOffSleepCoordinator {
+    private(set) var isPending = false
+    private let requestSleep: () -> CommandResult
+
+    init(
+        requestSleep: @escaping () -> CommandResult = {
+            SystemSleepRequester.request()
+        }
+    ) {
+        self.requestSleep = requestSleep
+    }
+
+    func recordCapsLockResult(_ result: CapsLockToggleResult) {
+        isPending = result == .changed(to: false)
+    }
+
+    /// Requests sleep once the confirmed state is OFF. A confirmed ON state
+    /// means the user re-enabled awake mode before completion, so the pending
+    /// sleep is cancelled rather than firing later against their intent.
+    func requestSleepIfReady(capsLockOn: Bool) -> CommandResult? {
+        guard isPending else { return nil }
+
+        if capsLockOn {
+            isPending = false
+            return nil
+        }
+
+        isPending = false
+        return requestSleep()
     }
 }
 
@@ -53,9 +94,6 @@ enum AutoOffPolicy {
     /// - Parameters:
     ///   - capsLockOn: whether awake mode (Caps Lock) is currently on.
     ///   - autoOffMinutes: the configured duration; `0` disables the timer.
-    ///   - restartOnReenable: when `true`, re-enabling awake mode restarts the
-    ///     full duration (old behavior). When `false`, the countdown pauses
-    ///     while off and resumes where it left off.
     ///   - now: the current instant.
     ///   - state: the current timer state.
     /// - Returns: the next `state` to persist and `shouldFire`, which is `true`
@@ -63,7 +101,6 @@ enum AutoOffPolicy {
     static func evaluate(
         capsLockOn: Bool,
         autoOffMinutes: Int,
-        restartOnReenable: Bool,
         now: Date,
         state: AutoOffState
     ) -> (state: AutoOffState, shouldFire: Bool) {
@@ -75,18 +112,9 @@ enum AutoOffPolicy {
         let fullDuration = TimeInterval(autoOffMinutes) * 60
 
         guard capsLockOn else {
-            // Awake mode is off.
-            if restartOnReenable {
-                // Old behavior: keep no memory of elapsed time.
-                return (AutoOffState(), false)
-            }
-            if let deadline = state.deadline {
-                // Was counting: pause and remember the time remaining.
-                let remaining = max(0, deadline.timeIntervalSince(now))
-                return (AutoOffState(deadline: nil, pausedRemaining: remaining), false)
-            }
-            // Already paused, or never started: keep whatever was remembered.
-            return (AutoOffState(deadline: nil, pausedRemaining: state.pausedRemaining), false)
+            // Turning awake mode off ends the current timer session. The next
+            // re-enable always starts a fresh full-duration countdown.
+            return (AutoOffState(), false)
         }
 
         // Awake mode is on.
@@ -94,17 +122,11 @@ enum AutoOffPolicy {
             if now >= deadline {
                 return (AutoOffState(), true)
             }
-            return (AutoOffState(deadline: deadline, pausedRemaining: nil), false)
+            return (AutoOffState(deadline: deadline), false)
         }
 
-        // Just turned on (or the timer was just (re)armed): begin counting.
-        let remaining = restartOnReenable
-            ? fullDuration
-            : (state.pausedRemaining ?? fullDuration)
-        if remaining <= 0 {
-            return (AutoOffState(), true)
-        }
-        return (AutoOffState(deadline: now.addingTimeInterval(remaining), pausedRemaining: nil), false)
+        // Just turned on (or the timer was just re-armed): begin a fresh countdown.
+        return (AutoOffState(deadline: now.addingTimeInterval(fullDuration)), false)
     }
 
     /// A fresh full-duration state for the explicit Restart action.
@@ -116,10 +138,10 @@ enum AutoOffPolicy {
         guard autoOffMinutes > 0 else { return AutoOffState() }
         let fullDuration = TimeInterval(autoOffMinutes) * 60
         if capsLockOn {
-            return AutoOffState(deadline: now.addingTimeInterval(fullDuration), pausedRemaining: nil)
+            return AutoOffState(deadline: now.addingTimeInterval(fullDuration))
         }
-        // Awake mode is off: arm the full duration to resume when re-enabled.
-        return AutoOffState(deadline: nil, pausedRemaining: fullDuration)
+        // Awake mode is off: the next re-enable starts the full duration anyway.
+        return AutoOffState()
     }
 }
 
@@ -129,15 +151,6 @@ enum AutoOffFormatter {
     static func countdown(_ remaining: TimeInterval) -> String {
         let (hours, minutes, seconds) = components(remaining)
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
-    }
-
-    /// Compact menu-bar countdown: "M:SS" under an hour, "H:MM:SS" otherwise.
-    static func menuBar(_ remaining: TimeInterval) -> String {
-        let (hours, minutes, seconds) = components(remaining)
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-        }
-        return String(format: "%d:%02d", minutes, seconds)
     }
 
     /// Compact, language-neutral duration label: "∞", "15m", "1h", "1h 30m".

@@ -1,7 +1,8 @@
 import AppKit
 
 /// Utilitarian auto-off control: a large countdown readout, quick-pick preset
-/// chips, and a custom hour/minute stepper. Matches the landing-page LED palette.
+/// chips, and a popover-based custom hour/minute stepper. Matches the
+/// landing-page LED palette.
 ///
 /// The control owns no timing logic. It reads the live display state from
 /// `displayProvider` (supplied by the app delegate) on a 1-second tick while the
@@ -11,17 +12,14 @@ final class AutoOffTimerControl: NSView {
     var onMinutesChange: ((Int) -> Void)?
     /// Supplies the current readout state for the big countdown display.
     var displayProvider: (() -> AutoOffDisplayState)?
-    /// Called when the control adds/removes the custom section so the hosting
-    /// window can grow or shrink to fit.
-    var onNeedsResize: (() -> Void)?
     /// Called when the Restart button is pressed.
     var onRestart: (() -> Void)?
 
     private(set) var minutes: Int
     /// The value used while the custom section is active; seeded from `minutes`.
     private var customMinutes: Int
-    /// Whether the custom stepper section is shown. Tracked explicitly so that
-    /// stepping onto a value that happens to equal a preset does not collapse it.
+    /// Whether the custom value is selected. Tracked explicitly so that stepping
+    /// onto a value that happens to equal a preset does not collapse the editor.
     private var isCustom: Bool
 
     private let descLabel = brandLabel(size: 12, color: Brand.textDim, wraps: true)
@@ -36,12 +34,12 @@ final class AutoOffTimerControl: NSView {
     private var customChip: AutoOffChip!
     private var presetChips: [(minutes: Int, chip: AutoOffChip)] = []
 
-    private let customContainer = NSView()
+    private let customPopover = NSPopover()
+    private let customEditor = NSView()
     private let hoursValueLabel = AutoOffTimerControl.makeValueLabel()
     private let minutesValueLabel = AutoOffTimerControl.makeValueLabel()
     private let hoursUnitLabel = brandLabel(size: 12, weight: .medium, color: Brand.textDim)
     private let minutesUnitLabel = brandLabel(size: 12, weight: .medium, color: Brand.textDim)
-    private var isCustomContainerInstalled = false
 
     private var turnsOffInText = "Turns off in"
     private var displayTimer: Timer?
@@ -62,6 +60,7 @@ final class AutoOffTimerControl: NSView {
 
     deinit {
         displayTimer?.invalidate()
+        customPopover.close()
     }
 
     // MARK: - Public API
@@ -119,6 +118,15 @@ final class AutoOffTimerControl: NSView {
         displayTimer = nil
     }
 
+    /// Close transient UI when the settings page or window is dismissed.
+    func dismissCustomEditor() {
+        customPopover.close()
+    }
+
+    var isCustomEditorVisible: Bool {
+        customPopover.isShown
+    }
+
     // MARK: - Build
 
     private func build() {
@@ -156,7 +164,7 @@ final class AutoOffTimerControl: NSView {
         ])
 
         buildChips()
-        buildCustomContainer()
+        buildCustomEditor()
 
         column.orientation = .vertical
         column.alignment = .leading
@@ -224,20 +232,26 @@ final class AutoOffTimerControl: NSView {
         return row
     }
 
-    private func buildCustomContainer() {
-        customContainer.translatesAutoresizingMaskIntoConstraints = false
-
+    private func buildCustomEditor() {
         let hoursRow = stepperRow(
             unitLabel: hoursUnitLabel,
             valueLabel: hoursValueLabel,
-            onMinus: { [weak self] in self?.adjustCustom(byMinutes: -60) },
-            onPlus: { [weak self] in self?.adjustCustom(byMinutes: 60) }
+            onMinus: { [weak self] in
+                self?.adjustCustom(byMinutes: -AutoOffPreset.customHourStep)
+            },
+            onPlus: { [weak self] in
+                self?.adjustCustom(byMinutes: AutoOffPreset.customHourStep)
+            }
         )
         let minutesRow = stepperRow(
             unitLabel: minutesUnitLabel,
             valueLabel: minutesValueLabel,
-            onMinus: { [weak self] in self?.adjustCustom(byMinutes: -5) },
-            onPlus: { [weak self] in self?.adjustCustom(byMinutes: 5) }
+            onMinus: { [weak self] in
+                self?.adjustCustom(byMinutes: -AutoOffPreset.customMinuteStep)
+            },
+            onPlus: { [weak self] in
+                self?.adjustCustom(byMinutes: AutoOffPreset.customMinuteStep)
+            }
         )
 
         let stack = NSStackView(views: [hoursRow, minutesRow])
@@ -245,15 +259,26 @@ final class AutoOffTimerControl: NSView {
         stack.alignment = .leading
         stack.spacing = 12
         stack.translatesAutoresizingMaskIntoConstraints = false
-        customContainer.addSubview(stack)
+        customEditor.frame = NSRect(x: 0, y: 0, width: 300, height: 116)
+        customEditor.wantsLayer = true
+        customEditor.layer?.backgroundColor = Brand.surface.cgColor
+        customEditor.addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: customContainer.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: customContainer.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: customContainer.topAnchor, constant: 2),
-            stack.bottomAnchor.constraint(equalTo: customContainer.bottomAnchor),
+            stack.leadingAnchor.constraint(equalTo: customEditor.leadingAnchor, constant: 16),
+            stack.trailingAnchor.constraint(equalTo: customEditor.trailingAnchor, constant: -16),
+            stack.topAnchor.constraint(equalTo: customEditor.topAnchor, constant: 16),
+            stack.bottomAnchor.constraint(equalTo: customEditor.bottomAnchor, constant: -16),
             hoursRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
             minutesRow.widthAnchor.constraint(equalTo: stack.widthAnchor)
         ])
+
+        let controller = NSViewController()
+        controller.view = customEditor
+        customPopover.contentViewController = controller
+        customPopover.contentSize = customEditor.frame.size
+        customPopover.behavior = .transient
+        customPopover.animates = false
+        customPopover.appearance = NSAppearance(named: .darkAqua)
     }
 
     private func stepperRow(
@@ -292,35 +317,40 @@ final class AutoOffTimerControl: NSView {
     // MARK: - Selection
 
     private func selectPreset(_ value: Int) {
+        customPopover.close()
         isCustom = false
         minutes = value
-        setCustomContainer(installed: false)
         refreshSelection()
-        renderDisplay()
         onMinutesChange?(value)
+        renderDisplay()
     }
 
     private func selectCustom() {
         isCustom = true
         minutes = min(max(customMinutes, AutoOffPreset.minCustomMinutes), AutoOffPreset.maxCustomMinutes)
         customMinutes = minutes
-        setCustomContainer(installed: true)
         refreshSelection()
-        renderDisplay()
         onMinutesChange?(minutes)
+        renderDisplay()
+        if customPopover.isShown {
+            customPopover.close()
+        } else {
+            customPopover.show(
+                relativeTo: customChip.bounds,
+                of: customChip,
+                preferredEdge: .minY
+            )
+        }
     }
 
     private func adjustCustom(byMinutes delta: Int) {
-        let updated = min(
-            max(customMinutes + delta, AutoOffPreset.minCustomMinutes),
-            AutoOffPreset.maxCustomMinutes
-        )
+        let updated = AutoOffPreset.adjustedCustomMinutes(customMinutes, by: delta)
         guard updated != customMinutes else { return }
         customMinutes = updated
         minutes = updated
         refreshSelection()
-        renderDisplay()
         onMinutesChange?(updated)
+        renderDisplay()
     }
 
     private func refreshSelection() {
@@ -332,21 +362,6 @@ final class AutoOffTimerControl: NSView {
         hoursValueLabel.stringValue = "\(customMinutes / 60)"
         minutesValueLabel.stringValue = String(format: "%02d", customMinutes % 60)
         restartButton.isHidden = (minutes == 0)
-        setCustomContainer(installed: isCustom)
-    }
-
-    private func setCustomContainer(installed: Bool) {
-        guard installed != isCustomContainerInstalled else { return }
-        isCustomContainerInstalled = installed
-        if installed {
-            column.addArrangedSubview(customContainer)
-            column.setCustomSpacing(16, after: chipsColumn)
-            customContainer.widthAnchor.constraint(equalTo: column.widthAnchor).isActive = true
-        } else {
-            column.removeArrangedSubview(customContainer)
-            customContainer.removeFromSuperview()
-        }
-        onNeedsResize?()
     }
 
     private func renderDisplay() {

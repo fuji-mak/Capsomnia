@@ -47,6 +47,8 @@ The sudoers rule only permits the current user to run:
 
 The helper is a compiled executable. It does not invoke a shell or load shell startup files. It only accepts `on`, `off`, and `display-sleep`, and only executes `/usr/bin/pmset -a disablesleep` or `/usr/bin/pmset displaysleepnow`.
 
+When an auto-off timer expires, Capsomnia first turns Caps Lock off through the existing HID path and confirms that `SleepDisabled=0`. Only then does the app invoke `/usr/bin/pmset sleepnow` directly as the signed-in user. This immediate sleep request does not use `sudo`, does not add a helper mode, and does not expand the sudoers rule. If Caps Lock cannot be turned off or the sleep-prevention state cannot be confirmed, Capsomnia does not request sleep.
+
 Package installs keep `/Applications/Capsomnia.app`, the helper, and the system LaunchAgent owned by `root:wheel`. The packaged helper and app are signed with the same Developer ID. The app process still runs as the signed-in user. Capsomnia verifies the actual `SleepDisabled` state after each change and every ten seconds afterward. If the helper cannot apply a sleep-state change, the actual state cannot be verified, or the setting drifts, Capsomnia shows a red status indicator and retries instead of reporting the requested state as active.
 
 The LaunchAgent restarts Capsomnia after crashes. If the app is force-killed while crash recovery is disabled or unavailable, the last system sleep setting can remain active. Users can restore normal behavior with `sudo pmset -a disablesleep 0`.

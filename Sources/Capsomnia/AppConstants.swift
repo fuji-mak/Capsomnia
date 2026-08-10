@@ -145,7 +145,7 @@ struct AppStrings {
                 displaySleepOnLidClose: "Turn display off when lid closes",
                 displaySleepOnLidCloseDesc: "When Capsomnia is on, let the display sleep after closing the lid only if no external display is connected.",
                 autoOffTimer: "Auto-off timer",
-                autoOffTimerDesc: "After the set time, turns awake mode off and puts your Mac to sleep. When off, awake mode stays on until you turn Caps Lock off yourself.",
+                autoOffTimerDesc: "After the set time, Capsomnia turns awake mode off and puts your Mac to sleep. When the timer is off, awake mode stays on until you turn Caps Lock off yourself.",
                 autoOffOff: "Off",
                 autoOffCustom: "Custom",
                 autoOffTurnsOffIn: "Turns off in",

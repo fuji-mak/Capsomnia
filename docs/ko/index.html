@@ -63,7 +63,7 @@
             "applicationCategory": "UtilitiesApplication",
             "applicationSubCategory": "DeveloperTool",
             "operatingSystem": "macOS 14 or later on Apple silicon",
-            "softwareVersion": "2.0.4",
+            "softwareVersion": "3.0.0",
             "license": "https://github.com/fuji-mak/Capsomnia/blob/main/LICENSE",
             "isAccessibleForFree": true,
             "offers": {
@@ -332,6 +332,11 @@
                 <p class="text-[0.95rem] text-[var(--text-dim)]">불이 켜져 있으면 잠자기 방지 기능도 켜진 상태입니다. 키보드만 보고 확인할 수 있어 메뉴 막대에 아이콘을 띄우지 않아도 됩니다.</p>
               </article>
               <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
+                <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">자동 종료</p>
+                <h3 class="mb-2 text-[1.05rem] font-bold">타이머가 끝나면 자동으로 잠자기</h3>
+                <p class="text-[0.95rem] text-[var(--text-dim)]">15분~8시간 프리셋 또는 1분~24시간 사용자 지정 시간을 선택할 수 있습니다. Capsomnia를 끄고 잠자기 방지가 해제되었는지 확인한 뒤 Mac을 잠자기 상태로 전환합니다.</p>
+              </article>
+              <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
                 <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">오픈 소스</p>
                 <h3 class="mb-2 text-[1.05rem] font-bold">무료 오픈 소스</h3>
                 <p class="text-[0.95rem] text-[var(--text-dim)]">MIT 라이선스로 공개합니다. 설치 전에 소스 코드, 패키지 설치 스크립트, helper 명령, 보안 모델을 직접 살펴볼 수 있습니다.</p>
@@ -445,7 +450,7 @@
         </div>
         <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">앱이 호출할 수 있는 명령</h3>
+            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">권한을 높여 호출하는 명령</h3>
             <pre
               class="mb-3 overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-4"
             ><code class="font-mono text-sm leading-7 text-[var(--led-bright)]">sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
@@ -463,6 +468,7 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
             <p class="text-sm text-[var(--text-faint)]"><code>on</code>, <code>off</code>, <code>display-sleep</code> 외에는 받아들이지 않습니다.</p>
           </div>
         </div>
+        <p class="mt-5 max-w-[760px] text-sm text-[var(--text-faint)]">자동 종료 타이머가 끝나고 <code>SleepDisabled=0</code>을 확인하면 앱이 현재 사용자 권한으로 <code>/usr/bin/pmset sleepnow</code>를 직접 실행합니다. <code>sudo</code>를 사용하지 않으며 helper 권한도 늘리지 않습니다.</p>
         <p class="mt-7 max-w-[760px] text-sm text-[var(--text-faint)]">앱을 종료하면 평소 잠자기 동작으로 돌아갑니다. 잠자기를 막은 채 덮개를 닫으면 발열과 배터리 소모가 늘 수 있으니 통풍, 전원, 실행 시간을 확인하세요.</p>
       </section>
 

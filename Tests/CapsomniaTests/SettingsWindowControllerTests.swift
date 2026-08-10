@@ -357,6 +357,7 @@ final class SettingsWindowControllerTests: XCTestCase {
             onLanguageChange: { _ in },
             onLaunchAtLoginChange: { _ in },
             onDisplaySleepOnLidCloseChange: { _ in },
+            onIgnoreExternalCapsLockOffWhileLidClosedChange: { _ in },
             onAutoOffMinutesChange: { _ in },
             onAutoOffRestart: {},
             autoOffDisplayProvider: autoOffDisplayProvider,

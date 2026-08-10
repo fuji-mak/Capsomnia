@@ -27,6 +27,8 @@ final class LocalizationTests: XCTestCase {
             XCTAssertFalse(strings.toggleCapsLock.isEmpty)
             XCTAssertFalse(strings.showMenuBarIcon.isEmpty)
             XCTAssertFalse(strings.displaySleepOnLidClose.isEmpty)
+            XCTAssertFalse(strings.ignoreExternalCapsLockOffWhileLidClosed.isEmpty)
+            XCTAssertFalse(strings.ignoreExternalCapsLockOffWhileLidClosedDesc.isEmpty)
             XCTAssertFalse(strings.openAtLogin.isEmpty)
             XCTAssertFalse(strings.language.isEmpty)
             XCTAssertFalse(strings.advancedSettings.isEmpty)

@@ -4,6 +4,8 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- Add an opt-in "Ignore Caps Lock turn-offs while the lid is closed" setting (default off) to Advanced Settings. While the lid is closed, Caps Lock turn-offs from external sources — such as a remote desktop client syncing its keyboard state to the host — are ignored and Caps Lock is re-asserted, so sleep prevention survives remote sessions. Turn-offs from the menu bar, the registered shortcut, and the auto-off timer stay effective, and opening the lid with Caps Lock off returns to normal sleep behavior. (#75)
+
 ## 3.0.0 - 2026-08-10
 
 - Add an optional auto-off timer with 15-minute through 8-hour presets, a one-minute to 24-hour custom picker, a live countdown, and an explicit restart action in Advanced Settings.

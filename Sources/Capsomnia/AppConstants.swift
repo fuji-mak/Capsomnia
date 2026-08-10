@@ -92,6 +92,8 @@ struct AppStrings {
     let openAtLoginDesc: String
     let displaySleepOnLidClose: String
     let displaySleepOnLidCloseDesc: String
+    let ignoreExternalCapsLockOffWhileLidClosed: String
+    let ignoreExternalCapsLockOffWhileLidClosedDesc: String
     let autoOffTimer: String
     let autoOffTimerDesc: String
     let autoOffOff: String
@@ -144,6 +146,8 @@ struct AppStrings {
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
                 displaySleepOnLidClose: "Turn display off when lid closes",
                 displaySleepOnLidCloseDesc: "When Capsomnia is on, let the display sleep after closing the lid only if no external display is connected.",
+                ignoreExternalCapsLockOffWhileLidClosed: "Ignore Caps Lock turn-offs while the lid is closed",
+                ignoreExternalCapsLockOffWhileLidClosedDesc: "While the lid is closed, sleep prevention stays on even if Caps Lock is turned off — for example by a remote desktop client syncing its keyboard state. The menu bar, the toggle shortcut, and the auto-off timer still turn it off.",
                 autoOffTimer: "Auto-off timer",
                 autoOffTimerDesc: "After the set time, Capsomnia turns awake mode off and puts your Mac to sleep.",
                 autoOffOff: "Off",
@@ -190,6 +194,8 @@ struct AppStrings {
                 openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
                 displaySleepOnLidClose: "덮개를 닫을 때 화면 끄기",
                 displaySleepOnLidCloseDesc: "Capsomnia가 켜진 상태에서 덮개를 닫으면 외부 디스플레이가 연결되지 않은 경우에만 화면을 끕니다.",
+                ignoreExternalCapsLockOffWhileLidClosed: "덮개를 닫은 동안 Caps Lock에 의한 끄기 무시",
+                ignoreExternalCapsLockOffWhileLidClosedDesc: "덮개가 닫혀 있는 동안에는 Caps Lock이 꺼져도 잠자기 방지를 유지합니다. 원격 데스크톱 연결 등으로 의도치 않게 해제되는 것을 방지합니다. 메뉴 막대, 전환 단축키, 자동 종료 타이머로는 평소대로 끌 수 있습니다.",
                 autoOffTimer: "자동 종료 타이머",
                 autoOffTimerDesc: "설정한 시간이 지나면 절전 방지를 끄고 Mac을 잠자기 상태로 전환합니다.",
                 autoOffOff: "끄기",
@@ -236,6 +242,8 @@ struct AppStrings {
                 openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
                 displaySleepOnLidClose: "蓋を閉じたら画面をオフ",
                 displaySleepOnLidCloseDesc: "Capsomnia ON中は、外部ディスプレイが接続されていない場合のみ、蓋を閉じたら画面を暗くします。",
+                ignoreExternalCapsLockOffWhileLidClosed: "蓋を閉じている間はCaps Lockによるオフを無視",
+                ignoreExternalCapsLockOffWhileLidClosedDesc: "蓋を閉じている間は、Caps Lockがオフになってもスリープ抑止を維持します。リモートデスクトップ接続などで意図せず解除されるのを防ぎます。メニューバー・切り替えショートカット・自動オフタイマーからは通常どおりオフにできます。",
                 autoOffTimer: "自動オフタイマー",
                 autoOffTimerDesc: "設定した時間が経過すると、スリープ抑止を解除してMacをスリープさせます。",
                 autoOffOff: "オフ",
@@ -282,6 +290,8 @@ struct AppStrings {
                 openAtLoginDesc: "登录后自动启动 Capsomnia。",
                 displaySleepOnLidClose: "合盖时关闭显示屏",
                 displaySleepOnLidCloseDesc: "Capsomnia 开启时，仅在未连接外接显示器的情况下，合盖后让显示屏进入睡眠。",
+                ignoreExternalCapsLockOffWhileLidClosed: "合盖期间忽略 Caps Lock 的关闭操作",
+                ignoreExternalCapsLockOffWhileLidClosedDesc: "合盖期间，即使 Caps Lock 被关闭也会保持防睡眠，防止远程桌面连接等意外解除防睡眠。菜单栏、切换快捷键和自动关闭定时器仍可正常关闭。",
                 autoOffTimer: "自动关闭定时器",
                 autoOffTimerDesc: "设定时间结束后会关闭防睡眠并让 Mac 进入睡眠。",
                 autoOffOff: "关闭",
@@ -324,6 +334,7 @@ private enum PreferenceKey {
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
     static let displaySleepOnLidClose = "DisplaySleepOnLidClose"
+    static let ignoreExternalCapsLockOffWhileLidClosed = "IgnoreExternalCapsLockOffWhileLidClosed"
     static let autoOffMinutes = "AutoOffMinutes"
     static let shortcutKeyCode = "ShortcutKeyCode"
     static let shortcutModifiers = "ShortcutModifiers"
@@ -342,6 +353,7 @@ enum Preferences {
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
             PreferenceKey.displaySleepOnLidClose: true,
+            PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed: false,
             PreferenceKey.autoOffMinutes: 0,
             PreferenceKey.didCompleteInitialSetup: false,
             PreferenceKey.forceWelcomeOnNextLaunch: false
@@ -374,6 +386,18 @@ enum Preferences {
     static var displaySleepOnLidClose: Bool {
         get { defaults.bool(forKey: PreferenceKey.displaySleepOnLidClose) }
         set { defaults.set(newValue, forKey: PreferenceKey.displaySleepOnLidClose) }
+    }
+
+    /// While the lid is closed the built-in keyboard cannot be pressed, so a
+    /// Caps Lock turn-off observed in that window comes from an external
+    /// source (e.g. a remote desktop client syncing its keyboard state to the
+    /// host). When enabled, such turn-offs are ignored and Caps Lock is
+    /// re-asserted instead of releasing sleep prevention. Turn-offs from the
+    /// menu bar, the registered shortcut, and the auto-off timer stay
+    /// effective.
+    static var ignoreExternalCapsLockOffWhileLidClosed: Bool {
+        get { defaults.bool(forKey: PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed) }
+        set { defaults.set(newValue, forKey: PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed) }
     }
 
     /// Minutes after which awake mode turns itself off automatically.

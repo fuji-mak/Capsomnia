@@ -42,6 +42,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let inputSourceNotificationDebounceInterval: TimeInterval = 0.1
     private let inputSourceInternalNotificationSuppression: TimeInterval = 0.5
     private let userCapsLockEventSuppressionInterval: TimeInterval = 0.5
+    private var userCapsLockOffIntentUntil = Date.distantPast
     private var suppressInputSourceNotificationsUntil = Date.distantPast
     private var suppressInputSourceRecoveryUntil = Date.distantPast
     private let selectedKeyboardInputSourceChangedNotificationName = Notification.Name(
@@ -194,6 +195,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         suppressInputSourceRecoveryForUserAction(reason: "capslock_key")
+        authorizeUserCapsLockOff(reason: "capslock_key")
     }
 
     private func suppressInputSourceRecoveryForUserAction(reason: String) {
@@ -202,6 +204,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             userCapsLockEventSuppressionInterval
         )
         log("\(reason) user_action input_source_recovery_suppressed")
+    }
+    private func authorizeUserCapsLockOff(reason: String) {
+        userCapsLockOffIntentUntil = Date().addingTimeInterval(userCapsLockEventSuppressionInterval)
+        log("\(reason) capslock_off_authorized")
+    }
+
+    private func consumeUserCapsLockOffAuthorization() -> Bool {
+        guard Date() <= userCapsLockOffIntentUntil else { return false }
+        userCapsLockOffIntentUntil = .distantPast
+        return true
     }
 
     private func scheduleInputSourceRecovery() {
@@ -373,6 +385,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         switch result {
         case let .changed(target):
             cancelInputSourceRecovery()
+            if target == false, source != "auto_off" {
+                authorizeUserCapsLockOff(reason: source)
+            }
             log("\(source)_toggle_capslock target=\(target ? "on" : "off") succeeded=true")
         case .unavailable:
             log("\(source)_toggle_capslock failed=hid_system_unavailable")
@@ -727,8 +742,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 return
             }
 
-            _ = self.evaluateAutoOff(capsLockOn: false, reason: "\(reason)_debounced")
-            self.apply(capsLockOn: false, reason: "\(reason)_debounced")
+            if self.consumeUserCapsLockOffAuthorization() {
+                _ = self.evaluateAutoOff(capsLockOn: false, reason: "\(reason)_debounced")
+                self.apply(capsLockOn: false, reason: "\(reason)_debounced")
+            } else {
+                self.log("\(reason) unexpected_capslock_off reasserting")
+                self.reassertCapsLockAfterInputSourceChange(reason: "\(reason)_unexpected")
+            }
         }
 
         pendingCapsLockOffWorkItem = workItem

@@ -39,3 +39,22 @@ final class CommandRunnerTests: XCTestCase {
         XCTAssertTrue(timerDidFire)
     }
 }
+
+final class SystemSleepRequesterTests: XCTestCase {
+    func testRequestsImmediateSleepUsingPmset() {
+        var receivedPath: String?
+        var receivedArguments: [String]?
+
+        let result = SystemSleepRequester.request { path, arguments in
+            receivedPath = path
+            receivedArguments = arguments
+            return (0, "requested", "")
+        }
+
+        XCTAssertEqual(receivedPath, "/usr/bin/pmset")
+        XCTAssertEqual(receivedArguments, ["sleepnow"])
+        XCTAssertEqual(result.status, 0)
+        XCTAssertEqual(result.stdout, "requested")
+        XCTAssertEqual(result.stderr, "")
+    }
+}

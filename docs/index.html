@@ -63,7 +63,7 @@
             "applicationCategory": "UtilitiesApplication",
             "applicationSubCategory": "DeveloperTool",
             "operatingSystem": "macOS 14 or later on Apple silicon",
-            "softwareVersion": "2.0.4",
+            "softwareVersion": "3.0.0",
             "license": "https://github.com/fuji-mak/Capsomnia/blob/main/LICENSE",
             "isAccessibleForFree": true,
             "offers": {
@@ -332,6 +332,11 @@
                 <p class="text-[0.95rem] text-[var(--text-dim)]">When the light is on, sleep prevention is on. You can check the state from the keyboard and keep your menu bar clean.</p>
               </article>
               <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
+                <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">Auto-off</p>
+                <h3 class="mb-2 text-[1.05rem] font-bold">Sleep automatically when the timer ends</h3>
+                <p class="text-[0.95rem] text-[var(--text-dim)]">Choose a preset from 15 minutes to 8 hours or a custom duration from 1 minute to 24 hours. Capsomnia turns off, confirms sleep prevention is released, and then puts the Mac to sleep.</p>
+              </article>
+              <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
                 <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">Open source</p>
                 <h3 class="mb-2 text-[1.05rem] font-bold">Completely free, open-source design</h3>
                 <p class="text-[0.95rem] text-[var(--text-dim)]">Released under the MIT License. You can inspect the source, package install scripts, helper commands, and security model before installing.</p>
@@ -445,7 +450,7 @@
         </div>
         <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">The app can only invoke</h3>
+            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">Privileged commands</h3>
             <pre
               class="mb-3 overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-4"
             ><code class="font-mono text-sm leading-7 text-[var(--led-bright)]">sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
@@ -463,6 +468,7 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
             <p class="text-sm text-[var(--text-faint)]">It accepts <code>on</code>, <code>off</code>, and <code>display-sleep</code> and nothing else.</p>
           </div>
         </div>
+        <p class="mt-5 max-w-[760px] text-sm text-[var(--text-faint)]">When an auto-off timer expires and <code>SleepDisabled=0</code> is confirmed, the app runs <code>/usr/bin/pmset sleepnow</code> directly as the current user. This does not use <code>sudo</code> or expand the helper permissions.</p>
         <p class="mt-7 max-w-[760px] text-sm text-[var(--text-faint)]">Quitting the app restores normal sleep behavior. Sleep-disabled closed-lid use can increase heat and battery drain — mind airflow, power, and runtime.</p>
       </section>
 

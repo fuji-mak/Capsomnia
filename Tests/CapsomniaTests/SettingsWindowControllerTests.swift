@@ -43,6 +43,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertTrue(renderedText.contains(strings.preferencesHeading))
         XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
         XCTAssertFalse(renderedText.contains(strings.openAtLogin))
+        XCTAssertFalse(renderedText.contains(strings.autoOffTimer.uppercased()))
         visibleButtons = visibleDescendants(of: contentView)
         XCTAssertTrue(
             visibleButtons.contains {
@@ -80,6 +81,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         }
         XCTAssertFalse(renderedText.contains(strings.displaySleepOnLidClose))
         XCTAssertFalse(renderedText.contains(strings.openAtLogin))
+        XCTAssertFalse(renderedText.contains(strings.autoOffTimer.uppercased()))
 
         let buttons: [DisclosureButton] = descendants(of: contentView)
         XCTAssertTrue(
@@ -152,9 +154,8 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertGreaterThan(contentView.bounds.width, basicWidth)
         XCTAssertEqual(advancedWindow.title, strings.advancedSettings)
 
-        let renderedText = Set(
-            visibleDescendants(of: contentView).map(\NSTextField.stringValue)
-        )
+        let visibleLabels: [NSTextField] = visibleDescendants(of: contentView)
+        let renderedText = Set(visibleLabels.map(\NSTextField.stringValue))
         for expected in [
             strings.advancedSettings,
             strings.preferencesHeading.uppercased(),
@@ -164,14 +165,44 @@ final class SettingsWindowControllerTests: XCTestCase {
             strings.systemBehavior.uppercased(),
             strings.displaySleepOnLidClose,
             strings.openAtLogin,
-            strings.autoOffRestartOnReenable,
-            strings.autoOffShowInMenuBar,
+            strings.autoOffTimer.uppercased(),
+            strings.autoOffOff,
+            strings.autoOffCustom,
             strings.keyboardShortcut.uppercased(),
             strings.keyboardShortcut,
             strings.keyboardShortcutDesc
         ] {
             XCTAssertTrue(renderedText.contains(expected), "Missing rendered text: \(expected)")
         }
+
+        let preferencesHeading = try XCTUnwrap(
+            visibleLabels.first { $0.stringValue == strings.preferencesHeading.uppercased() }
+        )
+        let timerHeading = try XCTUnwrap(
+            visibleLabels.first { $0.stringValue == strings.autoOffTimer.uppercased() }
+        )
+        let shortcutHeading = try XCTUnwrap(
+            visibleLabels.first { $0.stringValue == strings.keyboardShortcut.uppercased() }
+        )
+        let preferencesFrame = preferencesHeading.convert(preferencesHeading.bounds, to: contentView)
+        let timerFrame = timerHeading.convert(timerHeading.bounds, to: contentView)
+        let shortcutFrame = shortcutHeading.convert(shortcutHeading.bounds, to: contentView)
+        XCTAssertGreaterThan(
+            timerFrame.minX,
+            preferencesFrame.maxX,
+            "The timer column should be to the right of the general settings column"
+        )
+        XCTAssertEqual(
+            shortcutFrame.minX,
+            timerFrame.minX,
+            accuracy: 1,
+            "The shortcut should share the timer's right column"
+        )
+        XCTAssertLessThan(
+            shortcutFrame.minY,
+            timerFrame.minY,
+            "The shortcut should appear below the timer"
+        )
 
         let recorder: ShortcutRecorderButton = try XCTUnwrap(
             visibleDescendants(of: contentView).first
@@ -209,11 +240,11 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertEqual(recordingStates, [true, false])
     }
 
-    func testAutoOffCustomSectionAndCountdownRenderWithinTheWindow() throws {
+    func testAutoOffCustomEditorDoesNotResizeOrShiftTheSettingsWindow() throws {
         let previousLanguage = Preferences.language
         let previousMinutes = Preferences.autoOffMinutes
         Preferences.language = .english
-        Preferences.autoOffMinutes = 45 // a custom value reveals the H/M steppers
+        Preferences.autoOffMinutes = 60
         defer {
             Preferences.language = previousLanguage
             Preferences.autoOffMinutes = previousMinutes
@@ -226,19 +257,44 @@ final class SettingsWindowControllerTests: XCTestCase {
         )
         defer { controller.close() }
 
-        controller.show(page: .settings)
+        controller.show(page: .advancedSettings)
         let contentView = try XCTUnwrap(controller.window?.contentView)
         contentView.layoutSubtreeIfNeeded()
+
+        let timerControl: AutoOffTimerControl = try XCTUnwrap(descendants(of: contentView).first)
+        let customChip = try XCTUnwrap(
+            view(in: contentView, accessibilityLabel: strings.autoOffCustom)
+        )
+        let preferencesHeading = try XCTUnwrap(
+            visibleDescendants(of: contentView).first {
+                $0.stringValue == strings.preferencesHeading.uppercased()
+            } as NSTextField?
+        )
+        let originalContentSize = contentView.bounds.size
+        let originalPreferencesFrame = preferencesHeading.convert(
+            preferencesHeading.bounds,
+            to: contentView
+        )
+
+        XCTAssertTrue(customChip.accessibilityPerformPress())
+        contentView.layoutSubtreeIfNeeded()
+
+        XCTAssertTrue(timerControl.isCustomEditorVisible)
+        XCTAssertEqual(contentView.bounds.size, originalContentSize)
+        XCTAssertEqual(
+            preferencesHeading.convert(preferencesHeading.bounds, to: contentView),
+            originalPreferencesFrame
+        )
 
         let labels: [NSTextField] = descendants(of: contentView)
         let renderedText = Set(labels.map(\.stringValue))
 
-        // Section heading, chips, custom stepper labels, and the live countdown.
+        // The timer stays in the right column; custom controls live in a separate popover.
         XCTAssertTrue(renderedText.contains(strings.autoOffTimer.uppercased()))
         XCTAssertTrue(renderedText.contains(strings.autoOffOff))
         XCTAssertTrue(renderedText.contains(strings.autoOffCustom))
-        XCTAssertTrue(renderedText.contains(strings.autoOffHours))
-        XCTAssertTrue(renderedText.contains(strings.autoOffMinutesUnit))
+        XCTAssertFalse(renderedText.contains(strings.autoOffHours))
+        XCTAssertFalse(renderedText.contains(strings.autoOffMinutesUnit))
         XCTAssertTrue(renderedText.contains("1h"))
         XCTAssertTrue(renderedText.contains("8h"))
         XCTAssertTrue(renderedText.contains("00:45:00"))
@@ -269,7 +325,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         Preferences.autoOffMinutes = 45
         let onController = makeController()
         defer { onController.close() }
-        onController.show(page: .settings)
+        onController.show(page: .advancedSettings)
         let onContent = try XCTUnwrap(onController.window?.contentView)
         onContent.layoutSubtreeIfNeeded()
         let shown = try XCTUnwrap(view(in: onContent, accessibilityLabel: restartLabel))
@@ -279,7 +335,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         Preferences.autoOffMinutes = 0
         let offController = makeController()
         defer { offController.close() }
-        offController.show(page: .settings)
+        offController.show(page: .advancedSettings)
         let offContent = try XCTUnwrap(offController.window?.contentView)
         offContent.layoutSubtreeIfNeeded()
         let hidden = try XCTUnwrap(view(in: offContent, accessibilityLabel: restartLabel))
@@ -303,8 +359,6 @@ final class SettingsWindowControllerTests: XCTestCase {
             onDisplaySleepOnLidCloseChange: { _ in },
             onAutoOffMinutesChange: { _ in },
             onAutoOffRestart: {},
-            onAutoOffRestartOnReenableChange: { _ in },
-            onShowTimerInMenuBarChange: { _ in },
             autoOffDisplayProvider: autoOffDisplayProvider,
             onKeyboardShortcutChange: { _ in true },
             onKeyboardShortcutRecordingChange: onKeyboardShortcutRecordingChange,

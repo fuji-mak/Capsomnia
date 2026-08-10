@@ -2,6 +2,8 @@ import CoreGraphics
 import Foundation
 import IOKit
 
+typealias CommandResult = (status: Int32, stdout: String, stderr: String)
+
 struct LaunchAgentError: LocalizedError {
     let message: String
 
@@ -29,7 +31,7 @@ private final class CommandOutputBuffer: @unchecked Sendable {
 }
 
 enum CommandRunner {
-    static func run(_ executablePath: String, _ arguments: [String]) -> (status: Int32, stdout: String, stderr: String) {
+    static func run(_ executablePath: String, _ arguments: [String]) -> CommandResult {
         let process = Process()
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
@@ -78,6 +80,18 @@ enum CommandRunner {
             defer { group.leave() }
             buffer.append(handle.readDataToEndOfFile())
         }
+    }
+}
+
+enum SystemSleepRequester {
+    typealias Runner = (String, [String]) -> CommandResult
+
+    static func request() -> CommandResult {
+        request(runner: CommandRunner.run)
+    }
+
+    static func request(runner: Runner) -> CommandResult {
+        runner("/usr/bin/pmset", ["sleepnow"])
     }
 }
 

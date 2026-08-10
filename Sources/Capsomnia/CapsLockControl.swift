@@ -10,29 +10,6 @@ enum CapsLockToggleResult: Equatable {
     case verificationFailed(target: Bool, actual: Bool?)
 }
 
-struct CapsLockToggleTransaction {
-    let readState: () -> Bool?
-    let setState: (Bool) -> Bool
-
-    func run() -> CapsLockToggleResult {
-        guard let current = readState() else {
-            return .readFailed
-        }
-
-        let target = !current
-        guard setState(target) else {
-            return .writeFailed(target: target)
-        }
-
-        let actual = readState()
-        guard actual == target else {
-            return .verificationFailed(target: target, actual: actual)
-        }
-
-        return .changed(to: target)
-    }
-}
-
 struct CapsLockStateConfirmationResult: Equatable {
     let confirmed: Bool
     let actual: Bool?
@@ -160,11 +137,25 @@ enum SystemCapsLockController {
         }
         defer { IOServiceClose(connection) }
 
-        guard let current = CapsLockHIDSystem.readState(connection: connection) else {
+        return toggle(
+            readState: {
+                CapsLockHIDSystem.readState(connection: connection)
+            },
+            setState: { target in
+                set(target, connection: connection)
+            }
+        )
+    }
+
+    static func toggle(
+        readState: () -> Bool?,
+        setState: (Bool) -> CapsLockToggleResult
+    ) -> CapsLockToggleResult {
+        guard let current = readState() else {
             return .readFailed
         }
 
-        return set(!current, connection: connection)
+        return setState(!current)
     }
 
     static func set(_ target: Bool) -> CapsLockToggleResult {

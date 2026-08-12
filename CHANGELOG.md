@@ -4,6 +4,8 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- Add Intel Mac source-install support for macOS 13.5 or later with Swift 5.9, while keeping the signed and notarized package Apple silicon-only on macOS 14 or later.
+
 ## 3.0.0 - 2026-08-10
 
 - Add an optional auto-off timer with 15-minute through 8-hour presets, a one-minute to 24-hour custom picker, a live countdown, and an explicit restart action in Advanced Settings.

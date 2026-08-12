@@ -1,11 +1,11 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 5.9
 
 import PackageDescription
 
 let package = Package(
     name: "Capsomnia",
     platforms: [
-        .macOS(.v14)
+        .macOS("13.5")
     ],
     products: [
         .executable(name: "Capsomnia", targets: ["Capsomnia"]),
@@ -23,5 +23,5 @@ let package = Package(
             dependencies: ["Capsomnia"]
         )
     ],
-    swiftLanguageModes: [.v5]
+    swiftLanguageVersions: [.v5]
 )

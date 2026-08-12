@@ -16,7 +16,7 @@
 <p align="center">
   <a href="https://github.com/fuji-mak/Capsomnia/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/fuji-mak/Capsomnia/ci.yml?branch=main&style=flat-square&label=CI&labelColor=111111&color=b7ff3c"></a>
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-b7ff3c?style=flat-square&labelColor=111111">
-  <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-b7ff3c?style=flat-square&labelColor=111111">
+  <img alt="Swift 5.9+" src="https://img.shields.io/badge/Swift-5.9%2B-b7ff3c?style=flat-square&labelColor=111111">
   <a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
@@ -47,7 +47,7 @@ Capsomnia本身不会发起网络请求、收集遥测数据，也不需要账�
 要求：
 
 - 上游签名软件包：运行macOS 14或更高版本的Apple芯片Mac
-- 源代码构建：运行macOS 13.5或更高版本的Intel Mac
+- 源代码安装：运行macOS 14或更高版本的Apple芯片Mac，或运行macOS 13.5或更高版本的Intel Mac
 - 安装时拥有管理员权限
 
 安装已签名的软件包：
@@ -61,16 +61,15 @@ Capsomnia本身不会发起网络请求、收集遥测数据，也不需要账�
 
 ## 从源代码构建
 
-在Intel macOS 13.5或更高版本上从源代码构建，需要Xcode 15附带的Swift 5.9工具链：
+开发者源代码安装支持运行macOS 14或更高版本的Apple芯片Mac，以及运行macOS 13.5或更高版本的Intel Mac。需要Xcode 15或更高版本附带的Swift 5.9或更高版本工具链：
 
 ```sh
 git clone https://github.com/fuji-mak/Capsomnia.git
 cd Capsomnia
-swift build -c release
+./scripts/install.sh
 ```
 
-此命令会在本地构建`Capsomnia`应用程序可执行文件和权限受限的`capsomnia-pmset`辅助程序。已签名并经过公证的发布软件包仍面向运行macOS 14或更高版本的Apple芯片Mac。
-
+源代码安装程序会在本地构建`Capsomnia.app`，将其放入`~/Applications/`，安装权限受限的辅助程序和sudoers规则，并启动用户LaunchAgent。已签名并经过公证的发布软件包仍仅支持Apple芯片，并要求macOS 14或更高版本。
 
 ## 功能
 

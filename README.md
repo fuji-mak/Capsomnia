@@ -16,7 +16,7 @@
 <p align="center">
   <a href="https://github.com/fuji-mak/Capsomnia/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/fuji-mak/Capsomnia/ci.yml?branch=main&style=flat-square&label=CI&labelColor=111111&color=b7ff3c"></a>
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-b7ff3c?style=flat-square&labelColor=111111">
-  <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-b7ff3c?style=flat-square&labelColor=111111">
+  <img alt="Swift 5.9+" src="https://img.shields.io/badge/Swift-5.9%2B-b7ff3c?style=flat-square&labelColor=111111">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
@@ -45,7 +45,7 @@ Capsomnia itself does not make network requests, collect telemetry, or require a
 Requirements:
 
 - Signed upstream package: Apple silicon Mac with macOS 14 or later
-- Source build on an Intel Mac with macOS 13.5 or later
+- Source install: Apple silicon Mac with macOS 14 or later, or Intel Mac with macOS 13.5 or later
 - Administrator access during installation
 
 Install the signed package:
@@ -59,16 +59,15 @@ The package build and install scripts are public in [`scripts/build-pkg.sh`](scr
 
 ## Build From Source
 
-Source builds on Intel macOS 13.5 or later require the Swift 5.9 toolchain included with Xcode 15:
+Developer source installation supports Apple silicon Macs on macOS 14 or later and Intel Macs on macOS 13.5 or later. It requires Swift 5.9 or later, included with Xcode 15 or later:
 
 ```sh
 git clone https://github.com/fuji-mak/Capsomnia.git
 cd Capsomnia
-swift build -c release
+./scripts/install.sh
 ```
 
-This builds the `Capsomnia` app executable and the restricted `capsomnia-pmset` helper locally. The signed and notarized release package remains available for Apple silicon Macs running macOS 14 or later.
-
+The source installer builds `Capsomnia.app` locally, places it in `~/Applications/`, installs the restricted helper and sudoers rule, and starts a user LaunchAgent. The signed and notarized release package remains Apple silicon-only and requires macOS 14 or later.
 
 ## What It Does
 

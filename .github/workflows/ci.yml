@@ -52,6 +52,7 @@ jobs:
           file .build/release/capsomnia-pmset | grep -q 'x86_64'
           otool -l .build/release/Capsomnia | grep -A3 LC_BUILD_VERSION | grep -q 'minos 13.5'
           otool -l .build/release/capsomnia-pmset | grep -A3 LC_BUILD_VERSION | grep -q 'minos 13.5'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' resources/Info.plist)" = '13.5'
 
   swift-59-compatibility:
     name: Swift 5.9 language compatibility

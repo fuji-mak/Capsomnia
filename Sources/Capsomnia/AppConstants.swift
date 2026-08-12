@@ -92,6 +92,14 @@ struct AppStrings {
     let openAtLoginDesc: String
     let displaySleepOnLidClose: String
     let displaySleepOnLidCloseDesc: String
+    let autoOffTimer: String
+    let autoOffTimerDesc: String
+    let autoOffOff: String
+    let autoOffCustom: String
+    let autoOffTurnsOffIn: String
+    let autoOffHours: String
+    let autoOffMinutesUnit: String
+    let autoOffRestart: String
     let keyboardShortcut: String
     let keyboardShortcutDesc: String
     let shortcutRecorderPlaceholder: String
@@ -136,6 +144,14 @@ struct AppStrings {
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
                 displaySleepOnLidClose: "Turn display off when lid closes",
                 displaySleepOnLidCloseDesc: "When Capsomnia is on, let the display sleep after closing the lid only if no external display is connected.",
+                autoOffTimer: "Auto-off timer",
+                autoOffTimerDesc: "After the set time, Capsomnia turns awake mode off and puts your Mac to sleep.",
+                autoOffOff: "Off",
+                autoOffCustom: "Custom",
+                autoOffTurnsOffIn: "Turns off in",
+                autoOffHours: "Hours",
+                autoOffMinutesUnit: "Minutes",
+                autoOffRestart: "Restart timer",
                 keyboardShortcut: "Toggle shortcut",
                 keyboardShortcutDesc: "If you’ve assigned Caps Lock to another key, you can use a shortcut to turn Capsomnia on and off. While Capsomnia is on, the green Caps Lock light stays lit.",
                 shortcutRecorderPlaceholder: "Not Set",
@@ -174,6 +190,14 @@ struct AppStrings {
                 openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
                 displaySleepOnLidClose: "덮개를 닫을 때 화면 끄기",
                 displaySleepOnLidCloseDesc: "Capsomnia가 켜진 상태에서 덮개를 닫으면 외부 디스플레이가 연결되지 않은 경우에만 화면을 끕니다.",
+                autoOffTimer: "자동 종료 타이머",
+                autoOffTimerDesc: "설정한 시간이 지나면 절전 방지를 끄고 Mac을 잠자기 상태로 전환합니다.",
+                autoOffOff: "끄기",
+                autoOffCustom: "사용자 지정",
+                autoOffTurnsOffIn: "종료까지",
+                autoOffHours: "시간",
+                autoOffMinutesUnit: "분",
+                autoOffRestart: "타이머 재시작",
                 keyboardShortcut: "전환 단축키",
                 keyboardShortcutDesc: "Caps Lock을 다른 키에 할당한 경우에도 원하는 단축키로 Capsomnia를 켜거나 끌 수 있습니다. Capsomnia가 켜져 있는 동안에는 초록색 Caps Lock 표시등이 켜집니다.",
                 shortcutRecorderPlaceholder: "미설정",
@@ -212,6 +236,14 @@ struct AppStrings {
                 openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
                 displaySleepOnLidClose: "蓋を閉じたら画面をオフ",
                 displaySleepOnLidCloseDesc: "Capsomnia ON中は、外部ディスプレイが接続されていない場合のみ、蓋を閉じたら画面を暗くします。",
+                autoOffTimer: "自動オフタイマー",
+                autoOffTimerDesc: "設定した時間が経過すると、スリープ抑止を解除してMacをスリープさせます。",
+                autoOffOff: "オフ",
+                autoOffCustom: "カスタム",
+                autoOffTurnsOffIn: "オフまで",
+                autoOffHours: "時間",
+                autoOffMinutesUnit: "分",
+                autoOffRestart: "タイマーを再スタート",
                 keyboardShortcut: "切り替えショートカット",
                 keyboardShortcutDesc: "Caps Lockを別のキーに割り当てている場合でも、お好みのショートカットでCapsomniaをオン／オフできます。Capsomniaがオンの間は、Caps Lockの緑のライトが点灯します。",
                 shortcutRecorderPlaceholder: "未設定",
@@ -250,6 +282,14 @@ struct AppStrings {
                 openAtLoginDesc: "登录后自动启动 Capsomnia。",
                 displaySleepOnLidClose: "合盖时关闭显示屏",
                 displaySleepOnLidCloseDesc: "Capsomnia 开启时，仅在未连接外接显示器的情况下，合盖后让显示屏进入睡眠。",
+                autoOffTimer: "自动关闭定时器",
+                autoOffTimerDesc: "设定时间结束后会关闭防睡眠并让 Mac 进入睡眠。",
+                autoOffOff: "关闭",
+                autoOffCustom: "自定义",
+                autoOffTurnsOffIn: "剩余",
+                autoOffHours: "小时",
+                autoOffMinutesUnit: "分钟",
+                autoOffRestart: "重启计时器",
                 keyboardShortcut: "切换快捷键",
                 keyboardShortcutDesc: "即使已将 Caps Lock 分配给其他按键，也可以使用自定义快捷键开启或关闭 Capsomnia。Capsomnia 开启期间，绿色 Caps Lock 指示灯会保持亮起。",
                 shortcutRecorderPlaceholder: "未设置",
@@ -284,6 +324,7 @@ private enum PreferenceKey {
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
     static let displaySleepOnLidClose = "DisplaySleepOnLidClose"
+    static let autoOffMinutes = "AutoOffMinutes"
     static let shortcutKeyCode = "ShortcutKeyCode"
     static let shortcutModifiers = "ShortcutModifiers"
     static let shortcutKey = "ShortcutKey"
@@ -301,6 +342,7 @@ enum Preferences {
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
             PreferenceKey.displaySleepOnLidClose: true,
+            PreferenceKey.autoOffMinutes: 0,
             PreferenceKey.didCompleteInitialSetup: false,
             PreferenceKey.forceWelcomeOnNextLaunch: false
         ])
@@ -332,6 +374,20 @@ enum Preferences {
     static var displaySleepOnLidClose: Bool {
         get { defaults.bool(forKey: PreferenceKey.displaySleepOnLidClose) }
         set { defaults.set(newValue, forKey: PreferenceKey.displaySleepOnLidClose) }
+    }
+
+    /// Minutes after which awake mode turns itself off automatically.
+    /// `0` means "no timer" — awake mode stays on until Caps Lock is turned off.
+    /// Stored values are clamped to `0...AutoOffPreset.maxCustomMinutes`.
+    static var autoOffMinutes: Int {
+        get {
+            let stored = defaults.integer(forKey: PreferenceKey.autoOffMinutes)
+            return min(max(stored, 0), AutoOffPreset.maxCustomMinutes)
+        }
+        set {
+            let clamped = min(max(newValue, 0), AutoOffPreset.maxCustomMinutes)
+            defaults.set(clamped, forKey: PreferenceKey.autoOffMinutes)
+        }
     }
 
     static var keyboardShortcut: KeyboardShortcut? {

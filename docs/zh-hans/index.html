@@ -63,7 +63,7 @@
             "applicationCategory": "UtilitiesApplication",
             "applicationSubCategory": "DeveloperTool",
             "operatingSystem": "macOS 14 or later on Apple silicon",
-            "softwareVersion": "2.0.4",
+            "softwareVersion": "3.0.0",
             "license": "https://github.com/fuji-mak/Capsomnia/blob/main/LICENSE",
             "isAccessibleForFree": true,
             "offers": {
@@ -332,6 +332,11 @@
                 <p class="text-[0.95rem] text-[var(--text-dim)]">指示灯亮起时，防休眠功能已开启。无需显示菜单栏图标，也能直接从键盘确认状态。</p>
               </article>
               <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
+                <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">自动关闭</p>
+                <h3 class="mb-2 text-[1.05rem] font-bold">定时结束后自动进入睡眠</h3>
+                <p class="text-[0.95rem] text-[var(--text-dim)]">可选择15分钟到8小时的预设，或设置1分钟到24小时的自定义时长。Capsomnia会关闭，确认防休眠已解除，然后让Mac进入睡眠。</p>
+              </article>
+              <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
                 <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">开源</p>
                 <h3 class="mb-2 text-[1.05rem] font-bold">完全免费，开源透明</h3>
                 <p class="text-[0.95rem] text-[var(--text-dim)]">项目采用 MIT 许可证。安装前，你可以检查源代码、软件包安装脚本、辅助程序命令和安全模型。</p>
@@ -445,7 +450,7 @@
         </div>
         <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">应用只能调用</h3>
+            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">提升权限调用的命令</h3>
             <pre
               class="mb-3 overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-4"
             ><code class="font-mono text-sm leading-7 text-[var(--led-bright)]">sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
@@ -463,6 +468,7 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
             <p class="text-sm text-[var(--text-faint)]">仅接受 <code>on</code>、<code>off</code> 和 <code>display-sleep</code>，不会接受其他参数。</p>
           </div>
         </div>
+        <p class="mt-5 max-w-[760px] text-sm text-[var(--text-faint)]">自动关闭定时器到时并确认<code>SleepDisabled=0</code>后，应用会以当前用户身份直接运行<code>/usr/bin/pmset sleepnow</code>。该操作不使用<code>sudo</code>，也不会扩大辅助程序权限。</p>
         <p class="mt-7 max-w-[760px] text-sm text-[var(--text-faint)]">退出应用会恢复正常睡眠。停用睡眠并合盖使用可能会增加发热和耗电量，请留意通风、电源和运行时长。</p>
       </section>
 

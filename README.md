@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `2.0.4`
+Current version: `3.0.0`
 
 [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
@@ -75,6 +75,7 @@ This builds the `Capsomnia` app executable and the restricted `capsomnia-pmset` 
 - Prevent all-caps typing (optional): when Capsomnia is on, Caps Lock no longer forces uppercase input. Shift still types uppercase letters.
 - Caps Lock on: keeps AI agents and other work from being interrupted when the MacBook lid is closed. Remote operation through tools such as Codex Mobile remains possible. The Caps Lock light physically shows the current state.
 - Custom toggle shortcut: turn Capsomnia on or off with another key combination even if Caps Lock is assigned elsewhere. The green Caps Lock light continues to show the current state.
+- Auto-off timer (optional): choose a preset from 15 minutes to 8 hours or a custom duration from 1 minute to 24 hours. When time expires, Capsomnia turns off, confirms that sleep prevention is released, and immediately puts the Mac to sleep.
 - Caps Lock off: restores normal sleep behavior.
 - Lid closed while Capsomnia is on: puts the display to sleep only when no external display is connected, while work keeps running.
 - Quitting the app restores normal sleep behavior.
@@ -86,6 +87,7 @@ Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions,
 - Ensure sufficient airflow and use a stable power source.
 - Closed-lid use while sleep prevention is active may increase heat and battery consumption.
 - Do not rely on Capsomnia for critical jobs or as a substitute for backups.
+- The auto-off timer explicitly puts the Mac to sleep when it expires. Save work and choose a duration long enough for the task to finish.
 - Turn Caps Lock off after use and confirm that normal sleep behavior has returned.
 - Use Capsomnia at your own risk. Compatibility is not guaranteed for every Mac, macOS version, or environment.
 
@@ -97,7 +99,7 @@ On first launch, Capsomnia explains how the Caps Lock switch works and lets you 
 - whether to prevent all-caps typing while Capsomnia is on
 - English, Japanese, Simplified Chinese, or Korean
 
-"Turn display off when lid closes" and "Open at login" are enabled by default and do not appear in initial setup. Open Capsomnia again later to change all settings. Advanced Settings also lets you record a global shortcut that toggles Capsomnia through the real Caps Lock state. "Show menu bar icon" remains independent when "Prevent all-caps typing" is enabled. If the icon is hidden, a red dot appears temporarily when an error occurs.
+"Turn display off when lid closes" and "Open at login" are enabled by default and do not appear in initial setup. Open Capsomnia again later to change all settings. Advanced Settings includes the optional auto-off timer and a global shortcut that toggles Capsomnia through the real Caps Lock state. The timer is off by default. Each time Capsomnia is enabled, the selected duration starts from the beginning; the restart button resets the current countdown. "Show menu bar icon" remains independent when "Prevent all-caps typing" is enabled. If the icon is hidden, a red dot appears temporarily when an error occurs.
 
 macOS Accessibility permission is required only when "Prevent all-caps typing" is enabled. Capsomnia installs a local Core Graphics event filter that removes only the Caps Lock modifier from keyboard events; it does not store keyboard input or send it anywhere. If permission is missing or the filter stops, Capsomnia fails closed: sleep prevention is turned off, the menu bar dot turns red, and the app retries. When this setting is disabled, Accessibility permission is not required and Capsomnia only checks the local Caps Lock state every 250 milliseconds.
 
@@ -157,7 +159,7 @@ macOS may show "Taketo Fujimaki" instead of "Capsomnia" for an existing cached b
 
 If Capsomnia is force-killed while crash recovery is disabled or unavailable, the last system sleep setting can remain active. Use the manual recovery command below to restore normal sleep behavior.
 
-The app can only invoke:
+The app invokes these privileged commands:
 
 ```sh
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
@@ -172,6 +174,8 @@ The sudoers rule is limited to those three exact commands. The helper only accep
 /usr/bin/pmset -a disablesleep 0
 /usr/bin/pmset displaysleepnow
 ```
+
+After an auto-off timer has successfully turned Caps Lock off and confirmed `SleepDisabled=0`, the app runs `/usr/bin/pmset sleepnow` directly as the current user. This immediate sleep request does not use `sudo` and does not expand the helper or sudoers permissions.
 
 ## Logs and Troubleshooting
 

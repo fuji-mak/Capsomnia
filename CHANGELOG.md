@@ -4,6 +4,13 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 3.0.0 - 2026-08-10
+
+- Add an optional auto-off timer with 15-minute through 8-hour presets, a one-minute to 24-hour custom picker, a live countdown, and an explicit restart action in Advanced Settings.
+- When the timer expires, turn Caps Lock off, confirm that `SleepDisabled` has returned to normal, and then request immediate system sleep exactly once. Do not sleep if Caps Lock cannot be turned off or the sleep-prevention state cannot be confirmed.
+- Keep the menu bar compact by leaving the countdown in Settings, and start a fresh full-duration timer whenever Capsomnia is enabled again.
+- Move custom time controls into a fixed popover, support one-minute adjustments, and coalesce rapid setting changes for immediate UI feedback without shifting the two-column layout.
+
 ## 2.0.4 - 2026-08-05
 
 - Prevent command execution deadlocks by draining standard output and standard error concurrently.

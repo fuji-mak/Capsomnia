@@ -8,7 +8,8 @@ enum SettingsPage {
 
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private static let settingsContentWidth: CGFloat = 400
-    private static let advancedContentWidth: CGFloat = 560
+    private static let advancedContentWidth: CGFloat = 920
+    private static let advancedColumnSpacing: CGFloat = 20
 
     private let headerIcon = NSImageView()
     private let titleLabel = brandLabel(size: 21, weight: .bold, color: Brand.text)
@@ -39,6 +40,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         selected: Preferences.language.rawValue
     )
     private let advancedSettingsButton = DisclosureButton()
+
+    private let autoOffHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
+    private let autoOffControl = AutoOffTimerControl(minutes: Preferences.autoOffMinutes)
 
     private let systemBehaviorHeading = brandLabel(
         size: 11,
@@ -80,9 +84,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     private let rootStack = NSStackView()
     private let bodyStack = NSStackView()
+    private let advancedColumns = NSStackView()
+    private let advancedLeftColumn = NSStackView()
+    private let advancedRightColumn = NSStackView()
+    private let advancedRightSpacer = NSView()
     private var preferencesCard = NSView()
     private var systemCard = NSView()
     private var shortcutCard = NSView()
+    private var autoOffCard = NSView()
     private var initialPreferencesLayoutConstraints: [NSLayoutConstraint] = []
     private var settingsLayoutConstraints: [NSLayoutConstraint] = []
     private var advancedSettingsLayoutConstraints: [NSLayoutConstraint] = []
@@ -92,6 +101,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let onLanguageChange: (AppLanguage) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
     private let onDisplaySleepOnLidCloseChange: (Bool) -> Void
+    private let onAutoOffMinutesChange: (Int) -> Void
+    private let onAutoOffRestart: () -> Void
+    private let autoOffDisplayProvider: () -> AutoOffDisplayState
     private let onKeyboardShortcutChange: (KeyboardShortcut?) -> Bool
     private let onKeyboardShortcutRecordingChange: (Bool) -> Void
     private let onFinishInitialSetup: () -> Void
@@ -103,6 +115,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onLanguageChange: @escaping (AppLanguage) -> Void,
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
         onDisplaySleepOnLidCloseChange: @escaping (Bool) -> Void,
+        onAutoOffMinutesChange: @escaping (Int) -> Void,
+        onAutoOffRestart: @escaping () -> Void,
+        autoOffDisplayProvider: @escaping () -> AutoOffDisplayState,
         onKeyboardShortcutChange: @escaping (KeyboardShortcut?) -> Bool,
         onKeyboardShortcutRecordingChange: @escaping (Bool) -> Void,
         onFinishInitialSetup: @escaping () -> Void
@@ -112,6 +127,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onLanguageChange = onLanguageChange
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
         self.onDisplaySleepOnLidCloseChange = onDisplaySleepOnLidCloseChange
+        self.onAutoOffMinutesChange = onAutoOffMinutesChange
+        self.onAutoOffRestart = onAutoOffRestart
+        self.autoOffDisplayProvider = autoOffDisplayProvider
         self.onKeyboardShortcutChange = onKeyboardShortcutChange
         self.onKeyboardShortcutRecordingChange = onKeyboardShortcutRecordingChange
         self.onFinishInitialSetup = onFinishInitialSetup
@@ -186,6 +204,16 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         openAtLoginDesc.stringValue = strings.openAtLoginDesc
         openAtLoginToggle.setAccessibilityLabel(strings.openAtLogin)
 
+        autoOffHeading.stringValue = strings.autoOffTimer.uppercased()
+        autoOffControl.setStrings(
+            desc: strings.autoOffTimerDesc,
+            off: strings.autoOffOff,
+            custom: strings.autoOffCustom,
+            turnsOffIn: strings.autoOffTurnsOffIn,
+            hours: strings.autoOffHours,
+            minutesUnit: strings.autoOffMinutesUnit,
+            restart: strings.autoOffRestart
+        )
         shortcutHeading.stringValue = strings.keyboardShortcut.uppercased()
         shortcutDesc.stringValue = strings.keyboardShortcutDesc
         shortcutRecorder.setStrings(
@@ -216,12 +244,20 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         }
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        if page == .advancedSettings {
+            autoOffControl.startDisplayUpdates()
+        } else {
+            autoOffControl.dismissCustomEditor()
+            autoOffControl.stopDisplayUpdates()
+        }
     }
 
     func windowWillClose(_ notification: Notification) {
         // The controller and window are reused after closing, so transient
         // recording state must not survive into the next presentation.
         shortcutRecorder.cancelRecording()
+        autoOffControl.dismissCustomEditor()
+        autoOffControl.stopDisplayUpdates()
         guard page == .initialPreferences else { return }
         finishInitialSetup()
     }
@@ -269,6 +305,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         preferencesCard = buildPreferencesCard()
         systemCard = buildSystemCard()
         shortcutCard = buildShortcutCard()
+        autoOffCard = buildAutoOffCard()
         configureAdvancedHeader()
         configureAdvancedSettingsButton()
 
@@ -276,6 +313,20 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         configureColumn(rootStack)
         configureColumn(bodyStack)
+        configureColumn(advancedLeftColumn)
+        configureColumn(advancedRightColumn)
+        advancedColumns.orientation = .horizontal
+        advancedColumns.alignment = .top
+        advancedColumns.distribution = .fillEqually
+        advancedColumns.spacing = Self.advancedColumnSpacing
+        advancedColumns.translatesAutoresizingMaskIntoConstraints = false
+        advancedColumns.addArrangedSubview(advancedLeftColumn)
+        advancedColumns.addArrangedSubview(advancedRightColumn)
+        advancedRightSpacer.translatesAutoresizingMaskIntoConstraints = false
+        advancedRightSpacer.setContentHuggingPriority(
+            NSLayoutConstraint.Priority(1),
+            for: .vertical
+        )
         bodyStack.distribution = .fill
         rootStack.detachesHiddenViews = true
         rootStack.addArrangedSubview(appHeader)
@@ -298,9 +349,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         ]
         advancedSettingsLayoutConstraints = [
             advancedHeader.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
-            preferencesCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
-            systemCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
-            shortcutCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
+            advancedColumns.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            preferencesCard.widthAnchor.constraint(equalTo: advancedLeftColumn.widthAnchor),
+            systemCard.widthAnchor.constraint(equalTo: advancedLeftColumn.widthAnchor),
+            autoOffCard.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
+            shortcutCard.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor)
         ]
 
         NSLayoutConstraint.activate([
@@ -323,6 +376,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
                 + advancedSettingsLayoutConstraints
         )
         clearArrangedSubviews(bodyStack)
+        clearArrangedSubviews(advancedLeftColumn)
+        clearArrangedSubviews(advancedRightColumn)
 
         switch page {
         case .initialPreferences:
@@ -340,24 +395,32 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             bodyStack.addArrangedSubview(advancedSettingsButton)
             bodyStack.addArrangedSubview(doneButton)
             bodyStack.setCustomSpacing(8, after: preferencesHeading)
-            bodyStack.setCustomSpacing(12, after: preferencesCard)
+            bodyStack.setCustomSpacing(20, after: preferencesCard)
             bodyStack.setCustomSpacing(20, after: advancedSettingsButton)
             NSLayoutConstraint.activate(settingsLayoutConstraints)
 
         case .advancedSettings:
             bodyStack.addArrangedSubview(advancedHeader)
-            bodyStack.addArrangedSubview(preferencesHeading)
-            bodyStack.addArrangedSubview(preferencesCard)
-            bodyStack.addArrangedSubview(systemBehaviorHeading)
-            bodyStack.addArrangedSubview(systemCard)
-            bodyStack.addArrangedSubview(shortcutHeading)
-            bodyStack.addArrangedSubview(shortcutCard)
+            bodyStack.addArrangedSubview(advancedColumns)
+
+            advancedLeftColumn.addArrangedSubview(preferencesHeading)
+            advancedLeftColumn.addArrangedSubview(preferencesCard)
+            advancedLeftColumn.addArrangedSubview(systemBehaviorHeading)
+            advancedLeftColumn.addArrangedSubview(systemCard)
+            advancedLeftColumn.setCustomSpacing(8, after: preferencesHeading)
+            advancedLeftColumn.setCustomSpacing(22, after: preferencesCard)
+            advancedLeftColumn.setCustomSpacing(8, after: systemBehaviorHeading)
+
+            advancedRightColumn.addArrangedSubview(autoOffHeading)
+            advancedRightColumn.addArrangedSubview(autoOffCard)
+            advancedRightColumn.addArrangedSubview(shortcutHeading)
+            advancedRightColumn.addArrangedSubview(shortcutCard)
+            advancedRightColumn.addArrangedSubview(advancedRightSpacer)
+            advancedRightColumn.setCustomSpacing(8, after: autoOffHeading)
+            advancedRightColumn.setCustomSpacing(22, after: autoOffCard)
+            advancedRightColumn.setCustomSpacing(8, after: shortcutHeading)
+
             bodyStack.setCustomSpacing(24, after: advancedHeader)
-            bodyStack.setCustomSpacing(8, after: preferencesHeading)
-            bodyStack.setCustomSpacing(22, after: preferencesCard)
-            bodyStack.setCustomSpacing(8, after: systemBehaviorHeading)
-            bodyStack.setCustomSpacing(22, after: systemCard)
-            bodyStack.setCustomSpacing(8, after: shortcutHeading)
             NSLayoutConstraint.activate(advancedSettingsLayoutConstraints)
         }
     }
@@ -517,7 +580,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onLaunchAtLoginChange(enabled)
             self?.updateValues()
         }
-
         let displayRow = settingRow(
             title: displaySleepOnLidCloseTitle,
             desc: displaySleepOnLidCloseDesc,
@@ -528,10 +590,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             desc: openAtLoginDesc,
             accessory: openAtLoginToggle
         )
-        let divider = brandDivider()
-
         let card = brandCard()
-        let stack = NSStackView(views: [displayRow, divider, openAtLoginRow])
+        let rows: [NSView] = [
+            displayRow, brandDivider(),
+            openAtLoginRow
+        ]
+        let stack = NSStackView(views: rows)
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 14
@@ -542,11 +606,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
             stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
             stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
-            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
-            displayRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            divider.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            openAtLoginRow.widthAnchor.constraint(equalTo: stack.widthAnchor)
+            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
         ])
+        for row in rows {
+            row.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        }
         return card
     }
 
@@ -578,6 +642,26 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         return card
     }
 
+    private func buildAutoOffCard() -> NSView {
+        autoOffControl.onMinutesChange = { [weak self] minutes in
+            self?.onAutoOffMinutesChange(minutes)
+        }
+        autoOffControl.displayProvider = autoOffDisplayProvider
+        autoOffControl.onRestart = { [weak self] in
+            self?.onAutoOffRestart()
+        }
+
+        let card = brandCard()
+        card.addSubview(autoOffControl)
+        NSLayoutConstraint.activate([
+            autoOffControl.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+            autoOffControl.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
+            autoOffControl.topAnchor.constraint(equalTo: card.topAnchor, constant: 18),
+            autoOffControl.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -18)
+        ])
+        return card
+    }
+
     private func updateValues() {
         dedicatedCapsLockModeToggle.setOn(Preferences.dedicatedCapsLockMode)
         menuBarToggle.setOn(Preferences.showMenuBarIcon)
@@ -585,6 +669,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         displaySleepOnLidCloseToggle.setOn(Preferences.displaySleepOnLidClose)
         openAtLoginToggle.setOn(Preferences.launchAtLogin)
         shortcutRecorder.setShortcut(Preferences.keyboardShortcut)
+        autoOffControl.setMinutes(Preferences.autoOffMinutes)
     }
 
     private func configureAdvancedHeader() {

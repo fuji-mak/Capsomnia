@@ -4,70 +4,67 @@ import XCTest
 final class CapsLockControlTests: XCTestCase {
     func testToggleTurnsOffStateOn() {
         var state = false
-        let transaction = CapsLockToggleTransaction(
+        let result = SystemCapsLockController.toggle(
             readState: { state },
-            setState: {
-                state = $0
-                return true
+            setState: { target in
+                state = target
+                return .changed(to: target)
             }
         )
 
-        XCTAssertEqual(transaction.run(), .changed(to: true))
+        XCTAssertEqual(result, .changed(to: true))
         XCTAssertTrue(state)
     }
 
     func testToggleTurnsOnStateOff() {
         var state = true
-        let transaction = CapsLockToggleTransaction(
+        let result = SystemCapsLockController.toggle(
             readState: { state },
-            setState: {
-                state = $0
-                return true
+            setState: { target in
+                state = target
+                return .changed(to: target)
             }
         )
 
-        XCTAssertEqual(transaction.run(), .changed(to: false))
+        XCTAssertEqual(result, .changed(to: false))
         XCTAssertFalse(state)
     }
 
     func testToggleDoesNotWriteWhenStateCannotBeRead() {
         var didWrite = false
-        let transaction = CapsLockToggleTransaction(
+        let result = SystemCapsLockController.toggle(
             readState: { nil },
             setState: { _ in
                 didWrite = true
-                return true
+                return .changed(to: true)
             }
         )
 
-        XCTAssertEqual(transaction.run(), .readFailed)
+        XCTAssertEqual(result, .readFailed)
         XCTAssertFalse(didWrite)
     }
 
     func testToggleReportsWriteFailure() {
-        let transaction = CapsLockToggleTransaction(
+        let result = SystemCapsLockController.toggle(
             readState: { false },
-            setState: { _ in false }
+            setState: { target in .writeFailed(target: target) }
         )
 
-        XCTAssertEqual(transaction.run(), .writeFailed(target: true))
+        XCTAssertEqual(result, .writeFailed(target: true))
     }
 
     func testToggleReportsVerificationFailure() {
-        var readCount = 0
-        let transaction = CapsLockToggleTransaction(
-            readState: {
-                defer { readCount += 1 }
-                return false
-            },
-            setState: { _ in true }
+        let result = SystemCapsLockController.toggle(
+            readState: { false },
+            setState: { target in
+                .verificationFailed(target: target, actual: false)
+            }
         )
 
         XCTAssertEqual(
-            transaction.run(),
+            result,
             .verificationFailed(target: true, actual: false)
         )
-        XCTAssertEqual(readCount, 2)
     }
 
     func testConfirmationRequiresConsecutiveMatches() {

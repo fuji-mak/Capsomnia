@@ -63,7 +63,7 @@
             "applicationCategory": "UtilitiesApplication",
             "applicationSubCategory": "DeveloperTool",
             "operatingSystem": "macOS 14 or later on Apple silicon",
-            "softwareVersion": "2.0.4",
+            "softwareVersion": "3.0.0",
             "license": "https://github.com/fuji-mak/Capsomnia/blob/main/LICENSE",
             "isAccessibleForFree": true,
             "offers": {
@@ -332,6 +332,11 @@
                 <p class="text-[0.95rem] text-[var(--text-dim)]">ランプが点いていればスリープ抑止中。メニューバー表示なしでも分かるので、画面を汚しません。</p>
               </article>
               <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
+                <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">Auto-off</p>
+                <h3 class="mb-2 text-[1.05rem] font-bold">時間が来たら自動でスリープ</h3>
+                <p class="text-[0.95rem] text-[var(--text-dim)]">15分〜8時間のプリセット、または1分〜24時間のカスタム時間を選択。Capsomniaをオフにし、スリープ抑止の解除を確認してからMacをスリープさせます。</p>
+              </article>
+              <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
                 <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">Open source</p>
                 <h3 class="mb-2 text-[1.05rem] font-bold">完全無料、OSS公開で安心設計</h3>
                 <p class="text-[0.95rem] text-[var(--text-dim)]">MIT Licenseで公開。ソースコード、パッケージのインストール処理、helperが実行できるコマンド、安全性モデルを確認できます。</p>
@@ -445,7 +450,7 @@
         </div>
         <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">アプリが呼べるのはこれだけ</h3>
+            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">昇格権限で呼ぶコマンド</h3>
             <pre
               class="mb-3 overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-4"
             ><code class="font-mono text-sm leading-7 text-[var(--led-bright)]">sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
@@ -463,6 +468,7 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre
             <p class="text-sm text-[var(--text-faint)]"><code>on</code>、<code>off</code>、<code>display-sleep</code> 以外は受け付けません。</p>
           </div>
         </div>
+        <p class="mt-5 max-w-[760px] text-sm text-[var(--text-faint)]">自動オフタイマー満了時は、<code>SleepDisabled=0</code>の確認後に、現在のユーザー権限で<code>/usr/bin/pmset sleepnow</code>を直接実行します。<code>sudo</code>は使わず、helperの権限も追加しません。</p>
         <p class="mt-7 max-w-[760px] text-sm text-[var(--text-faint)]">アプリを終了すると通常のスリープ動作に戻ります。スリープ無効の蓋閉じ運用は、発熱やバッテリー消費が増えることがあります。通気、電源、実行時間には注意してください。</p>
       </section>
 

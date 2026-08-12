@@ -159,7 +159,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertEqual(advancedWindow.title, strings.advancedSettings)
 
         let visibleLabels: [NSTextField] = visibleDescendants(of: contentView)
-        let renderedText = Set(visibleLabels.map(\NSTextField.stringValue))
+        let renderedText = Set(visibleLabels.map { $0.stringValue })
         for expected in [
             strings.advancedSettings,
             strings.preferencesHeading.uppercased(),

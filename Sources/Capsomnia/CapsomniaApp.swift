@@ -42,8 +42,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private let inputSourceNotificationDebounceInterval: TimeInterval = 0.1
     private let inputSourceInternalNotificationSuppression: TimeInterval = 0.5
     private let userCapsLockEventSuppressionInterval: TimeInterval = 0.5
+    // Longer than the input-source suppression window: the external-off guard
+    // consults this after the 350 ms off-debounce and possible polling delay,
+    // so an intentional turn-off must stay recognizable for a few seconds.
+    private let userActionExternalGuardBypassInterval: TimeInterval = 3
     private var suppressInputSourceNotificationsUntil = Date.distantPast
     private var suppressInputSourceRecoveryUntil = Date.distantPast
+    private var externalCapsLockOffGuardBypassUntil = Date.distantPast
     private let selectedKeyboardInputSourceChangedNotificationName = Notification.Name(
         kTISNotifySelectedKeyboardInputSourceChanged as String
     )
@@ -200,6 +205,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         cancelInputSourceRecovery()
         suppressInputSourceRecoveryUntil = Date().addingTimeInterval(
             userCapsLockEventSuppressionInterval
+        )
+        externalCapsLockOffGuardBypassUntil = Date().addingTimeInterval(
+            userActionExternalGuardBypassInterval
         )
         log("\(reason) user_action input_source_recovery_suppressed")
     }
@@ -425,6 +433,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 onDisplaySleepOnLidCloseChange: { [weak self] enabled in
                     self?.setDisplaySleepOnLidClose(enabled)
                 },
+                onIgnoreExternalCapsLockOffWhileLidClosedChange: { [weak self] enabled in
+                    self?.setIgnoreExternalCapsLockOffWhileLidClosed(enabled)
+                },
                 onAutoOffMinutesChange: { [weak self] minutes in
                     self?.setAutoOffMinutes(minutes)
                 },
@@ -515,6 +526,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             didRequestDisplaySleepForClosedLid = false
         }
         log("preference display_sleep_on_lid_close=\(enabled ? "on" : "off")")
+    }
+
+    private func setIgnoreExternalCapsLockOffWhileLidClosed(_ enabled: Bool) {
+        Preferences.ignoreExternalCapsLockOffWhileLidClosed = enabled
+        log("preference ignore_external_capslock_off_while_lid_closed=\(enabled ? "on" : "off")")
     }
 
     /// Advance the auto-off timer and, if it has elapsed, turn awake mode off.
@@ -697,6 +713,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
 
         if lastAppliedState == true, !capsLockOn {
+            if ExternalCapsLockOffPolicy.shouldReassert(
+                preferenceEnabled: Preferences.ignoreExternalCapsLockOffWhileLidClosed,
+                sleepPreventionActive: true,
+                recentUserAction: Date() < externalCapsLockOffGuardBypassUntil,
+                autoOffInProgress: isAutoOffToggleInFlight || autoOffSleepCoordinator.isPending,
+                clamshellClosed: ClamshellStateReader.isClosed()
+            ) {
+                reassertCapsLockAfterExternalOff(reason: reason)
+                return
+            }
             scheduleCapsLockOff(reason: reason)
             return
         }
@@ -707,6 +733,23 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             return
         }
         apply(capsLockOn: capsLockOn, reason: reason)
+    }
+
+    /// Re-assert Caps Lock after an external turn-off while the lid is
+    /// closed. Falls back to the normal turn-off path when the re-assert
+    /// fails, so a persistent failure can never wedge the app in a loop.
+    private func reassertCapsLockAfterExternalOff(reason: String) {
+        let result = SystemCapsLockController.set(true)
+        log(
+            "\(reason) external_capslock_off clamshell=closed"
+                + " reassert result=\(String(describing: result))"
+        )
+        guard result == .changed(to: true) else {
+            scheduleCapsLockOff(reason: reason)
+            return
+        }
+
+        apply(capsLockOn: true, reason: "\(reason)_external_off_reasserted")
     }
 
     private func scheduleCapsLockOff(reason: String) {

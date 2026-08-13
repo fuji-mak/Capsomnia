@@ -65,6 +65,19 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let displaySleepOnLidCloseToggle = LEDToggle(
         isOn: Preferences.displaySleepOnLidClose
     )
+    private let externalCapsLockOffTitle = brandLabel(
+        size: 13,
+        weight: .medium,
+        color: Brand.text
+    )
+    private let externalCapsLockOffDesc = brandLabel(
+        size: 12,
+        color: Brand.textDim,
+        wraps: true
+    )
+    private let externalCapsLockOffToggle = LEDToggle(
+        isOn: Preferences.ignoreExternalCapsLockOffWhileLidClosed
+    )
 
     private let shortcutHeading = brandLabel(
         size: 11,
@@ -101,6 +114,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let onLanguageChange: (AppLanguage) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
     private let onDisplaySleepOnLidCloseChange: (Bool) -> Void
+    private let onIgnoreExternalCapsLockOffWhileLidClosedChange: (Bool) -> Void
     private let onAutoOffMinutesChange: (Int) -> Void
     private let onAutoOffRestart: () -> Void
     private let autoOffDisplayProvider: () -> AutoOffDisplayState
@@ -115,6 +129,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onLanguageChange: @escaping (AppLanguage) -> Void,
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
         onDisplaySleepOnLidCloseChange: @escaping (Bool) -> Void,
+        onIgnoreExternalCapsLockOffWhileLidClosedChange: @escaping (Bool) -> Void,
         onAutoOffMinutesChange: @escaping (Int) -> Void,
         onAutoOffRestart: @escaping () -> Void,
         autoOffDisplayProvider: @escaping () -> AutoOffDisplayState,
@@ -127,6 +142,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onLanguageChange = onLanguageChange
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
         self.onDisplaySleepOnLidCloseChange = onDisplaySleepOnLidCloseChange
+        self.onIgnoreExternalCapsLockOffWhileLidClosedChange = onIgnoreExternalCapsLockOffWhileLidClosedChange
         self.onAutoOffMinutesChange = onAutoOffMinutesChange
         self.onAutoOffRestart = onAutoOffRestart
         self.autoOffDisplayProvider = autoOffDisplayProvider
@@ -200,6 +216,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         displaySleepOnLidCloseTitle.stringValue = strings.displaySleepOnLidClose
         displaySleepOnLidCloseDesc.stringValue = strings.displaySleepOnLidCloseDesc
         displaySleepOnLidCloseToggle.setAccessibilityLabel(strings.displaySleepOnLidClose)
+        externalCapsLockOffTitle.stringValue = strings.ignoreExternalCapsLockOffWhileLidClosed
+        externalCapsLockOffDesc.stringValue = strings.ignoreExternalCapsLockOffWhileLidClosedDesc
+        externalCapsLockOffToggle.setAccessibilityLabel(strings.ignoreExternalCapsLockOffWhileLidClosed)
         openAtLoginTitle.stringValue = strings.openAtLogin
         openAtLoginDesc.stringValue = strings.openAtLoginDesc
         openAtLoginToggle.setAccessibilityLabel(strings.openAtLogin)
@@ -576,6 +595,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onDisplaySleepOnLidCloseChange(enabled)
             self?.updateValues()
         }
+        externalCapsLockOffToggle.onToggle = { [weak self] enabled in
+            self?.onIgnoreExternalCapsLockOffWhileLidClosedChange(enabled)
+            self?.updateValues()
+        }
         openAtLoginToggle.onToggle = { [weak self] enabled in
             self?.onLaunchAtLoginChange(enabled)
             self?.updateValues()
@@ -585,6 +608,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             desc: displaySleepOnLidCloseDesc,
             accessory: displaySleepOnLidCloseToggle
         )
+        let externalCapsLockOffRow = settingRow(
+            title: externalCapsLockOffTitle,
+            desc: externalCapsLockOffDesc,
+            accessory: externalCapsLockOffToggle
+        )
         let openAtLoginRow = settingRow(
             title: openAtLoginTitle,
             desc: openAtLoginDesc,
@@ -593,6 +621,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let card = brandCard()
         let rows: [NSView] = [
             displayRow, brandDivider(),
+            externalCapsLockOffRow, brandDivider(),
             openAtLoginRow
         ]
         let stack = NSStackView(views: rows)
@@ -667,6 +696,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         menuBarToggle.setOn(Preferences.showMenuBarIcon)
         languagePopUp.setSelected(Preferences.language.rawValue)
         displaySleepOnLidCloseToggle.setOn(Preferences.displaySleepOnLidClose)
+        externalCapsLockOffToggle.setOn(Preferences.ignoreExternalCapsLockOffWhileLidClosed)
         openAtLoginToggle.setOn(Preferences.launchAtLogin)
         shortcutRecorder.setShortcut(Preferences.keyboardShortcut)
         autoOffControl.setMinutes(Preferences.autoOffMinutes)

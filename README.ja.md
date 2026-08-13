@@ -16,7 +16,7 @@
 <p align="center">
   <a href="https://github.com/fuji-mak/Capsomnia/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/fuji-mak/Capsomnia/ci.yml?branch=main&style=flat-square&label=CI&labelColor=111111&color=b7ff3c"></a>
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-b7ff3c?style=flat-square&labelColor=111111">
-  <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-b7ff3c?style=flat-square&labelColor=111111">
+  <img alt="Swift 5.9+" src="https://img.shields.io/badge/Swift-5.9%2B-b7ff3c?style=flat-square&labelColor=111111">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
@@ -44,7 +44,8 @@ Capsomnia 本体はネットワーク通信を行わず、テレメトリを収�
 
 必要なもの:
 
-- Apple silicon Mac（macOS 14以降）
+- 署名済み upstream パッケージ: macOS 14 以降の Apple silicon Mac
+- ソースインストール: macOS 14 以降の Apple silicon Mac、またはmacOS 13.5 以降の Intel Mac
 - インストール時の管理者権限
 
 署名済みパッケージでインストール:
@@ -58,7 +59,7 @@ Capsomnia 本体はネットワーク通信を行わず、テレメトリを収�
 
 ## ソースからビルド
 
-開発者向けのソースインストールも利用できます。こちらは Swift 6 toolchain が必要です。
+開発者向けのソースインストールは、macOS 14 以降の Apple silicon MacとmacOS 13.5 以降の Intel Macに対応します。Xcode 15以降に含まれるSwift 5.9以降のtoolchainが必要です。
 
 ```sh
 git clone https://github.com/fuji-mak/Capsomnia.git
@@ -66,7 +67,7 @@ cd Capsomnia
 ./scripts/install.sh
 ```
 
-ソースインストーラはローカルで `Capsomnia.app` をビルドし、`~/Applications/` に配置します。あわせて、同じ helper、sudoers rule、ユーザー LaunchAgent を設定します。
+ソースインストーラはローカルで`Capsomnia.app`をビルドして`~/Applications/`へ配置し、限定的なhelperとsudoers ruleをインストールして、ユーザーLaunchAgentを起動します。署名・公証済みのリリースパッケージは引き続きApple silicon専用で、macOS 14以降が必要です。
 
 ## できること
 

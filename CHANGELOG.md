@@ -4,6 +4,7 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- Add Intel Mac source-install support for macOS 13.5 or later with Swift 5.9, while keeping the signed and notarized package Apple silicon-only on macOS 14 or later.
 - Add an opt-in "Ignore Caps Lock turn-offs while the lid is closed" setting (default off) to Advanced Settings. While the lid is closed, Caps Lock turn-offs from external sources — such as a remote desktop client syncing its keyboard state to the host — are ignored and Caps Lock is re-asserted, so sleep prevention survives remote sessions. Turn-offs from the menu bar, the registered shortcut, and the auto-off timer stay effective, and opening the lid with Caps Lock off returns to normal sleep behavior. (#75)
 
 ## 3.0.0 - 2026-08-10

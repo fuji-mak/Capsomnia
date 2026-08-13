@@ -16,7 +16,7 @@
 <p align="center">
   <a href="https://github.com/fuji-mak/Capsomnia/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/fuji-mak/Capsomnia/ci.yml?branch=main&style=flat-square&label=CI&labelColor=111111&color=b7ff3c"></a>
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-b7ff3c?style=flat-square&labelColor=111111">
-  <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-b7ff3c?style=flat-square&labelColor=111111">
+  <img alt="Swift 5.9+" src="https://img.shields.io/badge/Swift-5.9%2B-b7ff3c?style=flat-square&labelColor=111111">
   <a href="LICENSE"><img alt="MIT 라이선스" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
@@ -44,7 +44,8 @@ Capsomnia 자체는 네트워크 요청을 보내지 않고, 텔레메트리를 
 
 필요한 환경:
 
-- macOS 14 이상을 실행하는 Apple silicon Mac
+- 업스트림 서명 패키지: macOS 14 이상을 실행하는 Apple silicon Mac
+- 소스 설치: macOS 14 이상을 실행하는 Apple silicon Mac 또는 macOS 13.5 이상을 실행하는 Intel Mac
 - 설치할 때 사용할 관리자 권한
 
 서명된 패키지 설치 방법:
@@ -58,7 +59,7 @@ Capsomnia 자체는 네트워크 요청을 보내지 않고, 텔레메트리를 
 
 ## 소스에서 빌드하기
 
-개발자용 소스 설치도 지원하며 Swift 6 툴체인이 필요합니다.
+개발자용 소스 설치는 macOS 14 이상의 Apple silicon Mac과 macOS 13.5 이상의 Intel Mac을 지원합니다. Xcode 15 이상에 포함된 Swift 5.9 이상의 툴체인이 필요합니다.
 
 ```sh
 git clone https://github.com/fuji-mak/Capsomnia.git
@@ -66,7 +67,7 @@ cd Capsomnia
 ./scripts/install.sh
 ```
 
-소스 설치 프로그램은 `Capsomnia.app`을 로컬에서 빌드해 `~/Applications/`에 넣고, 같은 helper와 sudoers 규칙을 설치한 뒤 사용자 LaunchAgent를 시작합니다.
+소스 설치 프로그램은 로컬에서 `Capsomnia.app`을 빌드해 `~/Applications/`에 배치하고, 제한된 helper와 sudoers 규칙을 설치한 뒤 사용자 LaunchAgent를 시작합니다. 서명 및 공증된 릴리스 패키지는 계속 Apple silicon 전용이며 macOS 14 이상이 필요합니다.
 
 ## 작동 방식
 

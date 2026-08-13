@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-当前版本：`3.0.0`
+当前版本：`3.1.0`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [한국어 README](README.ko.md)
 
@@ -79,6 +79,7 @@ cd Capsomnia
 - 自动关闭定时器（可选）：可选择15分钟到8小时的预设，或设置1分钟到24小时的自定义时长。到时后，Capsomnia会关闭，确认防休眠已解除，然后立即让Mac进入睡眠。
 - Caps Lock关闭：恢复正常睡眠行为。
 - Capsomnia开启时合盖：仅在未连接外接显示器时关闭显示屏，后台任务继续运行。
+- 合盖期间忽略 Caps Lock 的关闭操作（可选，默认关闭）：远程桌面客户端或其他外部来源意外关闭 Caps Lock 时仍保持防睡眠；菜单栏、切换快捷键和自动关闭定时器仍可正常关闭。
 - 退出应用：恢复正常睡眠行为。
 
 Capsomnia适合长时间运行的本地任务、AI编程智能体、SSH会话、构建、下载和无人值守脚本。

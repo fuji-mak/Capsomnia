@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-現在のバージョン: `3.0.0`
+現在のバージョン: `3.1.0`
 
 [English README](README.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
@@ -77,6 +77,7 @@ cd Capsomnia
 - 自動オフタイマー（任意）: 15分〜8時間のプリセット、または1分〜24時間のカスタム時間を設定できます。満了するとCapsomniaをオフにし、スリープ抑止の解除を確認してからMacを直ちにスリープさせます。
 - Caps Lock オフ: 通常のスリープ動作に戻ります。
 - Capsomniaオン中に蓋を閉じた時: 作業を走らせたまま画面だけスリープします。
+- 蓋を閉じている間はCaps Lockによるオフを無視（任意・既定オフ）: リモートデスクトップ接続などでCaps Lockが意図せずオフになってもスリープ抑止を維持し、メニューバー・切り替えショートカット・自動オフタイマーからは通常どおりオフにできます。
 - アプリ終了時: 通常のスリープ動作へ戻します。
 
 長時間動くローカルジョブ、AI コーディングエージェント、SSH、ビルド、ダウンロード、放置スクリプトなどを止めたくないときに使う想定です。

@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `3.0.0`
+Current version: `3.1.0`
 
 [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
@@ -77,6 +77,7 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 - Auto-off timer (optional): choose a preset from 15 minutes to 8 hours or a custom duration from 1 minute to 24 hours. When time expires, Capsomnia turns off, confirms that sleep prevention is released, and immediately puts the Mac to sleep.
 - Caps Lock off: restores normal sleep behavior.
 - Lid closed while Capsomnia is on: puts the display to sleep only when no external display is connected, while work keeps running.
+- Ignore Caps Lock turn-offs while the lid is closed (optional, off by default): keeps sleep prevention active when a remote desktop client or another external source turns Caps Lock off; the menu bar, toggle shortcut, and auto-off timer still turn it off normally.
 - Quitting the app restores normal sleep behavior.
 
 Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions, builds, downloads, and unattended scripts.

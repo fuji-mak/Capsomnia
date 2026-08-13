@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT 라이선스" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-현재 버전: `3.0.0`
+현재 버전: `3.1.0`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md)
 
@@ -77,6 +77,7 @@ cd Capsomnia
 - 자동 종료 타이머(선택 사항): 15분~8시간 프리셋 또는 1분~24시간 사용자 지정 시간을 설정할 수 있습니다. 시간이 끝나면 Capsomnia를 끄고 잠자기 방지가 해제되었는지 확인한 뒤 Mac을 즉시 잠자기 상태로 전환합니다.
 - Caps Lock 끄기: 평소 잠자기 동작으로 돌아갑니다.
 - Capsomnia가 켜진 상태에서 덮개 닫기: 외부 디스플레이가 연결되어 있지 않을 때만 디스플레이를 끄고 작업은 계속 돌립니다.
+- 덮개를 닫은 동안 Caps Lock에 의한 끄기 무시(선택 사항, 기본값: 꺼짐): 원격 데스크톱 연결 등으로 Caps Lock이 의도치 않게 꺼져도 잠자기 방지를 유지하며, 메뉴 막대·전환 단축키·자동 종료 타이머로는 평소대로 끌 수 있습니다.
 - 앱 종료: 평소 잠자기 동작으로 돌아갑니다.
 
 오래 걸리는 로컬 작업, AI 코딩 에이전트, SSH 세션, 빌드, 다운로드, 무인 스크립트를 실행할 때 유용합니다.

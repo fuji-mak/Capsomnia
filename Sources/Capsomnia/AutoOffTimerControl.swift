@@ -318,19 +318,29 @@ final class AutoOffTimerControl: NSView {
 
     private func selectPreset(_ value: Int) {
         customPopover.close()
+        let changed = minutes != value
         isCustom = false
         minutes = value
         refreshSelection()
-        onMinutesChange?(value)
+        if changed {
+            onMinutesChange?(value)
+        }
         renderDisplay()
     }
 
     private func selectCustom() {
         isCustom = true
-        minutes = min(max(customMinutes, AutoOffPreset.minCustomMinutes), AutoOffPreset.maxCustomMinutes)
+        let selectedMinutes = min(
+            max(customMinutes, AutoOffPreset.minCustomMinutes),
+            AutoOffPreset.maxCustomMinutes
+        )
+        let changed = minutes != selectedMinutes
+        minutes = selectedMinutes
         customMinutes = minutes
         refreshSelection()
-        onMinutesChange?(minutes)
+        if changed {
+            onMinutesChange?(minutes)
+        }
         renderDisplay()
         if customPopover.isShown {
             customPopover.close()

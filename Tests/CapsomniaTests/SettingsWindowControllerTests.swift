@@ -314,6 +314,69 @@ final class SettingsWindowControllerTests: XCTestCase {
         }
     }
 
+    func testReselectingCurrentAutoOffDurationDoesNotReportAChange() throws {
+        let previousLanguage = Preferences.language
+        let previousMinutes = Preferences.autoOffMinutes
+        Preferences.language = .english
+        Preferences.autoOffMinutes = 60
+        defer {
+            Preferences.language = previousLanguage
+            Preferences.autoOffMinutes = previousMinutes
+        }
+
+        var reportedMinutes: [Int] = []
+        _ = NSApplication.shared
+        let controller = makeController(
+            onAutoOffMinutesChange: { reportedMinutes.append($0) }
+        )
+        defer { controller.close() }
+
+        controller.show(page: .advancedSettings)
+        let contentView = try XCTUnwrap(controller.window?.contentView)
+        contentView.layoutSubtreeIfNeeded()
+        let selectedPreset = try XCTUnwrap(
+            view(
+                in: contentView,
+                accessibilityLabel: AutoOffFormatter.durationLabel(minutes: 60)
+            )
+        )
+
+        XCTAssertTrue(selectedPreset.accessibilityPerformPress())
+        XCTAssertTrue(reportedMinutes.isEmpty)
+    }
+
+    func testTogglingCurrentCustomAutoOffEditorDoesNotReportAChange() throws {
+        let previousLanguage = Preferences.language
+        let previousMinutes = Preferences.autoOffMinutes
+        Preferences.language = .english
+        Preferences.autoOffMinutes = 45
+        defer {
+            Preferences.language = previousLanguage
+            Preferences.autoOffMinutes = previousMinutes
+        }
+
+        var reportedMinutes: [Int] = []
+        _ = NSApplication.shared
+        let controller = makeController(
+            onAutoOffMinutesChange: { reportedMinutes.append($0) }
+        )
+        defer { controller.close() }
+
+        controller.show(page: .advancedSettings)
+        let contentView = try XCTUnwrap(controller.window?.contentView)
+        contentView.layoutSubtreeIfNeeded()
+        let customChip = try XCTUnwrap(
+            view(
+                in: contentView,
+                accessibilityLabel: AppStrings.localized(for: .english).autoOffCustom
+            )
+        )
+
+        XCTAssertTrue(customChip.accessibilityPerformPress())
+        XCTAssertTrue(customChip.accessibilityPerformPress())
+        XCTAssertTrue(reportedMinutes.isEmpty)
+    }
+
     func testRestartButtonShownWhenTimerIsSetAndHiddenWhenOff() throws {
         let previousLanguage = Preferences.language
         let previousMinutes = Preferences.autoOffMinutes
@@ -353,6 +416,7 @@ final class SettingsWindowControllerTests: XCTestCase {
 
     private func makeController(
         onKeyboardShortcutRecordingChange: @escaping (Bool) -> Void = { _ in },
+        onAutoOffMinutesChange: @escaping (Int) -> Void = { _ in },
         autoOffDisplayProvider: @escaping () -> AutoOffDisplayState = { .idle(minutes: 0) }
     ) -> SettingsWindowController {
         SettingsWindowController(
@@ -362,7 +426,7 @@ final class SettingsWindowControllerTests: XCTestCase {
             onLaunchAtLoginChange: { _ in },
             onDisplaySleepOnLidCloseChange: { _ in },
             onIgnoreExternalCapsLockOffWhileLidClosedChange: { _ in },
-            onAutoOffMinutesChange: { _ in },
+            onAutoOffMinutesChange: onAutoOffMinutesChange,
             onAutoOffRestart: {},
             autoOffDisplayProvider: autoOffDisplayProvider,
             onKeyboardShortcutChange: { _ in true },

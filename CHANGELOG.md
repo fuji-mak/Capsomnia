@@ -4,6 +4,10 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 3.1.1 - 2026-08-16
+
+- Prevent reselecting the current auto-off preset or opening and closing the unchanged Custom editor from restarting an active countdown. Use the existing Restart action for intentional resets. (#84)
+
 ## 3.1.0 - 2026-08-13
 
 - Add Intel Mac source-install support for macOS 13.5 or later with Swift 5.9, while keeping the signed and notarized package Apple silicon-only on macOS 14 or later.

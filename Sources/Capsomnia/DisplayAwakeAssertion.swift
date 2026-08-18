@@ -13,7 +13,24 @@ import IOKit.pwr_mgt
 /// needs for the app's verify-log-retry pattern; the Foundation API has no
 /// failure signal.
 final class DisplayAwakeAssertion {
+    private let create: (UnsafeMutablePointer<IOPMAssertionID>) -> IOReturn
+    private let release: (IOPMAssertionID) -> IOReturn
     private var assertionID: IOPMAssertionID?
+
+    init(
+        create: @escaping (UnsafeMutablePointer<IOPMAssertionID>) -> IOReturn = { id in
+            IOPMAssertionCreateWithName(
+                kIOPMAssertPreventUserIdleDisplaySleep as CFString,
+                IOPMAssertionLevel(kIOPMAssertionLevelOn),
+                "\(appName) keeps the display awake" as CFString,
+                id
+            )
+        },
+        release: @escaping (IOPMAssertionID) -> IOReturn = IOPMAssertionRelease
+    ) {
+        self.create = create
+        self.release = release
+    }
 
     var isActive: Bool {
         assertionID != nil
@@ -26,23 +43,23 @@ final class DisplayAwakeAssertion {
         if active {
             guard assertionID == nil else { return true }
             var id = IOPMAssertionID(0)
-            let status = IOPMAssertionCreateWithName(
-                kIOPMAssertPreventUserIdleDisplaySleep as CFString,
-                IOPMAssertionLevel(kIOPMAssertionLevelOn),
-                "\(appName) keeps the display awake" as CFString,
-                &id
-            )
-            guard status == kIOReturnSuccess else { return false }
+            guard create(&id) == kIOReturnSuccess else { return false }
             assertionID = id
             return true
         }
 
         guard let id = assertionID else { return true }
-        // A failed release can leave the assertion alive in powerd (for
-        // example when the power-management connection fails), so keep the ID
-        // for the caller's retry instead of clearing it.
-        guard IOPMAssertionRelease(id) == kIOReturnSuccess else { return false }
-        assertionID = nil
-        return true
+        switch release(id) {
+        case kIOReturnSuccess, kIOReturnBadArgument:
+            // Released, or the ID no longer names an assertion in powerd —
+            // either way nothing is held, so drop the ID.
+            assertionID = nil
+            return true
+        default:
+            // A transient failure (for example a broken power-management
+            // connection) leaves the assertion alive in powerd; keep the ID
+            // so the caller can retry the release.
+            return false
+        }
     }
 }

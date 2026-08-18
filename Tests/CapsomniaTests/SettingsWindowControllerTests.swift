@@ -377,6 +377,50 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertTrue(reportedMinutes.isEmpty)
     }
 
+    func testHideIndicatorToggleReflectsStateAndRestartNoteVisibility() throws {
+        let previousLanguage = Preferences.language
+        Preferences.language = .english
+        defer { Preferences.language = previousLanguage }
+        let strings = AppStrings.localized(for: .english)
+        _ = NSApplication.shared
+
+        var reportedChanges: [Bool] = []
+        var state = CapsLockIndicatorDisplayState(hidden: false, restartPending: false)
+        let controller = makeController(
+            onHideCapsLockIndicatorChange: { hidden in
+                reportedChanges.append(hidden)
+                state = CapsLockIndicatorDisplayState(hidden: hidden, restartPending: true)
+            },
+            capsLockIndicatorStateProvider: { state }
+        )
+        defer { controller.close() }
+
+        controller.show(page: .advancedSettings)
+        let contentView = try XCTUnwrap(controller.window?.contentView)
+        contentView.layoutSubtreeIfNeeded()
+
+        var renderedText = Set(
+            (visibleDescendants(of: contentView) as [NSTextField]).map(\.stringValue)
+        )
+        XCTAssertTrue(renderedText.contains(strings.hideCapsLockIndicator))
+        XCTAssertFalse(renderedText.contains(strings.hideCapsLockIndicatorRestartNote))
+
+        let toggle = try XCTUnwrap(
+            view(in: contentView, accessibilityLabel: strings.hideCapsLockIndicator)
+                as? LEDToggle
+        )
+        XCTAssertFalse(toggle.isOn)
+        XCTAssertTrue(toggle.accessibilityPerformPress())
+        contentView.layoutSubtreeIfNeeded()
+
+        XCTAssertEqual(reportedChanges, [true])
+        XCTAssertTrue(toggle.isOn)
+        renderedText = Set(
+            (visibleDescendants(of: contentView) as [NSTextField]).map(\.stringValue)
+        )
+        XCTAssertTrue(renderedText.contains(strings.hideCapsLockIndicatorRestartNote))
+    }
+
     func testRestartButtonShownWhenTimerIsSetAndHiddenWhenOff() throws {
         let previousLanguage = Preferences.language
         let previousMinutes = Preferences.autoOffMinutes
@@ -417,7 +461,11 @@ final class SettingsWindowControllerTests: XCTestCase {
     private func makeController(
         onKeyboardShortcutRecordingChange: @escaping (Bool) -> Void = { _ in },
         onAutoOffMinutesChange: @escaping (Int) -> Void = { _ in },
-        autoOffDisplayProvider: @escaping () -> AutoOffDisplayState = { .idle(minutes: 0) }
+        autoOffDisplayProvider: @escaping () -> AutoOffDisplayState = { .idle(minutes: 0) },
+        onHideCapsLockIndicatorChange: @escaping (Bool) -> Void = { _ in },
+        capsLockIndicatorStateProvider: @escaping () -> CapsLockIndicatorDisplayState = {
+            CapsLockIndicatorDisplayState(hidden: false, restartPending: false)
+        }
     ) -> SettingsWindowController {
         SettingsWindowController(
             onDedicatedCapsLockModeChange: { _ in },
@@ -426,6 +474,8 @@ final class SettingsWindowControllerTests: XCTestCase {
             onLaunchAtLoginChange: { _ in },
             onDisplaySleepOnLidCloseChange: { _ in },
             onIgnoreExternalCapsLockOffWhileLidClosedChange: { _ in },
+            onHideCapsLockIndicatorChange: onHideCapsLockIndicatorChange,
+            capsLockIndicatorStateProvider: capsLockIndicatorStateProvider,
             onAutoOffMinutesChange: onAutoOffMinutesChange,
             onAutoOffRestart: {},
             autoOffDisplayProvider: autoOffDisplayProvider,

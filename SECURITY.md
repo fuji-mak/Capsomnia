@@ -43,9 +43,13 @@ The sudoers rule only permits the current user to run:
 /Library/PrivilegedHelperTools/capsomnia-pmset on
 /Library/PrivilegedHelperTools/capsomnia-pmset off
 /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
+/Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide
+/Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
 ```
 
-The helper is a compiled executable. It does not invoke a shell or load shell startup files. It only accepts `on`, `off`, and `display-sleep`, and only executes `/usr/bin/pmset -a disablesleep` or `/usr/bin/pmset displaysleepnow`.
+The helper is a compiled executable. It does not invoke a shell or load shell startup files. It only accepts `on`, `off`, `display-sleep`, `indicator-hide`, and `indicator-show`. The first three only execute `/usr/bin/pmset -a disablesleep` or `/usr/bin/pmset displaysleepnow`.
+
+The `indicator-hide` and `indicator-show` modes back the optional "Hide the Caps Lock indicator" setting. They only edit the fixed file `/Library/Preferences/FeatureFlags/Domain/UIKit.plist`: `indicator-hide` sets the `redesigned_text_cursor` feature-flag override that suppresses the macOS Caps Lock indicator shown in text fields, and `indicator-show` removes only that override, deleting the file when no other flags remain in it. Unrelated flags in the same file are preserved, the change takes effect after a restart, and the uninstaller restores the macOS default.
 
 When an auto-off timer expires, Capsomnia first turns Caps Lock off through the existing HID path and confirms that `SleepDisabled=0`. Only then does the app invoke `/usr/bin/pmset sleepnow` directly as the signed-in user. This immediate sleep request does not use `sudo`, does not add a helper mode, and does not expand the sudoers rule. If Caps Lock cannot be turned off or the sleep-prevention state cannot be confirmed, Capsomnia does not request sleep.
 

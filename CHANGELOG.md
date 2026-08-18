@@ -4,6 +4,8 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- Add an optional "Hide the Caps Lock indicator" setting to Advanced Settings that suppresses the macOS indicator shown in text fields while Caps Lock is on, via the system `redesigned_text_cursor` feature-flag override. The change requires a Mac restart; Capsomnia shows a restart reminder until the current boot reflects the on-disk state, and toggling back before restarting clears it. The privileged helper gains argument-restricted `indicator-hide` and `indicator-show` modes that edit only `/Library/Preferences/FeatureFlags/Domain/UIKit.plist`, preserve unrelated flags, and remove the file when nothing else remains. The uninstaller restores the macOS default.
+
 ## 3.1.1 - 2026-08-16
 
 - Prevent reselecting the current auto-off preset or opening and closing the unchanged Custom editor from restarting an active countdown. Use the existing Restart action for intentional resets. (#84)

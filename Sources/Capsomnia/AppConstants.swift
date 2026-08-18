@@ -5,6 +5,8 @@ let appName = "Capsomnia"
 let appLabel = "com.github.fuji-mak.capsomnia"
 let helperPath = "/Library/PrivilegedHelperTools/capsomnia-pmset"
 let displaySleepHelperMode = "display-sleep"
+let indicatorHideHelperMode = "indicator-hide"
+let indicatorShowHelperMode = "indicator-show"
 let logDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent("Library/Logs/Capsomnia")
 let logPath = logDirectoryURL
@@ -94,6 +96,9 @@ struct AppStrings {
     let displaySleepOnLidCloseDesc: String
     let ignoreExternalCapsLockOffWhileLidClosed: String
     let ignoreExternalCapsLockOffWhileLidClosedDesc: String
+    let hideCapsLockIndicator: String
+    let hideCapsLockIndicatorDesc: String
+    let hideCapsLockIndicatorRestartNote: String
     let autoOffTimer: String
     let autoOffTimerDesc: String
     let autoOffOff: String
@@ -148,6 +153,9 @@ struct AppStrings {
                 displaySleepOnLidCloseDesc: "When Capsomnia is on, let the display sleep after closing the lid only if no external display is connected.",
                 ignoreExternalCapsLockOffWhileLidClosed: "Ignore Caps Lock turn-offs while the lid is closed",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "While the lid is closed, sleep prevention stays on even if Caps Lock is turned off — for example by a remote desktop client syncing its keyboard state. The menu bar, the toggle shortcut, and the auto-off timer still turn it off.",
+                hideCapsLockIndicator: "Hide the Caps Lock indicator",
+                hideCapsLockIndicatorDesc: "Remove the macOS indicator that appears in text fields while Caps Lock is on. This changes a system-wide setting and takes effect after restarting your Mac.",
+                hideCapsLockIndicatorRestartNote: "Restart your Mac to apply this change.",
                 autoOffTimer: "Auto-off timer",
                 autoOffTimerDesc: "After the set time, Capsomnia turns awake mode off and puts your Mac to sleep.",
                 autoOffOff: "Off",
@@ -196,6 +204,9 @@ struct AppStrings {
                 displaySleepOnLidCloseDesc: "Capsomnia가 켜진 상태에서 덮개를 닫으면 외부 디스플레이가 연결되지 않은 경우에만 화면을 끕니다.",
                 ignoreExternalCapsLockOffWhileLidClosed: "덮개를 닫은 동안 Caps Lock에 의한 끄기 무시",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "덮개가 닫혀 있는 동안에는 Caps Lock이 꺼져도 잠자기 방지를 유지합니다. 원격 데스크톱 연결 등으로 의도치 않게 해제되는 것을 방지합니다. 메뉴 막대, 전환 단축키, 자동 종료 타이머로는 평소대로 끌 수 있습니다.",
+                hideCapsLockIndicator: "Caps Lock 표시기 숨기기",
+                hideCapsLockIndicatorDesc: "Caps Lock이 켜져 있을 때 텍스트 입력란에 나타나는 macOS 표시기를 숨깁니다. 시스템 전체 설정을 변경하며 Mac을 재시동한 후에 적용됩니다.",
+                hideCapsLockIndicatorRestartNote: "변경 사항을 적용하려면 Mac을 재시동하세요.",
                 autoOffTimer: "자동 종료 타이머",
                 autoOffTimerDesc: "설정한 시간이 지나면 절전 방지를 끄고 Mac을 잠자기 상태로 전환합니다.",
                 autoOffOff: "끄기",
@@ -244,6 +255,9 @@ struct AppStrings {
                 displaySleepOnLidCloseDesc: "Capsomnia ON中は、外部ディスプレイが接続されていない場合のみ、蓋を閉じたら画面を暗くします。",
                 ignoreExternalCapsLockOffWhileLidClosed: "蓋を閉じている間はCaps Lockによるオフを無視",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "蓋を閉じている間は、Caps Lockがオフになってもスリープ抑止を維持します。リモートデスクトップ接続などで意図せず解除されるのを防ぎます。メニューバー・切り替えショートカット・自動オフタイマーからは通常どおりオフにできます。",
+                hideCapsLockIndicator: "Caps Lockインジケータを非表示",
+                hideCapsLockIndicatorDesc: "Caps Lockがオンのときにテキスト入力欄へ表示されるmacOSのインジケータを非表示にします。システム全体の設定を変更し、Macの再起動後に反映されます。",
+                hideCapsLockIndicatorRestartNote: "変更を反映するにはMacを再起動してください。",
                 autoOffTimer: "自動オフタイマー",
                 autoOffTimerDesc: "設定した時間が経過すると、スリープ抑止を解除してMacをスリープさせます。",
                 autoOffOff: "オフ",
@@ -292,6 +306,9 @@ struct AppStrings {
                 displaySleepOnLidCloseDesc: "Capsomnia 开启时，仅在未连接外接显示器的情况下，合盖后让显示屏进入睡眠。",
                 ignoreExternalCapsLockOffWhileLidClosed: "合盖期间忽略 Caps Lock 的关闭操作",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "合盖期间，即使 Caps Lock 被关闭也会保持防睡眠，防止远程桌面连接等意外解除防睡眠。菜单栏、切换快捷键和自动关闭定时器仍可正常关闭。",
+                hideCapsLockIndicator: "隐藏大写锁定指示器",
+                hideCapsLockIndicatorDesc: "隐藏 Caps Lock 开启时在文本输入框中出现的 macOS 指示器。此设置为系统级更改，重新启动 Mac 后才会生效。",
+                hideCapsLockIndicatorRestartNote: "重新启动 Mac 后此更改才会生效。",
                 autoOffTimer: "自动关闭定时器",
                 autoOffTimerDesc: "设定时间结束后会关闭防睡眠并让 Mac 进入睡眠。",
                 autoOffOff: "关闭",

@@ -74,21 +74,23 @@ final class DisplayAwakeAssertionTests: XCTestCase {
     }
 
     func testStaleAssertionIDIsDropped() {
-        let assertion = DisplayAwakeAssertion(
-            create: { id in
-                id.pointee = 7
-                return kIOReturnSuccess
-            },
-            release: { _ in kIOReturnBadArgument }
-        )
+        for staleStatus in [kIOReturnBadArgument, kIOReturnNotPermitted] {
+            let assertion = DisplayAwakeAssertion(
+                create: { id in
+                    id.pointee = 7
+                    return kIOReturnSuccess
+                },
+                release: { _ in staleStatus }
+            )
 
-        XCTAssertTrue(assertion.setActive(true))
-        XCTAssertTrue(
-            assertion.setActive(false),
-            "A stale ID names no assertion, so the release goal is already met"
-        )
-        XCTAssertFalse(assertion.isActive)
-        XCTAssertTrue(assertion.setActive(true), "Re-enabling must create a fresh assertion")
-        XCTAssertTrue(assertion.isActive)
+            XCTAssertTrue(assertion.setActive(true))
+            XCTAssertTrue(
+                assertion.setActive(false),
+                "A stale ID holds nothing for this instance, so the release goal is already met"
+            )
+            XCTAssertFalse(assertion.isActive)
+            XCTAssertTrue(assertion.setActive(true), "Re-enabling must create a fresh assertion")
+            XCTAssertTrue(assertion.isActive)
+        }
     }
 }

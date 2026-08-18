@@ -50,15 +50,16 @@ final class DisplayAwakeAssertion {
 
         guard let id = assertionID else { return true }
         switch release(id) {
-        case kIOReturnSuccess, kIOReturnBadArgument:
-            // Released, or the ID no longer names an assertion in powerd —
-            // either way nothing is held, so drop the ID.
+        case kIOReturnSuccess, kIOReturnBadArgument, kIOReturnNotPermitted:
+            // Released, the ID names no assertion, or it names one owned by
+            // another process — either way this instance holds nothing, so
+            // drop the ID.
             assertionID = nil
             return true
         default:
             // A transient failure (for example a broken power-management
-            // connection) leaves the assertion alive in powerd; keep the ID
-            // so the caller can retry the release.
+            // connection) can leave this assertion alive in powerd; keep the
+            // ID so the caller can retry the release.
             return false
         }
     }

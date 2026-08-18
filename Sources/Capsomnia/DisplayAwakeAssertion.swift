@@ -7,6 +7,11 @@ import IOKit.pwr_mgt
 /// "Turn display off when lid closes") still turns the display off. Runs as
 /// the current user — no privileged helper is involved — and macOS releases
 /// the assertion automatically if the process exits.
+///
+/// Uses IOKit directly instead of `ProcessInfo.beginActivity(options:reason:)`
+/// because the IOKit calls return per-call status codes, which the caller
+/// needs for the app's verify-log-retry pattern; the Foundation API has no
+/// failure signal.
 final class DisplayAwakeAssertion {
     private var assertionID: IOPMAssertionID?
 
@@ -33,8 +38,9 @@ final class DisplayAwakeAssertion {
         }
 
         guard let id = assertionID else { return true }
+        // Clear the stored ID before releasing: a failed release means the ID
+        // is no longer valid, so keeping it would only re-fail on retry.
         assertionID = nil
-        IOPMAssertionRelease(id)
-        return true
+        return IOPMAssertionRelease(id) == kIOReturnSuccess
     }
 }

@@ -2,11 +2,12 @@ import XCTest
 @testable import Capsomnia
 
 final class KeepDisplayAwakePolicyTests: XCTestCase {
-    func testHoldsAssertionWhenEnabledAndCapsLockOn() {
+    func testHoldsAssertionWhenEnabledAndCapsLockOnAndConfirmed() {
         XCTAssertTrue(
             KeepDisplayAwakePolicy.shouldHoldAssertion(
                 preferenceEnabled: true,
-                capsLockOn: true
+                capsLockOn: true,
+                sleepPreventionConfirmed: true
             )
         )
     }
@@ -15,7 +16,8 @@ final class KeepDisplayAwakePolicyTests: XCTestCase {
         XCTAssertFalse(
             KeepDisplayAwakePolicy.shouldHoldAssertion(
                 preferenceEnabled: true,
-                capsLockOn: false
+                capsLockOn: false,
+                sleepPreventionConfirmed: true
             )
         )
     }
@@ -24,13 +26,25 @@ final class KeepDisplayAwakePolicyTests: XCTestCase {
         XCTAssertFalse(
             KeepDisplayAwakePolicy.shouldHoldAssertion(
                 preferenceEnabled: false,
-                capsLockOn: true
+                capsLockOn: true,
+                sleepPreventionConfirmed: true
             )
         )
         XCTAssertFalse(
             KeepDisplayAwakePolicy.shouldHoldAssertion(
                 preferenceEnabled: false,
-                capsLockOn: false
+                capsLockOn: false,
+                sleepPreventionConfirmed: true
+            )
+        )
+    }
+
+    func testReleasesAssertionWhenSleepPreventionUnconfirmed() {
+        XCTAssertFalse(
+            KeepDisplayAwakePolicy.shouldHoldAssertion(
+                preferenceEnabled: true,
+                capsLockOn: true,
+                sleepPreventionConfirmed: false
             )
         )
     }

@@ -536,7 +536,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
     private func setKeepDisplayAwake(_ enabled: Bool) {
         Preferences.keepDisplayAwake = enabled
-        syncDisplayAwakeAssertion(capsLockOn: currentCapsLockState, reason: "preference")
+        let capsLockOn = currentCapsLockState
+        syncDisplayAwakeAssertion(
+            capsLockOn: capsLockOn,
+            sleepPreventionConfirmed: failedSleepState == nil && lastAppliedState == capsLockOn,
+            reason: "preference"
+        )
         log("preference keep_display_awake=\(enabled ? "on" : "off")")
     }
 
@@ -831,12 +836,17 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     /// Hold the display-awake assertion exactly while the preference is on
-    /// and awake mode is active. Idempotent, so it is safe to call from
-    /// every apply pass.
-    private func syncDisplayAwakeAssertion(capsLockOn: Bool, reason: String) {
+    /// and confirmed awake mode is active. Idempotent, so it is safe to call
+    /// from every apply pass.
+    private func syncDisplayAwakeAssertion(
+        capsLockOn: Bool,
+        sleepPreventionConfirmed: Bool,
+        reason: String
+    ) {
         let shouldHold = KeepDisplayAwakePolicy.shouldHoldAssertion(
             preferenceEnabled: Preferences.keepDisplayAwake,
-            capsLockOn: capsLockOn
+            capsLockOn: capsLockOn,
+            sleepPreventionConfirmed: sleepPreventionConfirmed
         )
         guard shouldHold != displayAwakeAssertion.isActive else { return }
         if shouldHold, Date() < nextDisplayAwakeRetryAt { return }
@@ -852,7 +862,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func apply(capsLockOn: Bool, reason: String) {
-        syncDisplayAwakeAssertion(capsLockOn: capsLockOn, reason: reason)
         let now = Date()
         if failedSleepState == capsLockOn, now < nextSleepStateRetryAt {
             return
@@ -860,6 +869,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         if lastAppliedState == capsLockOn {
             if failedSleepState == nil, now < nextSleepStateVerificationAt {
+                syncDisplayAwakeAssertion(
+                    capsLockOn: capsLockOn,
+                    sleepPreventionConfirmed: true,
+                    reason: reason
+                )
                 evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
                 return
             }
@@ -909,6 +923,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         if resetVerification {
             nextSleepStateVerificationAt = nextSleepStateRetryAt
         }
+        syncDisplayAwakeAssertion(
+            capsLockOn: capsLockOn,
+            sleepPreventionConfirmed: false,
+            reason: "sleep_state_failed"
+        )
         updateStatusError()
     }
 
@@ -918,6 +937,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         nextSleepStateRetryAt = .distantPast
         nextSleepStateVerificationAt = now.addingTimeInterval(sleepStateVerificationInterval)
         syncStatusItemVisibility()
+        syncDisplayAwakeAssertion(
+            capsLockOn: capsLockOn,
+            sleepPreventionConfirmed: true,
+            reason: reason
+        )
         evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
         requestSystemSleepAfterAutoOffIfReady(capsLockOn: capsLockOn, reason: reason)
     }

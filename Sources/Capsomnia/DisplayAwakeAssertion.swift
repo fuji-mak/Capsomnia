@@ -27,7 +27,7 @@ final class DisplayAwakeAssertion {
             guard assertionID == nil else { return true }
             var id = IOPMAssertionID(0)
             let status = IOPMAssertionCreateWithName(
-                kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString,
+                kIOPMAssertPreventUserIdleDisplaySleep as CFString,
                 IOPMAssertionLevel(kIOPMAssertionLevelOn),
                 "\(appName) keeps the display awake" as CFString,
                 &id
@@ -38,9 +38,11 @@ final class DisplayAwakeAssertion {
         }
 
         guard let id = assertionID else { return true }
-        // Clear the stored ID before releasing: a failed release means the ID
-        // is no longer valid, so keeping it would only re-fail on retry.
+        // A failed release can leave the assertion alive in powerd (for
+        // example when the power-management connection fails), so keep the ID
+        // for the caller's retry instead of clearing it.
+        guard IOPMAssertionRelease(id) == kIOReturnSuccess else { return false }
         assertionID = nil
-        return IOPMAssertionRelease(id) == kIOReturnSuccess
+        return true
     }
 }

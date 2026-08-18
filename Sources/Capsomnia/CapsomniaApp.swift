@@ -849,7 +849,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             sleepPreventionConfirmed: sleepPreventionConfirmed
         )
         guard shouldHold != displayAwakeAssertion.isActive else { return }
-        if shouldHold, Date() < nextDisplayAwakeRetryAt { return }
+        guard Date() >= nextDisplayAwakeRetryAt else { return }
 
         let succeeded = displayAwakeAssertion.setActive(shouldHold)
         nextDisplayAwakeRetryAt = succeeded

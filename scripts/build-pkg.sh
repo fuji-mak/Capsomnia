@@ -156,7 +156,12 @@ fi
 /bin/sleep 1
 /usr/bin/sudo -u "$console_user" /usr/bin/defaults write "$LABEL" ForceWelcomeOnNextLaunch -bool true 2>/dev/null || true
 /bin/launchctl bootstrap "gui/$console_uid" "$SYSTEM_LAUNCH_AGENT" 2>/dev/null || true
-/bin/launchctl enable "gui/$console_uid/$LABEL" 2>/dev/null || true
+launch_at_login="$(/usr/bin/sudo -u "$console_user" /usr/bin/defaults read "$LABEL" LaunchAtLogin 2>/dev/null || true)"
+if [[ "$launch_at_login" == "0" ]]; then
+  /bin/launchctl disable "gui/$console_uid/$LABEL" 2>/dev/null || true
+else
+  /bin/launchctl enable "gui/$console_uid/$LABEL" 2>/dev/null || true
+fi
 
 exit 0
 EOF

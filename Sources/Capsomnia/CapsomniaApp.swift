@@ -433,9 +433,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 onLaunchAtLoginChange: { [weak self] enabled in
                     self?.setLaunchAtLogin(enabled)
                 },
-                onDisplaySleepOnLidCloseChange: { [weak self] enabled in
-                    self?.setDisplaySleepOnLidClose(enabled)
-                },
                 onKeepDisplayAwakeChange: { [weak self] enabled in
                     self?.setKeepDisplayAwake(enabled)
                 },
@@ -524,24 +521,21 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func setDisplaySleepOnLidClose(_ enabled: Bool) {
-        Preferences.displaySleepOnLidClose = enabled
-        if enabled {
-            evaluateDisplaySleepForClosedLid(capsLockOn: currentCapsLockState, reason: "preference")
-        } else {
-            didRequestDisplaySleepForClosedLid = false
-        }
-        log("preference display_sleep_on_lid_close=\(enabled ? "on" : "off")")
-    }
-
     private func setKeepDisplayAwake(_ enabled: Bool) {
         Preferences.keepDisplayAwake = enabled
         let capsLockOn = currentCapsLockState
+        if enabled {
+            didRequestDisplaySleepForClosedLid = false
+            nextDisplaySleepRetryAt = .distantPast
+        }
         syncDisplayAwakeAssertion(
             capsLockOn: capsLockOn,
             sleepPreventionConfirmed: failedSleepState == nil && lastAppliedState == capsLockOn,
             reason: "preference"
         )
+        if !enabled {
+            evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: "preference")
+        }
         log("preference keep_display_awake=\(enabled ? "on" : "off")")
     }
 
@@ -967,7 +961,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func evaluateDisplaySleepForClosedLid(capsLockOn: Bool, reason: String) {
-        guard Preferences.displaySleepOnLidClose else {
+        guard !Preferences.keepDisplayAwake else {
             didRequestDisplaySleepForClosedLid = false
             nextDisplaySleepRetryAt = .distantPast
             return
@@ -1000,6 +994,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             hasLoggedMissingDisplayState = false
         }
         guard DisplaySleepPolicy.shouldRequestDisplaySleep(
+            keepDisplayAwake: Preferences.keepDisplayAwake,
             externalDisplayConnected: externalDisplayConnected
         ) else {
             didRequestDisplaySleepForClosedLid = false

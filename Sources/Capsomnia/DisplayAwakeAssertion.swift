@@ -2,11 +2,10 @@ import Foundation
 import IOKit.pwr_mgt
 
 /// Holds a `PreventUserIdleDisplaySleep` power assertion so the display stays
-/// on while Capsomnia keeps the system awake. The assertion only blocks
-/// idle-timeout display sleep; a forced `pmset displaysleepnow` (used by
-/// "Turn display off when lid closes") still turns the display off. Runs as
-/// the current user — no privileged helper is involved — and macOS releases
-/// the assertion automatically if the process exits.
+/// on while Capsomnia keeps the system awake. Lid-close handling skips its
+/// forced `pmset displaysleepnow` request while this preference is enabled.
+/// Runs as the current user — no privileged helper is involved — and macOS
+/// releases the assertion automatically if the process exits.
 ///
 /// Uses IOKit directly instead of `ProcessInfo.beginActivity(options:reason:)`
 /// because the IOKit calls return per-call status codes, which the caller

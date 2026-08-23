@@ -168,13 +168,13 @@ final class AutoOffTimerControl: NSView {
 
         column.orientation = .vertical
         column.alignment = .leading
-        column.spacing = 14
+        column.spacing = 10
         column.translatesAutoresizingMaskIntoConstraints = false
         column.addArrangedSubview(descLabel)
         column.addArrangedSubview(countdownBlock)
         column.addArrangedSubview(chipsColumn)
-        column.setCustomSpacing(16, after: descLabel)
-        column.setCustomSpacing(16, after: countdownBlock)
+        column.setCustomSpacing(10, after: descLabel)
+        column.setCustomSpacing(10, after: countdownBlock)
 
         addSubview(column)
         NSLayoutConstraint.activate([
@@ -211,7 +211,7 @@ final class AutoOffTimerControl: NSView {
 
         chipsColumn.orientation = .vertical
         chipsColumn.alignment = .leading
-        chipsColumn.spacing = 8
+        chipsColumn.spacing = 6
         chipsColumn.translatesAutoresizingMaskIntoConstraints = false
 
         let row1 = chipRow(firstRow)
@@ -227,7 +227,7 @@ final class AutoOffTimerControl: NSView {
         row.orientation = .horizontal
         row.alignment = .centerY
         row.distribution = .fillEqually
-        row.spacing = 8
+        row.spacing = 6
         row.translatesAutoresizingMaskIntoConstraints = false
         return row
     }

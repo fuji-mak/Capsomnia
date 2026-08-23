@@ -4,6 +4,12 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 3.3.0 - 2026-08-23
+
+- Simplify display behavior to a single opt-in "Keep display awake" setting. By default, closing the lid puts the display to sleep while work continues. When enabled, Capsomnia prevents idle display sleep and skips its forced lid-close display sleep so the display session remains available for remote UI operation such as Computer Use.
+- Reorganize Settings around frequency of use. The regular window now puts "Keep display awake" and the auto-off timer up front, while initial setup keeps its onboarding choices and Advanced Settings holds the less frequently changed environment, login, lid-closed Caps Lock guard, and shortcut options.
+- Preserve the Developer ID signatures of the app and privileged helper through package installation by signing both executables in their final package payload locations and verifying the nested signatures after packaging.
+
 ## 3.2.0 - 2026-08-23
 
 - Add an opt-in "Keep display awake" setting (default off) to Advanced Settings. While Capsomnia is on, the display no longer turns off after the idle time configured in macOS. The assertion is held in-process without new privileges, is released when Capsomnia turns off or the app quits, and is independent of "Turn display off when lid closes", which still turns the display off after the lid closes. (#88)

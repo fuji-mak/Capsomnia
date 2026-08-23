@@ -29,15 +29,39 @@ final class SleepStateReaderTests: XCTestCase {
 
 final class DisplaySleepPolicyTests: XCTestCase {
     func testAllowsDisplaySleepWithoutExternalDisplay() {
-        XCTAssertTrue(DisplaySleepPolicy.shouldRequestDisplaySleep(externalDisplayConnected: false))
+        XCTAssertTrue(
+            DisplaySleepPolicy.shouldRequestDisplaySleep(
+                keepDisplayAwake: false,
+                externalDisplayConnected: false
+            )
+        )
     }
 
     func testSuppressesDisplaySleepWithExternalDisplay() {
-        XCTAssertFalse(DisplaySleepPolicy.shouldRequestDisplaySleep(externalDisplayConnected: true))
+        XCTAssertFalse(
+            DisplaySleepPolicy.shouldRequestDisplaySleep(
+                keepDisplayAwake: false,
+                externalDisplayConnected: true
+            )
+        )
     }
 
     func testSuppressesDisplaySleepWhenDisplayStateIsUnavailable() {
-        XCTAssertFalse(DisplaySleepPolicy.shouldRequestDisplaySleep(externalDisplayConnected: nil))
+        XCTAssertFalse(
+            DisplaySleepPolicy.shouldRequestDisplaySleep(
+                keepDisplayAwake: false,
+                externalDisplayConnected: nil
+            )
+        )
+    }
+
+    func testSuppressesLidCloseDisplaySleepWhileKeepingDisplayAwake() {
+        XCTAssertFalse(
+            DisplaySleepPolicy.shouldRequestDisplaySleep(
+                keepDisplayAwake: true,
+                externalDisplayConnected: false
+            )
+        )
     }
 }
 

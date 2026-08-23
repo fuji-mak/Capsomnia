@@ -41,7 +41,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     )
     private let advancedSettingsButton = DisclosureButton()
 
-    private let autoOffHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
     private let autoOffControl = AutoOffTimerControl(minutes: Preferences.autoOffMinutes)
 
     private let systemBehaviorHeading = brandLabel(
@@ -52,19 +51,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let openAtLoginTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
     private let openAtLoginDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
     private let openAtLoginToggle = LEDToggle(isOn: Preferences.launchAtLogin)
-    private let displaySleepOnLidCloseTitle = brandLabel(
-        size: 13,
-        weight: .medium,
-        color: Brand.text
-    )
-    private let displaySleepOnLidCloseDesc = brandLabel(
-        size: 12,
-        color: Brand.textDim,
-        wraps: true
-    )
-    private let displaySleepOnLidCloseToggle = LEDToggle(
-        isOn: Preferences.displaySleepOnLidClose
-    )
     private let keepDisplayAwakeTitle = brandLabel(
         size: 13,
         weight: .medium,
@@ -115,6 +101,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let advancedRightColumn = NSStackView()
     private let advancedRightSpacer = NSView()
     private var preferencesCard = NSView()
+    private var keepDisplayAwakeCard = NSView()
     private var systemCard = NSView()
     private var shortcutCard = NSView()
     private var autoOffCard = NSView()
@@ -126,7 +113,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let onShowMenuBarIconChange: (Bool) -> Void
     private let onLanguageChange: (AppLanguage) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
-    private let onDisplaySleepOnLidCloseChange: (Bool) -> Void
     private let onKeepDisplayAwakeChange: (Bool) -> Void
     private let onIgnoreExternalCapsLockOffWhileLidClosedChange: (Bool) -> Void
     private let onAutoOffMinutesChange: (Int) -> Void
@@ -142,7 +128,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onShowMenuBarIconChange: @escaping (Bool) -> Void,
         onLanguageChange: @escaping (AppLanguage) -> Void,
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
-        onDisplaySleepOnLidCloseChange: @escaping (Bool) -> Void,
         onKeepDisplayAwakeChange: @escaping (Bool) -> Void,
         onIgnoreExternalCapsLockOffWhileLidClosedChange: @escaping (Bool) -> Void,
         onAutoOffMinutesChange: @escaping (Int) -> Void,
@@ -156,7 +141,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onShowMenuBarIconChange = onShowMenuBarIconChange
         self.onLanguageChange = onLanguageChange
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
-        self.onDisplaySleepOnLidCloseChange = onDisplaySleepOnLidCloseChange
         self.onKeepDisplayAwakeChange = onKeepDisplayAwakeChange
         self.onIgnoreExternalCapsLockOffWhileLidClosedChange = onIgnoreExternalCapsLockOffWhileLidClosedChange
         self.onAutoOffMinutesChange = onAutoOffMinutesChange
@@ -229,9 +213,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         updateAdvancedSettingsButtonText(strings)
 
         systemBehaviorHeading.stringValue = strings.systemBehavior.uppercased()
-        displaySleepOnLidCloseTitle.stringValue = strings.displaySleepOnLidClose
-        displaySleepOnLidCloseDesc.stringValue = strings.displaySleepOnLidCloseDesc
-        displaySleepOnLidCloseToggle.setAccessibilityLabel(strings.displaySleepOnLidClose)
         keepDisplayAwakeTitle.stringValue = strings.keepDisplayAwake
         keepDisplayAwakeDesc.stringValue = strings.keepDisplayAwakeDesc
         keepDisplayAwakeToggle.setAccessibilityLabel(strings.keepDisplayAwake)
@@ -242,7 +223,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         openAtLoginDesc.stringValue = strings.openAtLoginDesc
         openAtLoginToggle.setAccessibilityLabel(strings.openAtLogin)
 
-        autoOffHeading.stringValue = strings.autoOffTimer.uppercased()
         autoOffControl.setStrings(
             desc: strings.autoOffTimerDesc,
             off: strings.autoOffOff,
@@ -282,7 +262,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         }
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        if page == .advancedSettings {
+        if page == .settings {
             autoOffControl.startDisplayUpdates()
         } else {
             autoOffControl.dismissCustomEditor()
@@ -341,6 +321,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         buildExplainerCard()
 
         preferencesCard = buildPreferencesCard()
+        keepDisplayAwakeCard = buildKeepDisplayAwakeCard()
         systemCard = buildSystemCard()
         shortcutCard = buildShortcutCard()
         autoOffCard = buildAutoOffCard()
@@ -381,7 +362,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
         ]
         settingsLayoutConstraints = [
-            preferencesCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            keepDisplayAwakeCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            autoOffCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             advancedSettingsButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
         ]
@@ -390,7 +372,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             advancedColumns.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             preferencesCard.widthAnchor.constraint(equalTo: advancedLeftColumn.widthAnchor),
             systemCard.widthAnchor.constraint(equalTo: advancedLeftColumn.widthAnchor),
-            autoOffCard.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
             shortcutCard.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor)
         ]
 
@@ -428,12 +409,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             NSLayoutConstraint.activate(initialPreferencesLayoutConstraints)
 
         case .settings:
-            bodyStack.addArrangedSubview(preferencesHeading)
-            bodyStack.addArrangedSubview(preferencesCard)
+            bodyStack.addArrangedSubview(autoOffCard)
+            bodyStack.addArrangedSubview(keepDisplayAwakeCard)
             bodyStack.addArrangedSubview(advancedSettingsButton)
             bodyStack.addArrangedSubview(doneButton)
-            bodyStack.setCustomSpacing(8, after: preferencesHeading)
-            bodyStack.setCustomSpacing(20, after: preferencesCard)
+            bodyStack.setCustomSpacing(20, after: autoOffCard)
+            bodyStack.setCustomSpacing(20, after: keepDisplayAwakeCard)
             bodyStack.setCustomSpacing(20, after: advancedSettingsButton)
             NSLayoutConstraint.activate(settingsLayoutConstraints)
 
@@ -449,13 +430,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             advancedLeftColumn.setCustomSpacing(22, after: preferencesCard)
             advancedLeftColumn.setCustomSpacing(8, after: systemBehaviorHeading)
 
-            advancedRightColumn.addArrangedSubview(autoOffHeading)
-            advancedRightColumn.addArrangedSubview(autoOffCard)
             advancedRightColumn.addArrangedSubview(shortcutHeading)
             advancedRightColumn.addArrangedSubview(shortcutCard)
             advancedRightColumn.addArrangedSubview(advancedRightSpacer)
-            advancedRightColumn.setCustomSpacing(8, after: autoOffHeading)
-            advancedRightColumn.setCustomSpacing(22, after: autoOffCard)
             advancedRightColumn.setCustomSpacing(8, after: shortcutHeading)
 
             bodyStack.setCustomSpacing(24, after: advancedHeader)
@@ -609,15 +586,28 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         return row
     }
 
-    private func buildSystemCard() -> NSView {
-        displaySleepOnLidCloseToggle.onToggle = { [weak self] enabled in
-            self?.onDisplaySleepOnLidCloseChange(enabled)
-            self?.updateValues()
-        }
+    private func buildKeepDisplayAwakeCard() -> NSView {
         keepDisplayAwakeToggle.onToggle = { [weak self] enabled in
             self?.onKeepDisplayAwakeChange(enabled)
             self?.updateValues()
         }
+        let row = settingRow(
+            title: keepDisplayAwakeTitle,
+            desc: keepDisplayAwakeDesc,
+            accessory: keepDisplayAwakeToggle
+        )
+        let card = brandCard()
+        card.addSubview(row)
+        NSLayoutConstraint.activate([
+            row.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+            row.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
+            row.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
+            row.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
+        ])
+        return card
+    }
+
+    private func buildSystemCard() -> NSView {
         externalCapsLockOffToggle.onToggle = { [weak self] enabled in
             self?.onIgnoreExternalCapsLockOffWhileLidClosedChange(enabled)
             self?.updateValues()
@@ -626,16 +616,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onLaunchAtLoginChange(enabled)
             self?.updateValues()
         }
-        let displayRow = settingRow(
-            title: displaySleepOnLidCloseTitle,
-            desc: displaySleepOnLidCloseDesc,
-            accessory: displaySleepOnLidCloseToggle
-        )
-        let keepDisplayAwakeRow = settingRow(
-            title: keepDisplayAwakeTitle,
-            desc: keepDisplayAwakeDesc,
-            accessory: keepDisplayAwakeToggle
-        )
         let externalCapsLockOffRow = settingRow(
             title: externalCapsLockOffTitle,
             desc: externalCapsLockOffDesc,
@@ -648,8 +628,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         )
         let card = brandCard()
         let rows: [NSView] = [
-            displayRow, brandDivider(),
-            keepDisplayAwakeRow, brandDivider(),
             externalCapsLockOffRow, brandDivider(),
             openAtLoginRow
         ]
@@ -712,10 +690,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let card = brandCard()
         card.addSubview(autoOffControl)
         NSLayoutConstraint.activate([
-            autoOffControl.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
-            autoOffControl.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
-            autoOffControl.topAnchor.constraint(equalTo: card.topAnchor, constant: 18),
-            autoOffControl.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -18)
+            autoOffControl.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            autoOffControl.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+            autoOffControl.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
+            autoOffControl.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14)
         ])
         return card
     }
@@ -724,7 +702,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         dedicatedCapsLockModeToggle.setOn(Preferences.dedicatedCapsLockMode)
         menuBarToggle.setOn(Preferences.showMenuBarIcon)
         languagePopUp.setSelected(Preferences.language.rawValue)
-        displaySleepOnLidCloseToggle.setOn(Preferences.displaySleepOnLidClose)
         keepDisplayAwakeToggle.setOn(Preferences.keepDisplayAwake)
         externalCapsLockOffToggle.setOn(Preferences.ignoreExternalCapsLockOffWhileLidClosed)
         openAtLoginToggle.setOn(Preferences.launchAtLogin)

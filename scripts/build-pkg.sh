@@ -38,13 +38,13 @@ trap cleanup EXIT
   "$PAYLOAD_ROOT/Library/PrivilegedHelperTools" \
   "$SCRIPTS_DIR"
 
-BUILT_APP="$("$ROOT_DIR/scripts/build-app.sh" "$WORK_DIR/$APP_NAME.app")"
+BUILT_APP="$("$ROOT_DIR/scripts/build-app.sh" "$PAYLOAD_ROOT/Applications/$APP_NAME.app")"
 /usr/bin/install -m 0755 \
   "$ROOT_DIR/.build/release/capsomnia-pmset" \
   "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
 if [[ "$SKIP_SIGNING" != "true" ]]; then
-  # Remove disposable build metadata before signing. Never mutate the signed
-  # app or helper afterward, because doing so invalidates their signatures.
+  # Remove disposable build metadata before signing. Sign both executables in
+  # their final payload locations and never copy or mutate them afterward.
   /usr/bin/xattr -cr \
     "$BUILT_APP" \
     "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
@@ -62,8 +62,6 @@ if [[ "$SKIP_SIGNING" != "true" ]]; then
     --verbose=2 \
     "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
 fi
-
-/usr/bin/ditto "$BUILT_APP" "$PAYLOAD_ROOT/Applications/$APP_NAME.app"
 
 /bin/cat > "$PAYLOAD_ROOT/Library/LaunchAgents/$LABEL.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -190,16 +188,17 @@ EOF
   "$UNSIGNED_PKG"
 
 VERIFY_PKG="$WORK_DIR/verify-pkg"
-/usr/sbin/pkgutil --expand-full "$UNSIGNED_PKG" "$VERIFY_PKG"
+# `COPYFILE_DISABLE` is exported for package creation, but verification must
+# model Installer.app. With it unset, pkgutil applies AppleDouble metadata just
+# as Installer does; this catches metadata that would invalidate nested code
+# signatures only after installation.
+/usr/bin/env -u COPYFILE_DISABLE /usr/sbin/pkgutil --expand-full "$UNSIGNED_PKG" "$VERIFY_PKG"
 unexpected_owner="$(/usr/bin/lsbom "$VERIFY_PKG/Bom" | /usr/bin/awk -F '\t' '$3 != "0/0" { print; exit }')"
 if [[ -n "$unexpected_owner" ]]; then
   echo "Package payload contains a non-root owner: $unexpected_owner" >&2
   exit 1
 fi
 
-# pkgbuild may serialize signature-related extended metadata as AppleDouble
-# entries. Do not strip or repack them: the resulting files must remain exactly
-# as they were when Developer ID signatures were created.
 if [[ "$SKIP_SIGNING" != "true" ]]; then
   /usr/bin/codesign \
     --verify \
@@ -218,5 +217,18 @@ if [[ "$SKIP_SIGNING" == "true" ]]; then
   echo "$UNSIGNED_PKG"
 else
   /usr/bin/productsign --sign "$PKG_SIGN_ID" "$UNSIGNED_PKG" "$SIGNED_PKG"
+  SIGNED_VERIFY_PKG="$WORK_DIR/signed-verify-pkg"
+  /usr/bin/env -u COPYFILE_DISABLE /usr/sbin/pkgutil --expand-full "$SIGNED_PKG" "$SIGNED_VERIFY_PKG"
+  /usr/bin/codesign \
+    --verify \
+    --deep \
+    --strict \
+    --verbose=2 \
+    "$SIGNED_VERIFY_PKG/Payload/Applications/$APP_NAME.app"
+  /usr/bin/codesign \
+    --verify \
+    --strict \
+    --verbose=2 \
+    "$SIGNED_VERIFY_PKG/Payload/Library/PrivilegedHelperTools/capsomnia-pmset"
   echo "$SIGNED_PKG"
 fi

@@ -4,7 +4,9 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
-- Add an opt-in "Keep display awake" setting (default off) to Advanced Settings. While Capsomnia is on, the display no longer turns off after the idle time configured in macOS. The assertion is held in-process without new privileges, is released when Capsomnia turns off or the app quits, and is independent of "Turn display off when lid closes", which still turns the display off after the lid closes.
+## 3.2.0 - 2026-08-23
+
+- Add an opt-in "Keep display awake" setting (default off) to Advanced Settings. While Capsomnia is on, the display no longer turns off after the idle time configured in macOS. The assertion is held in-process without new privileges, is released when Capsomnia turns off or the app quits, and is independent of "Turn display off when lid closes", which still turns the display off after the lid closes. (#88)
 
 ## 3.1.2 - 2026-08-22
 

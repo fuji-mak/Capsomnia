@@ -77,6 +77,19 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let externalCapsLockOffToggle = LEDToggle(
         isOn: Preferences.ignoreExternalCapsLockOffWhileLidClosed
     )
+    private let automaticUpdateChecksTitle = brandLabel(
+        size: 13,
+        weight: .medium,
+        color: Brand.text
+    )
+    private let automaticUpdateChecksDesc = brandLabel(
+        size: 12,
+        color: Brand.textDim,
+        wraps: true
+    )
+    private let automaticUpdateChecksToggle = LEDToggle(
+        isOn: Preferences.automaticUpdateChecks
+    )
 
     private let shortcutHeading = brandLabel(
         size: 11,
@@ -120,6 +133,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let autoOffDisplayProvider: () -> AutoOffDisplayState
     private let onKeyboardShortcutChange: (KeyboardShortcut?) -> Bool
     private let onKeyboardShortcutRecordingChange: (Bool) -> Void
+    private let onAutomaticUpdateChecksChange: (Bool) -> Void
     private let onFinishInitialSetup: () -> Void
     private var page: SettingsPage = .settings
 
@@ -135,6 +149,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         autoOffDisplayProvider: @escaping () -> AutoOffDisplayState,
         onKeyboardShortcutChange: @escaping (KeyboardShortcut?) -> Bool,
         onKeyboardShortcutRecordingChange: @escaping (Bool) -> Void,
+        onAutomaticUpdateChecksChange: @escaping (Bool) -> Void,
         onFinishInitialSetup: @escaping () -> Void
     ) {
         self.onDedicatedCapsLockModeChange = onDedicatedCapsLockModeChange
@@ -148,6 +163,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.autoOffDisplayProvider = autoOffDisplayProvider
         self.onKeyboardShortcutChange = onKeyboardShortcutChange
         self.onKeyboardShortcutRecordingChange = onKeyboardShortcutRecordingChange
+        self.onAutomaticUpdateChecksChange = onAutomaticUpdateChecksChange
         self.onFinishInitialSetup = onFinishInitialSetup
 
         let window = NSWindow(
@@ -222,6 +238,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         openAtLoginTitle.stringValue = strings.openAtLogin
         openAtLoginDesc.stringValue = strings.openAtLoginDesc
         openAtLoginToggle.setAccessibilityLabel(strings.openAtLogin)
+        automaticUpdateChecksTitle.stringValue = strings.automaticUpdateChecks
+        automaticUpdateChecksDesc.stringValue = strings.automaticUpdateChecksDesc
+        automaticUpdateChecksToggle.setAccessibilityLabel(strings.automaticUpdateChecks)
 
         autoOffControl.setStrings(
             desc: strings.autoOffTimerDesc,
@@ -616,6 +635,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onLaunchAtLoginChange(enabled)
             self?.updateValues()
         }
+        automaticUpdateChecksToggle.onToggle = { [weak self] enabled in
+            self?.onAutomaticUpdateChecksChange(enabled)
+            self?.updateValues()
+        }
         let externalCapsLockOffRow = settingRow(
             title: externalCapsLockOffTitle,
             desc: externalCapsLockOffDesc,
@@ -626,10 +649,16 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             desc: openAtLoginDesc,
             accessory: openAtLoginToggle
         )
+        let automaticUpdateChecksRow = settingRow(
+            title: automaticUpdateChecksTitle,
+            desc: automaticUpdateChecksDesc,
+            accessory: automaticUpdateChecksToggle
+        )
         let card = brandCard()
         let rows: [NSView] = [
             externalCapsLockOffRow, brandDivider(),
-            openAtLoginRow
+            openAtLoginRow, brandDivider(),
+            automaticUpdateChecksRow
         ]
         let stack = NSStackView(views: rows)
         stack.orientation = .vertical
@@ -705,6 +734,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         keepDisplayAwakeToggle.setOn(Preferences.keepDisplayAwake)
         externalCapsLockOffToggle.setOn(Preferences.ignoreExternalCapsLockOffWhileLidClosed)
         openAtLoginToggle.setOn(Preferences.launchAtLogin)
+        automaticUpdateChecksToggle.setOn(Preferences.automaticUpdateChecks)
         shortcutRecorder.setShortcut(Preferences.keyboardShortcut)
         autoOffControl.setMinutes(Preferences.autoOffMinutes)
     }

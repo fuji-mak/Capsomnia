@@ -385,10 +385,42 @@ final class SettingsWindowControllerTests: XCTestCase {
         return all.first { $0.accessibilityLabel() == accessibilityLabel }
     }
 
+    func testAdvancedSettingsShowsAutomaticUpdateChecksToggle() throws {
+        let previousLanguage = Preferences.language
+        Preferences.language = .english
+        defer { Preferences.language = previousLanguage }
+        let strings = AppStrings.localized(for: .english)
+
+        _ = NSApplication.shared
+        var toggledValues: [Bool] = []
+        let controller = makeController(
+            onAutomaticUpdateChecksChange: { toggledValues.append($0) }
+        )
+        defer { controller.close() }
+
+        controller.show(page: .advancedSettings)
+        let contentView = try XCTUnwrap(controller.window?.contentView)
+        contentView.layoutSubtreeIfNeeded()
+
+        let renderedText = Set(
+            (visibleDescendants(of: contentView) as [NSTextField]).map(\.stringValue)
+        )
+        XCTAssertTrue(renderedText.contains(strings.automaticUpdateChecks))
+        XCTAssertTrue(renderedText.contains(strings.automaticUpdateChecksDesc))
+
+        let toggle = try XCTUnwrap(
+            view(in: contentView, accessibilityLabel: strings.automaticUpdateChecks)
+        )
+        XCTAssertTrue(toggle.accessibilityPerformPress())
+
+        XCTAssertEqual(toggledValues.count, 1)
+    }
+
     private func makeController(
         onKeyboardShortcutRecordingChange: @escaping (Bool) -> Void = { _ in },
         onAutoOffMinutesChange: @escaping (Int) -> Void = { _ in },
-        autoOffDisplayProvider: @escaping () -> AutoOffDisplayState = { .idle(minutes: 0) }
+        autoOffDisplayProvider: @escaping () -> AutoOffDisplayState = { .idle(minutes: 0) },
+        onAutomaticUpdateChecksChange: @escaping (Bool) -> Void = { _ in }
     ) -> SettingsWindowController {
         SettingsWindowController(
             onDedicatedCapsLockModeChange: { _ in },
@@ -402,6 +434,7 @@ final class SettingsWindowControllerTests: XCTestCase {
             autoOffDisplayProvider: autoOffDisplayProvider,
             onKeyboardShortcutChange: { _ in true },
             onKeyboardShortcutRecordingChange: onKeyboardShortcutRecordingChange,
+            onAutomaticUpdateChecksChange: onAutomaticUpdateChecksChange,
             onFinishInitialSetup: {}
         )
     }

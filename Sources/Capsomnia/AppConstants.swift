@@ -125,6 +125,22 @@ struct AppStrings {
     let tooltipOff: String
     let tooltipError: String
     let tooltipDedicatedPermission: String
+    let checkForUpdates: String
+    let updateAvailableMenuFormat: String
+    let updateAvailableTitle: String
+    let updateAvailableBodyFormat: String
+    let updateDownloadAndInstall: String
+    let updateLater: String
+    let updateUpToDateTitle: String
+    let updateUpToDateBodyFormat: String
+    let updateCheckFailedTitle: String
+    let updateCheckFailedBody: String
+    let updateRemoveInstallerTitle: String
+    let updateRemoveInstallerBodyFormat: String
+    let updateRemoveInstallerRemove: String
+    let updateRemoveInstallerKeep: String
+    let automaticUpdateChecks: String
+    let automaticUpdateChecksDesc: String
 
     static func current() -> AppStrings {
         localized(for: Preferences.language)
@@ -178,7 +194,23 @@ struct AppStrings {
                 tooltipOn: "Caps Lock ON: processes stay awake",
                 tooltipOff: "Caps Lock OFF: normal sleep",
                 tooltipError: "Capsomnia could not update the sleep setting — retrying",
-                tooltipDedicatedPermission: "“Prevent all-caps typing” requires Accessibility permission — sleep prevention is off"
+                tooltipDedicatedPermission: "“Prevent all-caps typing” requires Accessibility permission — sleep prevention is off",
+                checkForUpdates: "Check for Updates…",
+                updateAvailableMenuFormat: "Update available — %@",
+                updateAvailableTitle: "Update available",
+                updateAvailableBodyFormat: "Capsomnia %@ is available — you have %@. Download the installer to your Downloads folder and open it?",
+                updateDownloadAndInstall: "Download & Install",
+                updateLater: "Later",
+                updateUpToDateTitle: "You’re up to date",
+                updateUpToDateBodyFormat: "Capsomnia %@ is the latest version.",
+                updateCheckFailedTitle: "Update check failed",
+                updateCheckFailedBody: "Couldn’t reach GitHub to check for updates. Try again later.",
+                updateRemoveInstallerTitle: "Remove the downloaded installer?",
+                updateRemoveInstallerBodyFormat: "The update is installed, so %@ in your Downloads folder is no longer needed.",
+                updateRemoveInstallerRemove: "Move to Trash",
+                updateRemoveInstallerKeep: "Keep",
+                automaticUpdateChecks: "Check for updates automatically",
+                automaticUpdateChecksDesc: "Checks the GitHub releases page once a day and shows new versions in the menu bar menu. Only the version number is requested — nothing about you or your Mac is sent."
             )
         case .korean:
             AppStrings(
@@ -226,7 +258,23 @@ struct AppStrings {
                 tooltipOn: "Caps Lock 켜짐: 잠자기 방지 중",
                 tooltipOff: "Caps Lock 꺼짐: 평소 잠자기",
                 tooltipError: "잠자기 설정을 바꾸지 못했습니다. 다시 시도 중입니다.",
-                tooltipDedicatedPermission: "대문자 고정 방지 기능에는 손쉬운 사용 권한이 필요합니다. 잠자기 방지는 꺼져 있습니다."
+                tooltipDedicatedPermission: "대문자 고정 방지 기능에는 손쉬운 사용 권한이 필요합니다. 잠자기 방지는 꺼져 있습니다.",
+                checkForUpdates: "업데이트 확인…",
+                updateAvailableMenuFormat: "업데이트 있음 — %@",
+                updateAvailableTitle: "업데이트가 있습니다",
+                updateAvailableBodyFormat: "Capsomnia %@ 버전을 사용할 수 있습니다. 현재 버전은 %@입니다. 설치 프로그램을 다운로드 폴더에 받아서 열까요?",
+                updateDownloadAndInstall: "다운로드 및 설치",
+                updateLater: "나중에",
+                updateUpToDateTitle: "최신 버전입니다",
+                updateUpToDateBodyFormat: "Capsomnia %@이(가) 최신 버전입니다.",
+                updateCheckFailedTitle: "업데이트 확인 실패",
+                updateCheckFailedBody: "GitHub에 연결해 업데이트를 확인하지 못했습니다. 나중에 다시 시도해 주세요.",
+                updateRemoveInstallerTitle: "다운로드한 설치 프로그램을 제거할까요?",
+                updateRemoveInstallerBodyFormat: "업데이트가 설치되어 다운로드 폴더의 %@은(는) 더 이상 필요하지 않습니다.",
+                updateRemoveInstallerRemove: "휴지통으로 이동",
+                updateRemoveInstallerKeep: "유지",
+                automaticUpdateChecks: "자동으로 업데이트 확인",
+                automaticUpdateChecksDesc: "하루에 한 번 GitHub 릴리스 페이지를 확인하고 새 버전을 메뉴 막대 메뉴에 표시합니다. 버전 번호만 요청하며 사용자나 Mac에 관한 정보는 전송하지 않습니다."
             )
         case .japanese:
             AppStrings(
@@ -274,7 +322,23 @@ struct AppStrings {
                 tooltipOn: "Caps Lock ON: スリープ抑止中",
                 tooltipOff: "Caps Lock OFF: 通常のスリープ動作",
                 tooltipError: "スリープ設定を更新できませんでした — 再試行中",
-                tooltipDedicatedPermission: "「大文字固定を防ぐ」にはアクセシビリティ権限が必要です — スリープ抑止OFF"
+                tooltipDedicatedPermission: "「大文字固定を防ぐ」にはアクセシビリティ権限が必要です — スリープ抑止OFF",
+                checkForUpdates: "アップデートを確認…",
+                updateAvailableMenuFormat: "アップデートあり — %@",
+                updateAvailableTitle: "アップデートがあります",
+                updateAvailableBodyFormat: "Capsomnia %@ が利用できます（現在は %@）。インストーラをダウンロードフォルダに保存して開きますか？",
+                updateDownloadAndInstall: "ダウンロードしてインストール",
+                updateLater: "あとで",
+                updateUpToDateTitle: "最新の状態です",
+                updateUpToDateBodyFormat: "Capsomnia %@ は最新バージョンです。",
+                updateCheckFailedTitle: "アップデートを確認できませんでした",
+                updateCheckFailedBody: "GitHubに接続してアップデートを確認できませんでした。あとでもう一度お試しください。",
+                updateRemoveInstallerTitle: "ダウンロードしたインストーラを削除しますか？",
+                updateRemoveInstallerBodyFormat: "アップデートのインストールが完了したため、ダウンロードフォルダの %@ は不要になりました。",
+                updateRemoveInstallerRemove: "ゴミ箱に入れる",
+                updateRemoveInstallerKeep: "残す",
+                automaticUpdateChecks: "アップデートを自動で確認",
+                automaticUpdateChecksDesc: "1日に1回GitHubのリリースページを確認し、新しいバージョンをメニューバーのメニューに表示します。取得するのはバージョン番号のみで、ユーザーやMacに関する情報は送信しません。"
             )
         case .simplifiedChinese:
             AppStrings(
@@ -322,7 +386,23 @@ struct AppStrings {
                 tooltipOn: "Caps Lock 已开启：任务将保持运行",
                 tooltipOff: "Caps Lock 已关闭：正常睡眠",
                 tooltipError: "Capsomnia 无法更新睡眠设置——正在重试",
-                tooltipDedicatedPermission: "“防止输入锁定为大写”需要辅助功能权限——睡眠防止已关闭"
+                tooltipDedicatedPermission: "“防止输入锁定为大写”需要辅助功能权限——睡眠防止已关闭",
+                checkForUpdates: "检查更新…",
+                updateAvailableMenuFormat: "有可用更新 — %@",
+                updateAvailableTitle: "有可用更新",
+                updateAvailableBodyFormat: "Capsomnia %@ 已发布，当前版本为 %@。要将安装器下载到“下载”文件夹并打开吗？",
+                updateDownloadAndInstall: "下载并安装",
+                updateLater: "稍后",
+                updateUpToDateTitle: "已是最新版本",
+                updateUpToDateBodyFormat: "Capsomnia %@ 已是最新版本。",
+                updateCheckFailedTitle: "检查更新失败",
+                updateCheckFailedBody: "无法连接 GitHub 检查更新。请稍后再试。",
+                updateRemoveInstallerTitle: "要移除已下载的安装器吗？",
+                updateRemoveInstallerBodyFormat: "更新已安装完成，“下载”文件夹中的 %@ 不再需要。",
+                updateRemoveInstallerRemove: "移到废纸篓",
+                updateRemoveInstallerKeep: "保留",
+                automaticUpdateChecks: "自动检查更新",
+                automaticUpdateChecksDesc: "每天检查一次 GitHub 发布页面，并在菜单栏菜单中显示新版本。仅请求版本号，不会发送任何关于您或 Mac 的信息。"
             )
         }
     }

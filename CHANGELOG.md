@@ -4,6 +4,8 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- Add a built-in, dependency-free update check. "Check for Updates…" in the menu bar menu queries the GitHub releases API, and an opt-out daily automatic check (Advanced Settings) surfaces new versions as "Update available" in the menu. Choosing to update downloads the signed installer package to the Downloads folder and opens it; after the update is installed, Capsomnia offers once to move the downloaded installer to the Trash. Only the latest version number is requested — no telemetry.
+
 ## 3.4.0 - 2026-08-24
 
 - Refocus the menu bar menu on day-to-day controls: choose an auto-off timer preset, see the live remaining time while it runs, open the custom timer editor, and toggle "Keep display awake" without opening Settings.

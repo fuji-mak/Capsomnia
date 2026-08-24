@@ -46,6 +46,27 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testEveryLanguageHasUpdateStrings() {
+        for language in AppLanguage.allCases {
+            let strings = AppStrings.localized(for: language)
+
+            XCTAssertFalse(strings.checkForUpdates.isEmpty)
+            XCTAssertTrue(strings.updateAvailableMenuFormat.contains("%@"))
+            XCTAssertFalse(strings.updateAvailableTitle.isEmpty)
+            XCTAssertTrue(strings.updateAvailableBodyFormat.contains("%@"))
+            XCTAssertFalse(strings.updateDownloadAndInstall.isEmpty)
+            XCTAssertFalse(strings.updateLater.isEmpty)
+            XCTAssertFalse(strings.updateUpToDateTitle.isEmpty)
+            XCTAssertTrue(strings.updateUpToDateBodyFormat.contains("%@"))
+            XCTAssertFalse(strings.updateCheckFailedTitle.isEmpty)
+            XCTAssertFalse(strings.updateCheckFailedBody.isEmpty)
+            XCTAssertFalse(strings.updateDownloadFailedTitle.isEmpty)
+            XCTAssertFalse(strings.updateDownloadFailedBody.isEmpty)
+            XCTAssertFalse(strings.automaticUpdateChecks.isEmpty)
+            XCTAssertFalse(strings.automaticUpdateChecksDesc.isEmpty)
+        }
+    }
+
     func testSimplifiedChineseStrings() {
         let strings = AppStrings.localized(for: .simplifiedChinese)
 

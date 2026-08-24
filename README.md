@@ -30,7 +30,7 @@ Turn Caps Lock on when local work should keep running. Turn Caps Lock off when y
 
 It is useful for AI agents, mobile access, and other long-running or remote work.
 
-Capsomnia itself does not make network requests, collect telemetry, or require an account.
+Capsomnia does not collect telemetry or require an account. Its only network use is an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), plus downloading the installer from GitHub when you choose to update. Capsomnia sends no telemetry, identifiers, or personal data.
 
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="Caps Lock light on" width="560">

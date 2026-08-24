@@ -13,6 +13,11 @@ private enum PreferenceKey {
     static let shortcutKey = "ShortcutKey"
     static let didCompleteInitialSetup = "DidCompleteInitialSetup"
     static let forceWelcomeOnNextLaunch = "ForceWelcomeOnNextLaunch"
+    static let automaticUpdateChecks = "AutomaticUpdateChecks"
+    static let lastUpdateCheckAt = "LastUpdateCheckAt"
+    static let lastKnownReleaseVersion = "LastKnownReleaseVersion"
+    static let pendingInstallerPath = "PendingInstallerPath"
+    static let pendingInstallerVersion = "PendingInstallerVersion"
 }
 
 enum Preferences {
@@ -28,7 +33,8 @@ enum Preferences {
             PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed: false,
             PreferenceKey.autoOffMinutes: 0,
             PreferenceKey.didCompleteInitialSetup: false,
-            PreferenceKey.forceWelcomeOnNextLaunch: false
+            PreferenceKey.forceWelcomeOnNextLaunch: false,
+            PreferenceKey.automaticUpdateChecks: true
         ])
     }
 
@@ -118,6 +124,57 @@ enum Preferences {
     static var didCompleteInitialSetup: Bool {
         get { defaults.bool(forKey: PreferenceKey.didCompleteInitialSetup) }
         set { defaults.set(newValue, forKey: PreferenceKey.didCompleteInitialSetup) }
+    }
+
+    /// Daily background checks against the GitHub releases API. Manual
+    /// "Check for Updates…" works regardless of this setting.
+    static var automaticUpdateChecks: Bool {
+        get { defaults.bool(forKey: PreferenceKey.automaticUpdateChecks) }
+        set { defaults.set(newValue, forKey: PreferenceKey.automaticUpdateChecks) }
+    }
+
+    static var lastUpdateCheckAt: Date? {
+        get { defaults.object(forKey: PreferenceKey.lastUpdateCheckAt) as? Date }
+        set {
+            guard let newValue else {
+                defaults.removeObject(forKey: PreferenceKey.lastUpdateCheckAt)
+                return
+            }
+            defaults.set(newValue, forKey: PreferenceKey.lastUpdateCheckAt)
+        }
+    }
+
+    /// The release version most recently seen on GitHub, persisted so the
+    /// "Update available" menu state survives a relaunch between checks.
+    static var lastKnownReleaseVersion: String? {
+        get { defaults.string(forKey: PreferenceKey.lastKnownReleaseVersion) }
+        set {
+            guard let newValue else {
+                defaults.removeObject(forKey: PreferenceKey.lastKnownReleaseVersion)
+                return
+            }
+            defaults.set(newValue, forKey: PreferenceKey.lastKnownReleaseVersion)
+        }
+    }
+
+    /// Records a downloaded update installer so the app can offer to remove it
+    /// after the update is installed. Both values are set and cleared together.
+    static var pendingInstallerPath: String? {
+        defaults.string(forKey: PreferenceKey.pendingInstallerPath)
+    }
+
+    static var pendingInstallerVersion: String? {
+        defaults.string(forKey: PreferenceKey.pendingInstallerVersion)
+    }
+
+    static func setPendingInstaller(path: String?, version: String?) {
+        guard let path, let version else {
+            defaults.removeObject(forKey: PreferenceKey.pendingInstallerPath)
+            defaults.removeObject(forKey: PreferenceKey.pendingInstallerVersion)
+            return
+        }
+        defaults.set(path, forKey: PreferenceKey.pendingInstallerPath)
+        defaults.set(version, forKey: PreferenceKey.pendingInstallerVersion)
     }
 
     static func consumeForceWelcomeOnNextLaunch() -> Bool {

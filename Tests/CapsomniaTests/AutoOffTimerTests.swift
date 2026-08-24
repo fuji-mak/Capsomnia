@@ -193,3 +193,70 @@ final class AutoOffPresetTests: XCTestCase {
         XCTAssertEqual(AutoOffPreset.adjustedCustomMinutes(24 * 60, by: 1), 24 * 60)
     }
 }
+
+final class AutoOffMenuFormatterTests: XCTestCase {
+    func testCountingTitleIncludesLocalizedPrefixAndCountdown() {
+        XCTAssertEqual(
+            AutoOffMenuFormatter.title(
+                base: "自動オフタイマー",
+                turnsOffIn: "オフまで",
+                state: .counting(remaining: 3661)
+            ),
+            "自動オフタイマー (オフまで 01:01:01)"
+        )
+    }
+
+    func testInactiveTitlesStayCompact() {
+        XCTAssertEqual(
+            AutoOffMenuFormatter.title(
+                base: "Auto-off timer",
+                turnsOffIn: "Turns off in",
+                state: .idle(minutes: 60)
+            ),
+            "Auto-off timer"
+        )
+        XCTAssertEqual(
+            AutoOffMenuFormatter.title(
+                base: "Auto-off timer",
+                turnsOffIn: "Turns off in",
+                state: .infinite
+            ),
+            "Auto-off timer"
+        )
+    }
+
+    func testCustomTitleShowsOnlyNonPresetDuration() {
+        XCTAssertEqual(
+            AutoOffMenuFormatter.customTitle(base: "Custom", selectedMinutes: 45),
+            "Custom (45m)"
+        )
+        XCTAssertEqual(
+            AutoOffMenuFormatter.customTitle(base: "Custom", selectedMinutes: 60),
+            "Custom"
+        )
+        XCTAssertEqual(
+            AutoOffMenuFormatter.customTitle(base: "Custom", selectedMinutes: 0),
+            "Custom"
+        )
+    }
+}
+
+final class AutoOffMenuSelectionPolicyTests: XCTestCase {
+    func testReselectingCurrentDurationDoesNotRestartTimer() {
+        XCTAssertFalse(
+            AutoOffMenuSelectionPolicy.shouldApply(
+                currentMinutes: 60,
+                selectedMinutes: 60
+            )
+        )
+    }
+
+    func testSelectingDifferentDurationAppliesChange() {
+        XCTAssertTrue(
+            AutoOffMenuSelectionPolicy.shouldApply(
+                currentMinutes: 60,
+                selectedMinutes: 120
+            )
+        )
+    }
+}

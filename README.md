@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `3.3.0`
+Current version: `3.4.0`
 
 [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
@@ -99,6 +99,8 @@ On first launch, Capsomnia explains how the Caps Lock switch works and lets you 
 - English, Japanese, Simplified Chinese, or Korean
 
 "Open at login" is enabled by default and does not appear in initial setup. Open Capsomnia again later to use the two day-to-day controls directly: the opt-in "Keep display awake" setting and the optional auto-off timer. "Keep display awake" is off by default, so closing the lid normally puts the display to sleep. The timer is also off by default. Each time Capsomnia is enabled, the selected duration starts from the beginning; the restart button resets the current countdown. Advanced Settings contains the less frequently changed menu bar, all-caps prevention, language, login, lid-closed Caps Lock guard, and global shortcut options. "Show menu bar icon" remains independent when "Prevent all-caps typing" is enabled. If the icon is hidden, a red dot appears temporarily when an error occurs.
+
+The menu bar menu keeps the same day-to-day controls close at hand: choose Off or a timer preset, see the remaining time while it runs, open the custom timer editor, and toggle "Keep display awake" without opening Settings. Menu bar visibility and language remain in Settings.
 
 macOS Accessibility permission is required only when "Prevent all-caps typing" is enabled. Capsomnia installs a local Core Graphics event filter that removes only the Caps Lock modifier from keyboard events; it does not store keyboard input or send it anywhere. If permission is missing or the filter stops, Capsomnia fails closed: sleep prevention is turned off, the menu bar dot turns red, and the app retries. When this setting is disabled, Accessibility permission is not required and Capsomnia only checks the local Caps Lock state every 250 milliseconds.
 

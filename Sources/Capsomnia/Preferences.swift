@@ -13,6 +13,8 @@ private enum PreferenceKey {
     static let shortcutKey = "ShortcutKey"
     static let didCompleteInitialSetup = "DidCompleteInitialSetup"
     static let forceWelcomeOnNextLaunch = "ForceWelcomeOnNextLaunch"
+    static let capsLockIndicatorBootTime = "CapsLockIndicatorBootTime"
+    static let capsLockIndicatorHiddenAtBoot = "CapsLockIndicatorHiddenAtBoot"
 }
 
 enum Preferences {
@@ -112,6 +114,36 @@ enum Preferences {
             defaults.set(newValue.keyCode, forKey: PreferenceKey.shortcutKeyCode)
             defaults.set(newValue.modifiers.rawValue, forKey: PreferenceKey.shortcutModifiers)
             defaults.set(newValue.key, forKey: PreferenceKey.shortcutKey)
+        }
+    }
+
+    /// The indicator flag state observed when the current boot was first
+    /// seen, used to decide whether a restart-required note is still shown.
+    static var capsLockIndicatorBootSnapshot: CapsLockIndicatorBootSnapshot? {
+        get {
+            guard let bootTime = defaults.object(
+                forKey: PreferenceKey.capsLockIndicatorBootTime
+            ) as? NSNumber else {
+                return nil
+            }
+            return CapsLockIndicatorBootSnapshot(
+                bootTime: bootTime.doubleValue,
+                hiddenAtBoot: defaults.bool(
+                    forKey: PreferenceKey.capsLockIndicatorHiddenAtBoot
+                )
+            )
+        }
+        set {
+            guard let newValue else {
+                defaults.removeObject(forKey: PreferenceKey.capsLockIndicatorBootTime)
+                defaults.removeObject(forKey: PreferenceKey.capsLockIndicatorHiddenAtBoot)
+                return
+            }
+            defaults.set(newValue.bootTime, forKey: PreferenceKey.capsLockIndicatorBootTime)
+            defaults.set(
+                newValue.hiddenAtBoot,
+                forKey: PreferenceKey.capsLockIndicatorHiddenAtBoot
+            )
         }
     }
 

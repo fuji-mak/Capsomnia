@@ -98,7 +98,7 @@ Capsomnia를 처음 실행하면 Caps Lock 스위치의 작동 방식을 안내�
 - Capsomnia가 켜져 있을 때 대문자 고정을 방지할지 여부
 - 영어, 일본어, 중국어(간체) 또는 한국어
 
-‘로그인할 때 열기’는 기본적으로 켜져 있으며 초기 설정 화면에는 표시되지 않습니다. 나중에 Capsomnia를 다시 열면 평소 자주 바꾸는 ‘화면 켜진 상태로 유지’와 자동 종료 타이머를 바로 조작할 수 있습니다. ‘화면 켜진 상태로 유지’는 기본적으로 꺼져 있으므로 일반적으로 덮개를 닫으면 화면이 잠자기 상태로 전환됩니다. 타이머도 기본적으로 꺼져 있습니다. Capsomnia를 켤 때마다 선택한 시간 전체로 다시 시작하며, 재시작 버튼으로 현재 카운트다운을 처음부터 다시 셀 수 있습니다. 고급 설정에는 변경 빈도가 낮은 메뉴 막대 표시, 대문자 고정 방지, 언어, 로그인 시 실행, 덮개를 닫았을 때의 Caps Lock 보호, 전역 단축키를 모았습니다. ‘대문자 고정 방지’를 활성화해도 ‘메뉴 막대에 표시’는 별도로 켜거나 끌 수 있습니다. 메뉴 막대 아이콘을 숨겨 두었더라도 오류가 발생하면 빨간 점이 잠시 나타납니다.
+‘로그인할 때 열기’는 기본적으로 켜져 있으며 초기 설정 화면에는 표시되지 않습니다. 나중에 Capsomnia를 다시 열면 평소 자주 바꾸는 ‘화면 켜진 상태로 유지’와 자동 종료 타이머를 바로 조작할 수 있습니다. ‘화면 켜진 상태로 유지’는 기본적으로 꺼져 있으므로 일반적으로 덮개를 닫으면 화면이 잠자기 상태로 전환됩니다. 타이머도 기본적으로 꺼져 있습니다. Capsomnia를 켤 때마다 선택한 시간 전체로 다시 시작하며, 재시작 버튼으로 현재 카운트다운을 처음부터 다시 셀 수 있습니다. 고급 설정에는 변경 빈도가 낮은 메뉴 막대 표시, 대문자 고정 방지, 언어, 로그인 시 실행, 덮개를 닫았을 때의 Caps Lock 보호, 전역 단축키와 함께, Caps Lock이 켜져 있을 때 텍스트 입력란에 나타나는 macOS 표시기를 숨기는 ‘Caps Lock 표시기 숨기기’를 모았습니다. 표시기 숨김은 시스템 전체 feature flag 설정을 변경하며 Mac을 재시동한 후에 적용됩니다. 재시동할 때까지 Capsomnia가 알림을 표시하고, 제거 시에는 macOS 기본값으로 되돌립니다. ‘대문자 고정 방지’를 활성화해도 ‘메뉴 막대에 표시’는 별도로 켜거나 끌 수 있습니다. 메뉴 막대 아이콘을 숨겨 두었더라도 오류가 발생하면 빨간 점이 잠시 나타납니다.
 
 메뉴 막대 메뉴에서도 자주 사용하는 기능을 바로 조작할 수 있습니다. 타이머 끄기 또는 프리셋을 선택하고, 실행 중인 남은 시간을 확인하고, 사용자 지정 타이머 설정을 열고, 설정 창을 열지 않고도 ‘화면 켜진 상태로 유지’를 전환할 수 있습니다. 메뉴 막대 표시와 언어 설정은 설정 창에 그대로 남아 있습니다.
 
@@ -146,7 +146,7 @@ git pull
 ./scripts/uninstall.sh
 ```
 
-제거 프로그램은 LaunchAgent를 내리고 Capsomnia를 멈춘 다음, `/Applications` 또는 `~/Applications`의 `Capsomnia.app`, helper, sudoers 규칙을 삭제하고 평소 잠자기 동작으로 되돌립니다. 관리자 인증이 필요할 수 있습니다.
+제거 프로그램은 LaunchAgent를 내리고 Capsomnia를 멈춘 다음, `/Applications` 또는 `~/Applications`의 `Capsomnia.app`, helper, sudoers 규칙을 삭제하고 평소 잠자기 동작으로 되돌리며 Caps Lock 표시기도 macOS 기본값으로 되돌립니다. 관리자 인증이 필요할 수 있습니다.
 
 ## 보안 모델
 
@@ -160,21 +160,25 @@ Capsomnia의 메뉴 막대 앱은 root로 실행되지 않습니다. 시스템 �
 
 충돌 복구가 꺼져 있거나 작동하지 않는 상태에서 Capsomnia를 강제로 종료하면 마지막 시스템 잠자기 설정이 남을 수 있습니다. 이때는 아래 수동 복구 명령으로 평소 잠자기 동작을 되돌리세요.
 
-앱이 권한을 높여 호출하는 명령은 다음 세 개뿐입니다.
+앱이 권한을 높여 호출하는 명령은 다음 다섯 개뿐입니다.
 
 ```sh
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
 ```
 
-sudoers 규칙은 정확히 이 세 명령으로 제한됩니다. helper는 `on`, `off`, `display-sleep`만 받아들이며 다음 명령만 호출합니다.
+sudoers 규칙은 정확히 이 다섯 명령으로 제한됩니다. helper는 `on`, `off`, `display-sleep`, `indicator-hide`, `indicator-show`만 받아들이며 앞의 세 모드는 다음 명령만 호출합니다.
 
 ```sh
 /usr/bin/pmset -a disablesleep 1
 /usr/bin/pmset -a disablesleep 0
 /usr/bin/pmset displaysleepnow
 ```
+
+`indicator-hide`와 `indicator-show`는 고정 파일 `/Library/Preferences/FeatureFlags/Domain/UIKit.plist`만 편집합니다. 숨기기는 macOS Caps Lock 표시기를 억제하는 `redesigned_text_cursor` 재정의를 기록하고, 표시하기는 그 재정의만 제거하며 파일에 다른 내용이 남지 않으면 파일을 삭제합니다. 같은 파일에 있는 무관한 flag는 보존됩니다.
 
 자동 종료 타이머는 Caps Lock을 정상적으로 끄고 `SleepDisabled=0`을 확인한 뒤 현재 사용자 권한으로 `/usr/bin/pmset sleepnow`를 직접 실행합니다. 이 즉시 잠자기 요청은 `sudo`를 사용하지 않으며 helper나 sudoers 권한을 늘리지 않습니다.
 
@@ -214,7 +218,9 @@ helper 권한 확인:
 ```sh
 sudo -n -l /Library/PrivilegedHelperTools/capsomnia-pmset on \
   /Library/PrivilegedHelperTools/capsomnia-pmset off \
-  /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
+  /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
 ```
 
 helper 권한 확인에 실패하면 `./scripts/install.sh`를 다시 실행하세요. Capsomnia는 Caps Lock 상태를 250밀리초마다 확인하므로 실제 표시등을 바꾼 뒤 메뉴 막대의 점이 갱신되기까지 약 0.25초가 걸릴 수 있습니다.

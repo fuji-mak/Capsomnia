@@ -45,8 +45,8 @@ sudo /bin/rm -f "$LEGACY_HELPER_PATH"
 
 sudoers_tmp="$(mktemp)"
 cat > "$sudoers_tmp" <<EOF
-# Allow Capsomnia to toggle only its fixed pmset helper.
-$CURRENT_USER ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off, $HELPER_PATH display-sleep
+# Allow Capsomnia to run only its fixed privileged helper.
+$CURRENT_USER ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off, $HELPER_PATH display-sleep, $HELPER_PATH indicator-hide, $HELPER_PATH indicator-show
 EOF
 
 /usr/sbin/visudo -cf "$sudoers_tmp"

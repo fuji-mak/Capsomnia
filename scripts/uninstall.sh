@@ -17,6 +17,9 @@ launchctl bootout "gui/$(id -u)" "$SYSTEM_LAUNCH_AGENT" 2>/dev/null || true
 /usr/bin/pkill -x "$APP_NAME" 2>/dev/null || true
 
 sudo "$HELPER_PATH" off 2>/dev/null || sudo /usr/bin/pmset -a disablesleep 0 2>/dev/null || true
+# Restore the macOS Caps Lock indicator default; older helpers without this
+# mode exit non-zero, which is fine.
+sudo "$HELPER_PATH" indicator-show 2>/dev/null || true
 
 rm -f "$LAUNCH_AGENT"
 rm -rf "$APP_BUNDLE"

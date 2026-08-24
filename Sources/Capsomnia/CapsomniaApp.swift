@@ -471,6 +471,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 onIgnoreExternalCapsLockOffWhileLidClosedChange: { [weak self] enabled in
                     self?.setIgnoreExternalCapsLockOffWhileLidClosed(enabled)
                 },
+                onHideCapsLockIndicatorChange: { [weak self] hidden in
+                    self?.setHideCapsLockIndicator(hidden)
+                },
+                capsLockIndicatorStateProvider: { [weak self] in
+                    self?.capsLockIndicatorDisplayState()
+                        ?? CapsLockIndicatorDisplayState(hidden: false, restartPending: false)
+                },
                 onAutoOffMinutesChange: { [weak self] minutes in
                     self?.setAutoOffMinutes(minutes)
                 },
@@ -576,6 +583,34 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func setIgnoreExternalCapsLockOffWhileLidClosed(_ enabled: Bool) {
         Preferences.ignoreExternalCapsLockOffWhileLidClosed = enabled
         log("preference ignore_external_capslock_off_while_lid_closed=\(enabled ? "on" : "off")")
+    }
+
+    /// The indicator toggle reflects the on-disk feature-flag override, so a
+    /// failed helper call simply leaves the toggle on its previous state when
+    /// the window reloads.
+    private func setHideCapsLockIndicator(_ hidden: Bool) {
+        let result = runHelper(hidden ? indicatorHideHelperMode : indicatorShowHelperMode)
+        log(
+            "preference hide_caps_lock_indicator=\(hidden ? "on" : "off")"
+                + " helper_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)"
+        )
+        settingsWindowController?.reloadText()
+    }
+
+    private func capsLockIndicatorDisplayState() -> CapsLockIndicatorDisplayState {
+        let hidden = CapsLockIndicatorFeatureFlag.isHidden()
+        let evaluation = CapsLockIndicatorRestartPolicy.evaluate(
+            snapshot: Preferences.capsLockIndicatorBootSnapshot,
+            currentBootTime: SystemBootTimeReader.bootTime(),
+            currentHidden: hidden
+        )
+        if evaluation.snapshot != Preferences.capsLockIndicatorBootSnapshot {
+            Preferences.capsLockIndicatorBootSnapshot = evaluation.snapshot
+        }
+        return CapsLockIndicatorDisplayState(
+            hidden: hidden,
+            restartPending: evaluation.restartPending
+        )
     }
 
     /// Advance the auto-off timer and, if it has elapsed, turn awake mode off.

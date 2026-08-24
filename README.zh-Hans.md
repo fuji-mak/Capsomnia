@@ -32,7 +32,7 @@ Capsomnia是一款小巧的macOS菜单栏应用，可将Caps Lock变成MacBook�
 
 它适用于AI智能体、移动端访问，以及其他耗时较长或需要远程操作的任务。
 
-Capsomnia不会收集遥测数据，也不需要账户。其唯一的网络用途是每天一次的可选更新检查（访问 GitHub 发布 API，仅获取最新版本号，可在高级设置中关闭），以及在您选择更新时从 GitHub 下载安装器。
+Capsomnia不会收集遥测数据，也不需要账户。其唯一的网络用途是每天一次的可选更新检查（读取 GitHub 的公开发布信息，可在高级设置中关闭），以及在您选择更新时从 GitHub 下载安装器。Capsomnia 不会发送遥测数据、标识符或个人信息。
 
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="Caps Lock 指示灯亮起" width="560">

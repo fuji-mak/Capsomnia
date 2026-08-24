@@ -57,6 +57,62 @@ final class UpdateCheckTests: XCTestCase {
         XCTAssertTrue(UpdateCheck.shouldAutoCheck(now: now, lastCheckedAt: now.addingTimeInterval(3_600), minimumInterval: 86_400))
     }
 
+    func testShouldAutoCheckThrottlesRecentAttempts() {
+        let now = Date(timeIntervalSinceReferenceDate: 1_000_000)
+        let hour: TimeInterval = 3_600
+
+        XCTAssertFalse(UpdateCheck.shouldAutoCheck(
+            now: now,
+            lastCheckedAt: nil,
+            minimumInterval: 86_400,
+            lastAttemptAt: now.addingTimeInterval(-60),
+            minimumAttemptInterval: hour
+        ))
+        XCTAssertTrue(UpdateCheck.shouldAutoCheck(
+            now: now,
+            lastCheckedAt: nil,
+            minimumInterval: 86_400,
+            lastAttemptAt: now.addingTimeInterval(-hour),
+            minimumAttemptInterval: hour
+        ))
+        XCTAssertTrue(UpdateCheck.shouldAutoCheck(
+            now: now,
+            lastCheckedAt: nil,
+            minimumInterval: 86_400,
+            lastAttemptAt: nil,
+            minimumAttemptInterval: hour
+        ))
+    }
+
+    func testLastKnownReleaseVersionRoundTripsAndClears() {
+        let previous = Preferences.lastKnownReleaseVersion
+        defer { Preferences.lastKnownReleaseVersion = previous }
+
+        Preferences.lastKnownReleaseVersion = "9.9.9"
+        XCTAssertEqual(Preferences.lastKnownReleaseVersion, "9.9.9")
+
+        Preferences.lastKnownReleaseVersion = nil
+        XCTAssertNil(Preferences.lastKnownReleaseVersion)
+    }
+
+    @MainActor
+    func testUpdateControllerRestoresAvailableVersionFromLastKnownRelease() {
+        let previous = Preferences.lastKnownReleaseVersion
+        defer { Preferences.lastKnownReleaseVersion = previous }
+
+        Preferences.lastKnownReleaseVersion = "9.9.9"
+        let controllerWithNewer = UpdateController(currentVersion: "3.4.0", log: { _ in })
+        XCTAssertEqual(controllerWithNewer.availableVersion, "9.9.9")
+
+        Preferences.lastKnownReleaseVersion = "3.4.0"
+        let controllerUpToDate = UpdateController(currentVersion: "3.4.0", log: { _ in })
+        XCTAssertNil(controllerUpToDate.availableVersion)
+
+        Preferences.lastKnownReleaseVersion = nil
+        let controllerWithoutRecord = UpdateController(currentVersion: "3.4.0", log: { _ in })
+        XCTAssertNil(controllerWithoutRecord.availableVersion)
+    }
+
     func testInstallerCleanupWithoutRecordDoesNothing() {
         let action = UpdateCheck.installerCleanupAction(
             currentVersion: "3.5.0",

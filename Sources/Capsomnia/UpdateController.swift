@@ -1,4 +1,5 @@
 import AppKit
+import CoreServices
 import Foundation
 
 /// Checks GitHub releases for a newer version, downloads the installer
@@ -7,6 +8,10 @@ import Foundation
 /// side effects (network, alerts, files).
 final class UpdateController {
     static let autoCheckInterval: TimeInterval = 86_400
+
+    /// Failed attempts never update `lastUpdateCheckAt`, so without a floor a
+    /// flaky network would retry on every menu opening.
+    static let minimumAttemptInterval: TimeInterval = 3_600
 
     private static let repository = "fuji-mak/Capsomnia"
     private static let latestReleaseURL = URL(
@@ -20,22 +25,52 @@ final class UpdateController {
 
     private let log: (String) -> Void
     private var isChecking = false
+    private var promoteInFlightCheckToUserInitiated = false
+    private var lastAttemptAt: Date?
+    private var autoCheckTimer: Timer?
 
-    private let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"]
-        as? String ?? "0"
+    private let currentVersion: String
 
-    init(log: @escaping (String) -> Void) {
+    init(
+        currentVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"]
+            as? String ?? "0",
+        log: @escaping (String) -> Void
+    ) {
+        self.currentVersion = currentVersion
         self.log = log
+
+        if let lastKnown = Preferences.lastKnownReleaseVersion,
+           UpdateCheck.isVersion(lastKnown, newerThan: currentVersion) {
+            availableVersion = lastKnown
+        }
+    }
+
+    deinit {
+        autoCheckTimer?.invalidate()
     }
 
     // MARK: - Checking
+
+    /// Keeps the daily check running even if the menu is never opened. The
+    /// timer fires well below the check interval; `autoCheckIfDue` throttles.
+    func startAutoCheckTimer() {
+        guard autoCheckTimer == nil else { return }
+        let timer = Timer(timeInterval: Self.minimumAttemptInterval, repeats: true) { [weak self] _ in
+            self?.autoCheckIfDue()
+        }
+        timer.tolerance = 300
+        RunLoop.main.add(timer, forMode: .common)
+        autoCheckTimer = timer
+    }
 
     func autoCheckIfDue() {
         guard Preferences.automaticUpdateChecks,
               UpdateCheck.shouldAutoCheck(
                   now: Date(),
                   lastCheckedAt: Preferences.lastUpdateCheckAt,
-                  minimumInterval: Self.autoCheckInterval
+                  minimumInterval: Self.autoCheckInterval,
+                  lastAttemptAt: lastAttemptAt,
+                  minimumAttemptInterval: Self.minimumAttemptInterval
               ) else {
             return
         }
@@ -47,8 +82,16 @@ final class UpdateController {
     }
 
     private func check(userInitiated: Bool) {
-        guard !isChecking else { return }
+        guard !isChecking else {
+            // A user request during an in-flight automatic check adopts that
+            // check instead of being dropped, so its result still alerts.
+            if userInitiated {
+                promoteInFlightCheckToUserInitiated = true
+            }
+            return
+        }
         isChecking = true
+        lastAttemptAt = Date()
         log("update_check started user_initiated=\(userInitiated ? "yes" : "no")")
 
         let task = URLSession.shared.dataTask(with: Self.latestReleaseURL) { [weak self] data, _, error in
@@ -59,8 +102,10 @@ final class UpdateController {
         task.resume()
     }
 
-    private func handleCheckResult(data: Data?, error: Error?, userInitiated: Bool) {
+    private func handleCheckResult(data: Data?, error: Error?, userInitiated initiatedByUser: Bool) {
         isChecking = false
+        let userInitiated = initiatedByUser || promoteInFlightCheckToUserInitiated
+        promoteInFlightCheckToUserInitiated = false
 
         guard error == nil,
               let data,
@@ -78,6 +123,7 @@ final class UpdateController {
         }
 
         Preferences.lastUpdateCheckAt = Date()
+        Preferences.lastKnownReleaseVersion = latestVersion
         let isNewer = UpdateCheck.isVersion(latestVersion, newerThan: currentVersion)
         log("update_check latest=\(latestVersion) current=\(currentVersion) newer=\(isNewer ? "yes" : "no")")
 
@@ -139,7 +185,7 @@ final class UpdateController {
             let cachesDirectory = FileManager.default
                 .urls(for: .cachesDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent(appName, isDirectory: true)
-            let destination = cachesDirectory.appendingPathComponent("Capsomnia-\(version).pkg")
+            var destination = cachesDirectory.appendingPathComponent("Capsomnia-\(version).pkg")
             do {
                 try FileManager.default.createDirectory(
                     at: cachesDirectory,
@@ -147,7 +193,19 @@ final class UpdateController {
                 )
                 try? FileManager.default.removeItem(at: destination)
                 try FileManager.default.moveItem(at: location, to: destination)
+
+                // URLSession downloads carry no quarantine attribute for a
+                // non-sandboxed app, and quarantine is what makes Installer
+                // run the package through Gatekeeper. Fail closed: without
+                // the attribute the package is not opened.
+                var quarantine = URLResourceValues()
+                quarantine.quarantineProperties = [
+                    kLSQuarantineTypeKey as String: kLSQuarantineTypeWebDownload,
+                    kLSQuarantineDataURLKey as String: downloadURL.absoluteString
+                ]
+                try destination.setResourceValues(quarantine)
             } catch {
+                try? FileManager.default.removeItem(at: destination)
                 DispatchQueue.main.async {
                     self?.handleDownloadFailure(reason: String(describing: error))
                 }
@@ -162,9 +220,13 @@ final class UpdateController {
     }
 
     private func handleDownloadSuccess(version: String, destination: URL) {
+        guard NSWorkspace.shared.open(destination) else {
+            try? FileManager.default.removeItem(at: destination)
+            handleDownloadFailure(reason: "installer_open_failed")
+            return
+        }
         Preferences.setPendingInstaller(path: destination.path, version: version)
         log("update_download finished path=\(destination.path)")
-        NSWorkspace.shared.open(destination)
     }
 
     private func handleDownloadFailure(reason: String) {
@@ -200,10 +262,11 @@ final class UpdateController {
             do {
                 try FileManager.default.removeItem(atPath: path)
                 log("update_installer_cleanup removed path=\(path)")
+                Preferences.setPendingInstaller(path: nil, version: nil)
             } catch {
+                // Keep the record so the next launch retries the removal.
                 log("update_installer_cleanup failed error=\(String(describing: error))")
             }
-            Preferences.setPendingInstaller(path: nil, version: nil)
         }
     }
 

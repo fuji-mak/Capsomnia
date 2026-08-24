@@ -4,7 +4,7 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
-- Add a built-in, dependency-free update check. "Check for Updates…" in the menu bar menu queries the GitHub releases API, and an opt-out daily automatic check (Advanced Settings) surfaces new versions as "Update available" in the menu. Choosing to update downloads the signed installer package to Capsomnia's own caches folder — avoiding the macOS Downloads-folder privacy prompt — and opens it; the download is removed automatically on the first launch after the update. Only the latest version number is requested — no telemetry.
+- Add a built-in, dependency-free update check. "Check for Updates…" in the menu bar menu queries the GitHub releases API, and an opt-out daily automatic check (Advanced Settings) surfaces new versions as "Update available" in the menu. Choosing to update downloads the signed installer package to Capsomnia's own caches folder — avoiding the macOS Downloads-folder privacy prompt — and opens it; the download is removed automatically on the first launch after the update. The check reads GitHub's public release information and sends no telemetry, identifiers, or personal data.
 
 ## 3.4.0 - 2026-08-24
 

@@ -15,6 +15,7 @@ private enum PreferenceKey {
     static let forceWelcomeOnNextLaunch = "ForceWelcomeOnNextLaunch"
     static let automaticUpdateChecks = "AutomaticUpdateChecks"
     static let lastUpdateCheckAt = "LastUpdateCheckAt"
+    static let lastKnownReleaseVersion = "LastKnownReleaseVersion"
     static let pendingInstallerPath = "PendingInstallerPath"
     static let pendingInstallerVersion = "PendingInstallerVersion"
 }
@@ -140,6 +141,19 @@ enum Preferences {
                 return
             }
             defaults.set(newValue, forKey: PreferenceKey.lastUpdateCheckAt)
+        }
+    }
+
+    /// The release version most recently seen on GitHub, persisted so the
+    /// "Update available" menu state survives a relaunch between checks.
+    static var lastKnownReleaseVersion: String? {
+        get { defaults.string(forKey: PreferenceKey.lastKnownReleaseVersion) }
+        set {
+            guard let newValue else {
+                defaults.removeObject(forKey: PreferenceKey.lastKnownReleaseVersion)
+                return
+            }
+            defaults.set(newValue, forKey: PreferenceKey.lastKnownReleaseVersion)
         }
     }
 

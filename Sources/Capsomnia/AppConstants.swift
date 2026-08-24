@@ -202,7 +202,7 @@ struct AppStrings {
                 updateCheckFailedTitle: "Update check failed",
                 updateCheckFailedBody: "Couldn’t reach GitHub to check for updates. Try again later.",
                 automaticUpdateChecks: "Check for updates automatically",
-                automaticUpdateChecksDesc: "Checks the GitHub releases page once a day and shows new versions in the menu bar menu. Only the version number is requested — nothing about you or your Mac is sent."
+                automaticUpdateChecksDesc: "Checks GitHub's public release information once a day and shows new versions in the menu bar menu. Capsomnia sends no telemetry, identifiers, or personal data."
             )
         case .korean:
             AppStrings(
@@ -262,7 +262,7 @@ struct AppStrings {
                 updateCheckFailedTitle: "업데이트 확인 실패",
                 updateCheckFailedBody: "GitHub에 연결해 업데이트를 확인하지 못했습니다. 나중에 다시 시도해 주세요.",
                 automaticUpdateChecks: "자동으로 업데이트 확인",
-                automaticUpdateChecksDesc: "하루에 한 번 GitHub 릴리스 페이지를 확인하고 새 버전을 메뉴 막대 메뉴에 표시합니다. 버전 번호만 요청하며 사용자나 Mac에 관한 정보는 전송하지 않습니다."
+                automaticUpdateChecksDesc: "하루에 한 번 GitHub의 공개 릴리스 정보를 확인하고 새 버전을 메뉴 막대 메뉴에 표시합니다. Capsomnia는 텔레메트리, 식별자, 개인 정보를 전송하지 않습니다."
             )
         case .japanese:
             AppStrings(
@@ -322,7 +322,7 @@ struct AppStrings {
                 updateCheckFailedTitle: "アップデートを確認できませんでした",
                 updateCheckFailedBody: "GitHubに接続してアップデートを確認できませんでした。あとでもう一度お試しください。",
                 automaticUpdateChecks: "アップデートを自動で確認",
-                automaticUpdateChecksDesc: "1日に1回GitHubのリリースページを確認し、新しいバージョンをメニューバーのメニューに表示します。取得するのはバージョン番号のみで、ユーザーやMacに関する情報は送信しません。"
+                automaticUpdateChecksDesc: "1日に1回GitHubの公開リリース情報を確認し、新しいバージョンをメニューバーのメニューに表示します。Capsomniaがテレメトリや識別子、個人情報を送信することはありません。"
             )
         case .simplifiedChinese:
             AppStrings(
@@ -382,7 +382,7 @@ struct AppStrings {
                 updateCheckFailedTitle: "检查更新失败",
                 updateCheckFailedBody: "无法连接 GitHub 检查更新。请稍后再试。",
                 automaticUpdateChecks: "自动检查更新",
-                automaticUpdateChecksDesc: "每天检查一次 GitHub 发布页面，并在菜单栏菜单中显示新版本。仅请求版本号，不会发送任何关于您或 Mac 的信息。"
+                automaticUpdateChecksDesc: "每天检查一次 GitHub 的公开发布信息，并在菜单栏菜单中显示新版本。Capsomnia 不会发送遥测数据、标识符或个人信息。"
             )
         }
     }

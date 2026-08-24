@@ -12,8 +12,21 @@ enum InstallerCleanupAction: Equatable {
 enum UpdateCheck {
     /// Whether an automatic (non-user-initiated) check is due. A last-check
     /// date in the future means the clock moved backwards; check again rather
-    /// than blocking until the recorded date is reached.
-    static func shouldAutoCheck(now: Date, lastCheckedAt: Date?, minimumInterval: TimeInterval) -> Bool {
+    /// than blocking until the recorded date is reached. `lastAttemptAt`
+    /// throttles retries after failed attempts, which never update
+    /// `lastCheckedAt`.
+    static func shouldAutoCheck(
+        now: Date,
+        lastCheckedAt: Date?,
+        minimumInterval: TimeInterval,
+        lastAttemptAt: Date? = nil,
+        minimumAttemptInterval: TimeInterval = 0
+    ) -> Bool {
+        if let lastAttemptAt,
+           lastAttemptAt <= now,
+           now.timeIntervalSince(lastAttemptAt) < minimumAttemptInterval {
+            return false
+        }
         guard let lastCheckedAt else {
             return true
         }

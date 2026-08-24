@@ -106,7 +106,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         DispatchQueue.main.async { [weak self] in
-            self?.updateController?.offerInstallerCleanupIfNeeded()
+            self?.updateController?.cleanUpInstallerIfNeeded()
             self?.updateController?.autoCheckIfDue()
         }
     }

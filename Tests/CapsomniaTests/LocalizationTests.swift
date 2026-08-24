@@ -60,10 +60,6 @@ final class LocalizationTests: XCTestCase {
             XCTAssertTrue(strings.updateUpToDateBodyFormat.contains("%@"))
             XCTAssertFalse(strings.updateCheckFailedTitle.isEmpty)
             XCTAssertFalse(strings.updateCheckFailedBody.isEmpty)
-            XCTAssertFalse(strings.updateRemoveInstallerTitle.isEmpty)
-            XCTAssertTrue(strings.updateRemoveInstallerBodyFormat.contains("%@"))
-            XCTAssertFalse(strings.updateRemoveInstallerRemove.isEmpty)
-            XCTAssertFalse(strings.updateRemoveInstallerKeep.isEmpty)
             XCTAssertFalse(strings.automaticUpdateChecks.isEmpty)
             XCTAssertFalse(strings.automaticUpdateChecksDesc.isEmpty)
         }

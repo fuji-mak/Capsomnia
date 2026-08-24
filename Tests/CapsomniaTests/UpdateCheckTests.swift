@@ -68,21 +68,21 @@ final class UpdateCheckTests: XCTestCase {
         XCTAssertEqual(action, .none)
     }
 
-    func testInstallerCleanupOffersRemovalOnceUpdateIsInstalled() {
+    func testInstallerCleanupRemovesInstallerOnceUpdateIsInstalled() {
         let action = UpdateCheck.installerCleanupAction(
             currentVersion: "3.5.0",
-            recordedPath: "/Users/test/Downloads/Capsomnia-3.5.0.pkg",
+            recordedPath: "/Users/test/Library/Caches/Capsomnia/Capsomnia-3.5.0.pkg",
             recordedVersion: "3.5.0",
             fileExists: { _ in true }
         )
 
-        XCTAssertEqual(action, .offerRemoval(path: "/Users/test/Downloads/Capsomnia-3.5.0.pkg", version: "3.5.0"))
+        XCTAssertEqual(action, .remove(path: "/Users/test/Library/Caches/Capsomnia/Capsomnia-3.5.0.pkg"))
     }
 
     func testInstallerCleanupWaitsWhileUpdateIsStillPending() {
         let action = UpdateCheck.installerCleanupAction(
             currentVersion: "3.4.0",
-            recordedPath: "/Users/test/Downloads/Capsomnia-3.5.0.pkg",
+            recordedPath: "/Users/test/Library/Caches/Capsomnia/Capsomnia-3.5.0.pkg",
             recordedVersion: "3.5.0",
             fileExists: { _ in true }
         )
@@ -135,7 +135,7 @@ final class UpdateCheckTests: XCTestCase {
     func testInstallerCleanupClearsRecordWhenFileIsGone() {
         let action = UpdateCheck.installerCleanupAction(
             currentVersion: "3.5.0",
-            recordedPath: "/Users/test/Downloads/Capsomnia-3.5.0.pkg",
+            recordedPath: "/Users/test/Library/Caches/Capsomnia/Capsomnia-3.5.0.pkg",
             recordedVersion: "3.5.0",
             fileExists: { _ in false }
         )

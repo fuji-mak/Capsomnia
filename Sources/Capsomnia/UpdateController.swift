@@ -133,11 +133,18 @@ final class UpdateController {
             }
 
             // The temporary file is deleted when this handler returns, so move
-            // it before hopping to the main queue.
-            let destination = FileManager.default
-                .urls(for: .downloadsDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("Capsomnia-\(version).pkg")
+            // it before hopping to the main queue. The app-owned caches folder
+            // avoids the Downloads-folder privacy prompt, and the file is
+            // removed automatically once the update is installed.
+            let cachesDirectory = FileManager.default
+                .urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent(appName, isDirectory: true)
+            let destination = cachesDirectory.appendingPathComponent("Capsomnia-\(version).pkg")
             do {
+                try FileManager.default.createDirectory(
+                    at: cachesDirectory,
+                    withIntermediateDirectories: true
+                )
                 try? FileManager.default.removeItem(at: destination)
                 try FileManager.default.moveItem(at: location, to: destination)
             } catch {
@@ -173,9 +180,10 @@ final class UpdateController {
     // MARK: - Installer cleanup
 
     /// Called at launch: once the app runs as the version a previously
-    /// downloaded installer delivered, offer to move that download to the
-    /// Trash. Declining clears the record so the question is asked only once.
-    func offerInstallerCleanupIfNeeded() {
+    /// downloaded installer delivered, remove that download from the app's
+    /// caches folder. The file never lives in a user-facing location, so no
+    /// confirmation is needed.
+    func cleanUpInstallerIfNeeded() {
         let action = UpdateCheck.installerCleanupAction(
             currentVersion: currentVersion,
             recordedPath: Preferences.pendingInstallerPath,
@@ -188,24 +196,12 @@ final class UpdateController {
             return
         case .clearRecord:
             Preferences.setPendingInstaller(path: nil, version: nil)
-        case let .offerRemoval(path, _):
-            let strings = AppStrings.current()
-            let fileURL = URL(fileURLWithPath: path)
-            let confirmed = presentAlert(
-                title: strings.updateRemoveInstallerTitle,
-                body: String(format: strings.updateRemoveInstallerBodyFormat, fileURL.lastPathComponent),
-                confirm: strings.updateRemoveInstallerRemove,
-                cancel: strings.updateRemoveInstallerKeep
-            )
-            if confirmed {
-                do {
-                    try FileManager.default.trashItem(at: fileURL, resultingItemURL: nil)
-                    log("update_installer_cleanup trashed path=\(path)")
-                } catch {
-                    log("update_installer_cleanup failed error=\(String(describing: error))")
-                }
-            } else {
-                log("update_installer_cleanup kept path=\(path)")
+        case let .remove(path):
+            do {
+                try FileManager.default.removeItem(atPath: path)
+                log("update_installer_cleanup removed path=\(path)")
+            } catch {
+                log("update_installer_cleanup failed error=\(String(describing: error))")
             }
             Preferences.setPendingInstaller(path: nil, version: nil)
         }

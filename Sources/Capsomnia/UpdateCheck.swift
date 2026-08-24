@@ -5,7 +5,7 @@ import Foundation
 enum InstallerCleanupAction: Equatable {
     case none
     case keepWaiting
-    case offerRemoval(path: String, version: String)
+    case remove(path: String)
     case clearRecord
 }
 
@@ -24,8 +24,8 @@ enum UpdateCheck {
     }
 
     /// What to do with a previously downloaded installer package. The download
-    /// is offered for removal only after the app is running as (at least) the
-    /// version that installer delivered.
+    /// is removed only after the app is running as (at least) the version that
+    /// installer delivered.
     static func installerCleanupAction(
         currentVersion: String,
         recordedPath: String?,
@@ -41,7 +41,7 @@ enum UpdateCheck {
         if isVersion(recordedVersion, newerThan: currentVersion) {
             return .keepWaiting
         }
-        return .offerRemoval(path: recordedPath, version: recordedVersion)
+        return .remove(path: recordedPath)
     }
 
     /// Compares two dotted numeric versions ("3.4.0"). Missing components are

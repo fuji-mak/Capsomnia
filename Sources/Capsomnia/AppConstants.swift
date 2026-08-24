@@ -135,6 +135,8 @@ struct AppStrings {
     let updateUpToDateBodyFormat: String
     let updateCheckFailedTitle: String
     let updateCheckFailedBody: String
+    let updateDownloadFailedTitle: String
+    let updateDownloadFailedBody: String
     let automaticUpdateChecks: String
     let automaticUpdateChecksDesc: String
 
@@ -201,6 +203,8 @@ struct AppStrings {
                 updateUpToDateBodyFormat: "Capsomnia %@ is the latest version.",
                 updateCheckFailedTitle: "Update check failed",
                 updateCheckFailedBody: "Couldn’t reach GitHub to check for updates. Try again later.",
+                updateDownloadFailedTitle: "Update failed",
+                updateDownloadFailedBody: "The installer couldn’t be downloaded or opened. Try again later, or download it from the GitHub releases page.",
                 automaticUpdateChecks: "Check for updates automatically",
                 automaticUpdateChecksDesc: "Checks GitHub's public release information once a day and shows new versions in the menu bar menu. Capsomnia sends no telemetry, identifiers, or personal data."
             )
@@ -261,6 +265,8 @@ struct AppStrings {
                 updateUpToDateBodyFormat: "Capsomnia %@이(가) 최신 버전입니다.",
                 updateCheckFailedTitle: "업데이트 확인 실패",
                 updateCheckFailedBody: "GitHub에 연결해 업데이트를 확인하지 못했습니다. 나중에 다시 시도해 주세요.",
+                updateDownloadFailedTitle: "업데이트 실패",
+                updateDownloadFailedBody: "설치 프로그램을 다운로드하거나 열지 못했습니다. 나중에 다시 시도하거나 GitHub 릴리스 페이지에서 다운로드해 주세요.",
                 automaticUpdateChecks: "자동으로 업데이트 확인",
                 automaticUpdateChecksDesc: "하루에 한 번 GitHub의 공개 릴리스 정보를 확인하고 새 버전을 메뉴 막대 메뉴에 표시합니다. Capsomnia는 텔레메트리, 식별자, 개인 정보를 전송하지 않습니다."
             )
@@ -321,6 +327,8 @@ struct AppStrings {
                 updateUpToDateBodyFormat: "Capsomnia %@ は最新バージョンです。",
                 updateCheckFailedTitle: "アップデートを確認できませんでした",
                 updateCheckFailedBody: "GitHubに接続してアップデートを確認できませんでした。あとでもう一度お試しください。",
+                updateDownloadFailedTitle: "アップデートに失敗しました",
+                updateDownloadFailedBody: "インストーラをダウンロードまたは開くことができませんでした。あとでもう一度試すか、GitHubのリリースページからダウンロードしてください。",
                 automaticUpdateChecks: "アップデートを自動で確認",
                 automaticUpdateChecksDesc: "1日に1回GitHubの公開リリース情報を確認し、新しいバージョンをメニューバーのメニューに表示します。Capsomniaがテレメトリや識別子、個人情報を送信することはありません。"
             )
@@ -381,6 +389,8 @@ struct AppStrings {
                 updateUpToDateBodyFormat: "Capsomnia %@ 已是最新版本。",
                 updateCheckFailedTitle: "检查更新失败",
                 updateCheckFailedBody: "无法连接 GitHub 检查更新。请稍后再试。",
+                updateDownloadFailedTitle: "更新失败",
+                updateDownloadFailedBody: "无法下载或打开安装器。请稍后再试，或从 GitHub 发布页面下载。",
                 automaticUpdateChecks: "自动检查更新",
                 automaticUpdateChecksDesc: "每天检查一次 GitHub 的公开发布信息，并在菜单栏菜单中显示新版本。Capsomnia 不会发送遥测数据、标识符或个人信息。"
             )

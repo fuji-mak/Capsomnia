@@ -201,7 +201,7 @@ final class UpdateController {
                 var quarantine = URLResourceValues()
                 quarantine.quarantineProperties = [
                     kLSQuarantineTypeKey as String: kLSQuarantineTypeWebDownload,
-                    kLSQuarantineDataURLKey as String: downloadURL.absoluteString
+                    kLSQuarantineDataURLKey as String: downloadURL as NSURL
                 ]
                 try destination.setResourceValues(quarantine)
             } catch {
@@ -233,8 +233,8 @@ final class UpdateController {
         log("update_download failed error=\(reason)")
         let strings = AppStrings.current()
         presentAlert(
-            title: strings.updateCheckFailedTitle,
-            body: strings.updateCheckFailedBody,
+            title: strings.updateDownloadFailedTitle,
+            body: strings.updateDownloadFailedBody,
             confirm: strings.done
         )
     }

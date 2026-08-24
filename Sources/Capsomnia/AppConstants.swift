@@ -92,8 +92,8 @@ struct AppStrings {
     let systemBehavior: String
     let openAtLogin: String
     let openAtLoginDesc: String
-    let displaySleepOnLidClose: String
-    let displaySleepOnLidCloseDesc: String
+    let keepDisplayAwake: String
+    let keepDisplayAwakeDesc: String
     let ignoreExternalCapsLockOffWhileLidClosed: String
     let ignoreExternalCapsLockOffWhileLidClosedDesc: String
     let hideCapsLockIndicator: String
@@ -149,8 +149,8 @@ struct AppStrings {
                 systemBehavior: "System Behavior",
                 openAtLogin: "Open at login",
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
-                displaySleepOnLidClose: "Turn display off when lid closes",
-                displaySleepOnLidCloseDesc: "When Capsomnia is on, let the display sleep after closing the lid only if no external display is connected.",
+                keepDisplayAwake: "Keep display awake",
+                keepDisplayAwakeDesc: "Keeps the display awake while Capsomnia is on. Useful when using Computer Use or similar tools.",
                 ignoreExternalCapsLockOffWhileLidClosed: "Ignore Caps Lock turn-offs while the lid is closed",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "While the lid is closed, sleep prevention stays on even if Caps Lock is turned off — for example by a remote desktop client syncing its keyboard state. The menu bar, the toggle shortcut, and the auto-off timer still turn it off.",
                 hideCapsLockIndicator: "Hide the Caps Lock indicator",
@@ -200,8 +200,8 @@ struct AppStrings {
                 systemBehavior: "시스템 동작",
                 openAtLogin: "로그인할 때 열기",
                 openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
-                displaySleepOnLidClose: "덮개를 닫을 때 화면 끄기",
-                displaySleepOnLidCloseDesc: "Capsomnia가 켜진 상태에서 덮개를 닫으면 외부 디스플레이가 연결되지 않은 경우에만 화면을 끕니다.",
+                keepDisplayAwake: "화면 켜진 상태로 유지",
+                keepDisplayAwakeDesc: "Capsomnia가 켜져 있는 동안 화면이 잠자기 상태로 전환되지 않도록 합니다. Computer Use 등을 사용할 때 유용합니다.",
                 ignoreExternalCapsLockOffWhileLidClosed: "덮개를 닫은 동안 Caps Lock에 의한 끄기 무시",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "덮개가 닫혀 있는 동안에는 Caps Lock이 꺼져도 잠자기 방지를 유지합니다. 원격 데스크톱 연결 등으로 의도치 않게 해제되는 것을 방지합니다. 메뉴 막대, 전환 단축키, 자동 종료 타이머로는 평소대로 끌 수 있습니다.",
                 hideCapsLockIndicator: "Caps Lock 표시기 숨기기",
@@ -251,8 +251,8 @@ struct AppStrings {
                 systemBehavior: "システム動作",
                 openAtLogin: "ログイン時に起動",
                 openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
-                displaySleepOnLidClose: "蓋を閉じたら画面をオフ",
-                displaySleepOnLidCloseDesc: "Capsomnia ON中は、外部ディスプレイが接続されていない場合のみ、蓋を閉じたら画面を暗くします。",
+                keepDisplayAwake: "画面をスリープさせない",
+                keepDisplayAwakeDesc: "Capsomniaがオンの時に画面をスリープしないようにします。Computer Useなどを使う際に有効です。",
                 ignoreExternalCapsLockOffWhileLidClosed: "蓋を閉じている間はCaps Lockによるオフを無視",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "蓋を閉じている間は、Caps Lockがオフになってもスリープ抑止を維持します。リモートデスクトップ接続などで意図せず解除されるのを防ぎます。メニューバー・切り替えショートカット・自動オフタイマーからは通常どおりオフにできます。",
                 hideCapsLockIndicator: "Caps Lockインジケータを非表示",
@@ -302,8 +302,8 @@ struct AppStrings {
                 systemBehavior: "系统行为",
                 openAtLogin: "登录时启动",
                 openAtLoginDesc: "登录后自动启动 Capsomnia。",
-                displaySleepOnLidClose: "合盖时关闭显示屏",
-                displaySleepOnLidCloseDesc: "Capsomnia 开启时，仅在未连接外接显示器的情况下，合盖后让显示屏进入睡眠。",
+                keepDisplayAwake: "保持显示屏常亮",
+                keepDisplayAwakeDesc: "Capsomnia 开启时防止显示屏进入睡眠。使用 Computer Use 等工具时很有用。",
                 ignoreExternalCapsLockOffWhileLidClosed: "合盖期间忽略 Caps Lock 的关闭操作",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "合盖期间，即使 Caps Lock 被关闭也会保持防睡眠，防止远程桌面连接等意外解除防睡眠。菜单栏、切换快捷键和自动关闭定时器仍可正常关闭。",
                 hideCapsLockIndicator: "隐藏大写锁定指示器",

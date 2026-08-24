@@ -2,12 +2,14 @@ import AppKit
 import Carbon.HIToolbox
 import Foundation
 
-final class Capsomnia: NSObject, NSApplicationDelegate {
+final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastAppliedState: Bool?
     private var failedSleepState: Bool?
     private var nextSleepStateRetryAt = Date.distantPast
     private var nextSleepStateVerificationAt = Date.distantPast
     private var nextDisplaySleepRetryAt = Date.distantPast
+    private var nextDisplayAwakeRetryAt = Date.distantPast
+    private let displayAwakeAssertion = DisplayAwakeAssertion()
     private var autoOffState = AutoOffState()
     private var isAutoOffToggleInFlight = false
     private var didRequestDisplaySleepForClosedLid = false
@@ -25,6 +27,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var localCapsLockEventMonitor: Any?
     private var signalSources: [DispatchSourceSignal] = []
     private var statusItem: NSStatusItem?
+    private weak var autoOffStatusMenuItem: NSMenuItem?
+    private var autoOffPresetMenuItems: [NSMenuItem] = []
+    private weak var autoOffCustomMenuItem: NSMenuItem?
+    private weak var keepDisplayAwakeStatusMenuItem: NSMenuItem?
     private var settingsWindowController: SettingsWindowController?
     private let onImage = DotImage.make(color: Brand.led)
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
@@ -111,6 +117,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         pendingAutoOffPreferenceApplyWorkItem?.cancel()
         pendingAutoOffPreferenceApplyWorkItem = nil
         DistributedNotificationCenter.default().removeObserver(self)
+        displayAwakeAssertion.setActive(false)
         guard shouldRestoreSleepOnTerminate else { return }
 
         let result = runHelper("off")
@@ -307,6 +314,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         let strings = AppStrings.current()
         let menu = NSMenu()
+        menu.delegate = self
         let toggleCapsLockItem = NSMenuItem(
             title: strings.toggleCapsLock,
             action: #selector(toggleCapsLockFromMenu),
@@ -316,30 +324,48 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         menu.addItem(toggleCapsLockItem)
         menu.addItem(NSMenuItem.separator())
 
-        let showMenuBarItem = NSMenuItem(
-            title: strings.showMenuBarIcon,
-            action: #selector(toggleShowMenuBarIcon),
-            keyEquivalent: ""
-        )
-        showMenuBarItem.target = self
-        showMenuBarItem.state = Preferences.showMenuBarIcon ? .on : .off
-        menu.addItem(showMenuBarItem)
+        let autoOffItem = NSMenuItem(title: strings.autoOffTimer, action: nil, keyEquivalent: "")
+        let autoOffMenu = NSMenu(title: strings.autoOffTimer)
+        autoOffMenu.delegate = self
+        autoOffPresetMenuItems = []
 
-        let languageItem = NSMenuItem(title: strings.language, action: nil, keyEquivalent: "")
-        let languageMenu = NSMenu(title: strings.language)
-        for language in AppLanguage.allCases {
-            let item = NSMenuItem(
-                title: language.displayName,
-                action: #selector(selectLanguage),
+        for minutes in [0] + AutoOffPreset.minuteOptions {
+            let presetItem = NSMenuItem(
+                title: minutes == 0
+                    ? strings.autoOffOff
+                    : AutoOffFormatter.durationLabel(minutes: minutes),
+                action: #selector(selectAutoOffPreset),
                 keyEquivalent: ""
             )
-            item.target = self
-            item.representedObject = language.rawValue
-            item.state = Preferences.language == language ? .on : .off
-            languageMenu.addItem(item)
+            presetItem.target = self
+            presetItem.representedObject = minutes
+            autoOffMenu.addItem(presetItem)
+            autoOffPresetMenuItems.append(presetItem)
         }
-        menu.setSubmenu(languageMenu, for: languageItem)
-        menu.addItem(languageItem)
+
+        autoOffMenu.addItem(NSMenuItem.separator())
+        let customItem = NSMenuItem(
+            title: "\(strings.autoOffCustom)…",
+            action: #selector(openAutoOffSettings),
+            keyEquivalent: ""
+        )
+        customItem.target = self
+        autoOffMenu.addItem(customItem)
+        autoOffCustomMenuItem = customItem
+        menu.setSubmenu(autoOffMenu, for: autoOffItem)
+        menu.addItem(autoOffItem)
+        autoOffStatusMenuItem = autoOffItem
+
+        let keepDisplayAwakeItem = NSMenuItem(
+            title: strings.keepDisplayAwake,
+            action: #selector(toggleKeepDisplayAwakeFromMenu),
+            keyEquivalent: ""
+        )
+        keepDisplayAwakeItem.target = self
+        menu.addItem(keepDisplayAwakeItem)
+        keepDisplayAwakeStatusMenuItem = keepDisplayAwakeItem
+
+        menu.addItem(NSMenuItem.separator())
 
         let openItem = NSMenuItem(title: strings.openCapsomnia, action: #selector(openCapsomnia), keyEquivalent: "o")
         openItem.target = self
@@ -351,10 +377,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         menu.addItem(quitItem)
 
         item.menu = menu
+        updateStatusMenuControls()
     }
 
-    @objc private func toggleShowMenuBarIcon() {
-        setShowMenuBarIcon(!Preferences.showMenuBarIcon)
+    func menuWillOpen(_ menu: NSMenu) {
+        updateStatusMenuControls()
     }
 
     @objc private func toggleCapsLockFromMenu() {
@@ -397,13 +424,21 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc private func selectLanguage(_ sender: NSMenuItem) {
-        guard let rawValue = sender.representedObject as? String,
-              let language = AppLanguage(rawValue: rawValue) else {
-            return
-        }
+    @objc private func selectAutoOffPreset(_ sender: NSMenuItem) {
+        guard let minutes = sender.representedObject as? Int else { return }
+        guard AutoOffMenuSelectionPolicy.shouldApply(
+            currentMinutes: Preferences.autoOffMinutes,
+            selectedMinutes: minutes
+        ) else { return }
+        setAutoOffMinutes(minutes)
+    }
 
-        setLanguage(language)
+    @objc private func openAutoOffSettings() {
+        showSettingsWindow(page: currentSettingsPage())
+    }
+
+    @objc private func toggleKeepDisplayAwakeFromMenu() {
+        setKeepDisplayAwake(!Preferences.keepDisplayAwake)
     }
 
     @objc private func openCapsomnia() {
@@ -430,8 +465,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
                 onLaunchAtLoginChange: { [weak self] enabled in
                     self?.setLaunchAtLogin(enabled)
                 },
-                onDisplaySleepOnLidCloseChange: { [weak self] enabled in
-                    self?.setDisplaySleepOnLidClose(enabled)
+                onKeepDisplayAwakeChange: { [weak self] enabled in
+                    self?.setKeepDisplayAwake(enabled)
                 },
                 onIgnoreExternalCapsLockOffWhileLidClosedChange: { [weak self] enabled in
                     self?.setIgnoreExternalCapsLockOffWhileLidClosed(enabled)
@@ -525,14 +560,24 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func setDisplaySleepOnLidClose(_ enabled: Bool) {
-        Preferences.displaySleepOnLidClose = enabled
+    private func setKeepDisplayAwake(_ enabled: Bool) {
+        Preferences.keepDisplayAwake = enabled
+        let capsLockOn = currentCapsLockState
         if enabled {
-            evaluateDisplaySleepForClosedLid(capsLockOn: currentCapsLockState, reason: "preference")
-        } else {
             didRequestDisplaySleepForClosedLid = false
+            nextDisplaySleepRetryAt = .distantPast
         }
-        log("preference display_sleep_on_lid_close=\(enabled ? "on" : "off")")
+        syncDisplayAwakeAssertion(
+            capsLockOn: capsLockOn,
+            sleepPreventionConfirmed: failedSleepState == nil && lastAppliedState == capsLockOn,
+            reason: "preference"
+        )
+        if !enabled {
+            evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: "preference")
+        }
+        updateStatusMenuControls()
+        settingsWindowController?.reloadText()
+        log("preference keep_display_awake=\(enabled ? "on" : "off")")
     }
 
     private func setIgnoreExternalCapsLockOffWhileLidClosed(_ enabled: Bool) {
@@ -607,6 +652,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         Preferences.autoOffMinutes = minutes
         // Start fresh with the newly chosen duration.
         autoOffState = AutoOffState()
+        updateStatusMenuControls()
+        settingsWindowController?.reloadText()
         log("preference auto_off_minutes=\(minutes)")
 
         // Let AppKit paint the selected value before querying pmset/helper state,
@@ -645,6 +692,28 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             return .counting(remaining: max(0, deadline.timeIntervalSinceNow))
         }
         return .counting(remaining: TimeInterval(minutes) * 60)
+    }
+
+    private func updateStatusMenuControls() {
+        let strings = AppStrings.current()
+        let selectedMinutes = Preferences.autoOffMinutes
+
+        autoOffStatusMenuItem?.title = AutoOffMenuFormatter.title(
+            base: strings.autoOffTimer,
+            turnsOffIn: strings.autoOffTurnsOffIn,
+            state: autoOffDisplayState()
+        )
+        for item in autoOffPresetMenuItems {
+            guard let minutes = item.representedObject as? Int else { continue }
+            item.state = minutes == selectedMinutes ? .on : .off
+        }
+        autoOffCustomMenuItem?.title = AutoOffMenuFormatter.customTitle(
+            base: strings.autoOffCustom,
+            selectedMinutes: selectedMinutes
+        ) + "…"
+        autoOffCustomMenuItem?.state = selectedMinutes > 0
+            && !AutoOffPreset.isQuickPick(selectedMinutes) ? .on : .off
+        keepDisplayAwakeStatusMenuItem?.state = Preferences.keepDisplayAwake ? .on : .off
     }
 
     private func configureGlobalHotKey() {
@@ -853,6 +922,32 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         return isReady
     }
 
+    /// Hold the display-awake assertion exactly while the preference is on
+    /// and confirmed awake mode is active. Idempotent, so it is safe to call
+    /// from every apply pass.
+    private func syncDisplayAwakeAssertion(
+        capsLockOn: Bool,
+        sleepPreventionConfirmed: Bool,
+        reason: String
+    ) {
+        let shouldHold = KeepDisplayAwakePolicy.shouldHoldAssertion(
+            preferenceEnabled: Preferences.keepDisplayAwake,
+            capsLockOn: capsLockOn,
+            sleepPreventionConfirmed: sleepPreventionConfirmed
+        )
+        guard shouldHold != displayAwakeAssertion.isActive else { return }
+        guard Date() >= nextDisplayAwakeRetryAt else { return }
+
+        let succeeded = displayAwakeAssertion.setActive(shouldHold)
+        nextDisplayAwakeRetryAt = succeeded
+            ? .distantPast
+            : Date().addingTimeInterval(helperRetryInterval)
+        log(
+            "\(reason) display_awake_assertion=\(shouldHold ? "on" : "off")"
+                + " succeeded=\(succeeded ? "true" : "false")"
+        )
+    }
+
     private func apply(capsLockOn: Bool, reason: String) {
         let now = Date()
         if failedSleepState == capsLockOn, now < nextSleepStateRetryAt {
@@ -861,6 +956,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         if lastAppliedState == capsLockOn {
             if failedSleepState == nil, now < nextSleepStateVerificationAt {
+                syncDisplayAwakeAssertion(
+                    capsLockOn: capsLockOn,
+                    sleepPreventionConfirmed: true,
+                    reason: reason
+                )
                 evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
                 return
             }
@@ -910,6 +1010,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         if resetVerification {
             nextSleepStateVerificationAt = nextSleepStateRetryAt
         }
+        syncDisplayAwakeAssertion(
+            capsLockOn: capsLockOn,
+            sleepPreventionConfirmed: false,
+            reason: "sleep_state_failed"
+        )
         updateStatusError()
     }
 
@@ -919,6 +1024,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         nextSleepStateRetryAt = .distantPast
         nextSleepStateVerificationAt = now.addingTimeInterval(sleepStateVerificationInterval)
         syncStatusItemVisibility()
+        syncDisplayAwakeAssertion(
+            capsLockOn: capsLockOn,
+            sleepPreventionConfirmed: true,
+            reason: reason
+        )
         evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
         requestSystemSleepAfterAutoOffIfReady(capsLockOn: capsLockOn, reason: reason)
     }
@@ -944,7 +1054,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     }
 
     private func evaluateDisplaySleepForClosedLid(capsLockOn: Bool, reason: String) {
-        guard Preferences.displaySleepOnLidClose else {
+        guard !Preferences.keepDisplayAwake else {
             didRequestDisplaySleepForClosedLid = false
             nextDisplaySleepRetryAt = .distantPast
             return
@@ -977,6 +1087,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             hasLoggedMissingDisplayState = false
         }
         guard DisplaySleepPolicy.shouldRequestDisplaySleep(
+            keepDisplayAwake: Preferences.keepDisplayAwake,
             externalDisplayConnected: externalDisplayConnected
         ) else {
             didRequestDisplaySleepForClosedLid = false

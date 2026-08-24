@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `3.1.1`
+Current version: `3.4.0`
 
 [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
@@ -76,7 +76,7 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 - Custom toggle shortcut: turn Capsomnia on or off with another key combination even if Caps Lock is assigned elsewhere. The green Caps Lock light continues to show the current state.
 - Auto-off timer (optional): choose a preset from 15 minutes to 8 hours or a custom duration from 1 minute to 24 hours. When time expires, Capsomnia turns off, confirms that sleep prevention is released, and immediately puts the Mac to sleep.
 - Caps Lock off: restores normal sleep behavior.
-- Lid closed while Capsomnia is on: puts the display to sleep only when no external display is connected, while work keeps running.
+- Display behavior: by default, closing the lid puts the display to sleep while work keeps running. Enable "Keep display awake" to keep the display session available after the macOS idle time or closing the lid, so remote UI operation such as Computer Use can continue.
 - Quitting the app restores normal sleep behavior.
 
 Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions, builds, downloads, and unattended scripts.
@@ -98,7 +98,9 @@ On first launch, Capsomnia explains how the Caps Lock switch works and lets you 
 - whether to prevent all-caps typing while Capsomnia is on
 - English, Japanese, Simplified Chinese, or Korean
 
-"Turn display off when lid closes" and "Open at login" are enabled by default and do not appear in initial setup. Open Capsomnia again later to change all settings. Advanced Settings includes the optional auto-off timer, a global shortcut that toggles Capsomnia through the real Caps Lock state, and an optional "Hide the Caps Lock indicator" setting that removes the macOS indicator shown in text fields while Caps Lock is on. Hiding the indicator changes a system-wide feature-flag override and takes effect after restarting the Mac; Capsomnia shows a reminder until the restart happens, and uninstalling restores the macOS default. The timer is off by default. Each time Capsomnia is enabled, the selected duration starts from the beginning; the restart button resets the current countdown. "Show menu bar icon" remains independent when "Prevent all-caps typing" is enabled. If the icon is hidden, a red dot appears temporarily when an error occurs.
+"Open at login" is enabled by default and does not appear in initial setup. Open Capsomnia again later to use the two day-to-day controls directly: the opt-in "Keep display awake" setting and the optional auto-off timer. "Keep display awake" is off by default, so closing the lid normally puts the display to sleep. The timer is also off by default. Each time Capsomnia is enabled, the selected duration starts from the beginning; the restart button resets the current countdown. Advanced Settings contains the less frequently changed menu bar, all-caps prevention, language, login, lid-closed Caps Lock guard, and global shortcut options, plus an optional "Hide the Caps Lock indicator" setting that removes the macOS indicator shown in text fields while Caps Lock is on. Hiding the indicator changes a system-wide feature-flag override and takes effect after restarting the Mac; Capsomnia shows a reminder until the restart happens, and uninstalling restores the macOS default. "Show menu bar icon" remains independent when "Prevent all-caps typing" is enabled. If the icon is hidden, a red dot appears temporarily when an error occurs.
+
+The menu bar menu keeps the same day-to-day controls close at hand: choose Off or a timer preset, see the remaining time while it runs, open the custom timer editor, and toggle "Keep display awake" without opening Settings. Menu bar visibility and language remain in Settings.
 
 macOS Accessibility permission is required only when "Prevent all-caps typing" is enabled. Capsomnia installs a local Core Graphics event filter that removes only the Caps Lock modifier from keyboard events; it does not store keyboard input or send it anywhere. If permission is missing or the filter stops, Capsomnia fails closed: sleep prevention is turned off, the menu bar dot turns red, and the app retries. When this setting is disabled, Accessibility permission is not required and Capsomnia only checks the local Caps Lock state every 250 milliseconds.
 

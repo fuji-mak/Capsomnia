@@ -16,7 +16,6 @@ PKGBUILD_FILTERS=(
   --filter '(^|/)\.DS_Store$'
   --filter '(^|/)\.svn($|/)'
   --filter '(^|/)CVS($|/)'
-  --filter '(^|/)\._'
 )
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT_DIR/resources/Info.plist")"
@@ -24,9 +23,7 @@ WORK_DIR="$(/usr/bin/mktemp -d)"
 PAYLOAD_ROOT="$WORK_DIR/payload"
 SCRIPTS_DIR="$WORK_DIR/scripts"
 COMPONENT_PLIST="$WORK_DIR/components.plist"
-BOM_LIST="$WORK_DIR/bom-list.txt"
 UNSIGNED_PKG="$DIST_DIR/$APP_NAME-$VERSION-unsigned.pkg"
-SANITIZED_UNSIGNED_PKG="$WORK_DIR/$APP_NAME-$VERSION-sanitized-unsigned.pkg"
 SIGNED_PKG="$DIST_DIR/$APP_NAME-$VERSION.pkg"
 
 cleanup() {
@@ -41,11 +38,16 @@ trap cleanup EXIT
   "$PAYLOAD_ROOT/Library/PrivilegedHelperTools" \
   "$SCRIPTS_DIR"
 
-BUILT_APP="$("$ROOT_DIR/scripts/build-app.sh" "$WORK_DIR/$APP_NAME.app")"
+BUILT_APP="$("$ROOT_DIR/scripts/build-app.sh" "$PAYLOAD_ROOT/Applications/$APP_NAME.app")"
 /usr/bin/install -m 0755 \
   "$ROOT_DIR/.build/release/capsomnia-pmset" \
   "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
 if [[ "$SKIP_SIGNING" != "true" ]]; then
+  # Remove disposable build metadata before signing. Sign both executables in
+  # their final payload locations and never copy or mutate them afterward.
+  /usr/bin/xattr -cr \
+    "$BUILT_APP" \
+    "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
   /usr/bin/codesign --force --options runtime --timestamp --sign "$APP_SIGN_ID" "$BUILT_APP"
   /usr/bin/codesign --verify --deep --strict --verbose=2 "$BUILT_APP"
   /usr/bin/codesign \
@@ -60,8 +62,6 @@ if [[ "$SKIP_SIGNING" != "true" ]]; then
     --verbose=2 \
     "$PAYLOAD_ROOT/Library/PrivilegedHelperTools/capsomnia-pmset"
 fi
-
-/usr/bin/ditto "$BUILT_APP" "$PAYLOAD_ROOT/Applications/$APP_NAME.app"
 
 /bin/cat > "$PAYLOAD_ROOT/Library/LaunchAgents/$LABEL.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -156,15 +156,19 @@ fi
 /bin/sleep 1
 /usr/bin/sudo -u "$console_user" /usr/bin/defaults write "$LABEL" ForceWelcomeOnNextLaunch -bool true 2>/dev/null || true
 /bin/launchctl bootstrap "gui/$console_uid" "$SYSTEM_LAUNCH_AGENT" 2>/dev/null || true
-/bin/launchctl enable "gui/$console_uid/$LABEL" 2>/dev/null || true
+launch_at_login="$(/usr/bin/sudo -u "$console_user" /usr/bin/defaults read "$LABEL" LaunchAtLogin 2>/dev/null || true)"
+if [[ "$launch_at_login" == "0" ]]; then
+  /bin/launchctl disable "gui/$console_uid/$LABEL" 2>/dev/null || true
+else
+  /bin/launchctl enable "gui/$console_uid/$LABEL" 2>/dev/null || true
+fi
 
 exit 0
 EOF
 
 /bin/chmod 0755 "$SCRIPTS_DIR/postinstall"
 
-/usr/bin/xattr -cr "$PAYLOAD_ROOT" "$SCRIPTS_DIR"
-/usr/bin/find "$PAYLOAD_ROOT" -name '._*' -type f -delete
+/usr/bin/xattr -cr "$SCRIPTS_DIR" "$PAYLOAD_ROOT/Library/LaunchAgents"
 
 /usr/bin/env COPYFILE_DISABLE=true /usr/bin/pkgbuild --analyze --root "$PAYLOAD_ROOT" "${PKGBUILD_FILTERS[@]}" "$COMPONENT_PLIST"
 /usr/libexec/PlistBuddy -c "Set :0:BundleIsRelocatable false" "$COMPONENT_PLIST" 2>/dev/null \
@@ -183,47 +187,48 @@ EOF
   --min-os-version "14.0" \
   "$UNSIGNED_PKG"
 
-EXPANDED_PKG="$WORK_DIR/expanded-pkg"
-PAYLOAD_ARCHIVE="$WORK_DIR/payload.cpio.gz"
-/usr/sbin/pkgutil --expand-full "$UNSIGNED_PKG" "$EXPANDED_PKG"
-/usr/bin/xattr -cr "$EXPANDED_PKG/Payload" "$EXPANDED_PKG/Scripts"
-/usr/bin/find "$EXPANDED_PKG/Payload" -name '._*' -type f -delete
-/usr/bin/lsbom "$EXPANDED_PKG/Bom" \
-  | /usr/bin/awk -F '\t' 'BEGIN { OFS = "\t" } $1 !~ /(^|\/)\._/ { $3 = "0/0"; print }' \
-  > "$BOM_LIST"
-/usr/bin/mkbom -i "$BOM_LIST" "$EXPANDED_PKG/Bom"
-
-payload_file_count="$(/usr/bin/lsbom -s "$EXPANDED_PKG/Bom" | /usr/bin/wc -l | /usr/bin/tr -d ' ')"
-payload_install_kbytes="$(/usr/bin/du -sk "$EXPANDED_PKG/Payload" | /usr/bin/awk '{print $1}')"
-/usr/bin/sed -E -i '' \
-  "s/<payload numberOfFiles=\"[0-9]+\" installKBytes=\"[0-9]+\"\\/>/<payload numberOfFiles=\"$payload_file_count\" installKBytes=\"$payload_install_kbytes\"\\/>/" \
-  "$EXPANDED_PKG/PackageInfo"
-
-(
-  cd "$EXPANDED_PKG/Payload"
-  /usr/bin/find . | /usr/bin/cpio -o -H odc -z -R root:wheel > "$PAYLOAD_ARCHIVE"
-) 2>/dev/null
-/bin/rm -rf "$EXPANDED_PKG/Payload"
-/bin/mv "$PAYLOAD_ARCHIVE" "$EXPANDED_PKG/Payload"
-/usr/sbin/pkgutil --flatten "$EXPANDED_PKG" "$SANITIZED_UNSIGNED_PKG"
-/bin/mv -f "$SANITIZED_UNSIGNED_PKG" "$UNSIGNED_PKG"
-
 VERIFY_PKG="$WORK_DIR/verify-pkg"
-/usr/sbin/pkgutil --expand-full "$UNSIGNED_PKG" "$VERIFY_PKG"
+# `COPYFILE_DISABLE` is exported for package creation, but verification must
+# model Installer.app. With it unset, pkgutil applies AppleDouble metadata just
+# as Installer does; this catches metadata that would invalidate nested code
+# signatures only after installation.
+/usr/bin/env -u COPYFILE_DISABLE /usr/sbin/pkgutil --expand-full "$UNSIGNED_PKG" "$VERIFY_PKG"
 unexpected_owner="$(/usr/bin/lsbom "$VERIFY_PKG/Bom" | /usr/bin/awk -F '\t' '$3 != "0/0" { print; exit }')"
-appledouble_entry="$(/usr/bin/lsbom -s "$VERIFY_PKG/Bom" | /usr/bin/awk '$0 ~ /(^|\/)\._/ { print; exit }')"
 if [[ -n "$unexpected_owner" ]]; then
   echo "Package payload contains a non-root owner: $unexpected_owner" >&2
   exit 1
 fi
-if [[ -n "$appledouble_entry" ]]; then
-  echo "Package BOM contains an AppleDouble entry: $appledouble_entry" >&2
-  exit 1
+
+if [[ "$SKIP_SIGNING" != "true" ]]; then
+  /usr/bin/codesign \
+    --verify \
+    --deep \
+    --strict \
+    --verbose=2 \
+    "$VERIFY_PKG/Payload/Applications/$APP_NAME.app"
+  /usr/bin/codesign \
+    --verify \
+    --strict \
+    --verbose=2 \
+    "$VERIFY_PKG/Payload/Library/PrivilegedHelperTools/capsomnia-pmset"
 fi
 
 if [[ "$SKIP_SIGNING" == "true" ]]; then
   echo "$UNSIGNED_PKG"
 else
   /usr/bin/productsign --sign "$PKG_SIGN_ID" "$UNSIGNED_PKG" "$SIGNED_PKG"
+  SIGNED_VERIFY_PKG="$WORK_DIR/signed-verify-pkg"
+  /usr/bin/env -u COPYFILE_DISABLE /usr/sbin/pkgutil --expand-full "$SIGNED_PKG" "$SIGNED_VERIFY_PKG"
+  /usr/bin/codesign \
+    --verify \
+    --deep \
+    --strict \
+    --verbose=2 \
+    "$SIGNED_VERIFY_PKG/Payload/Applications/$APP_NAME.app"
+  /usr/bin/codesign \
+    --verify \
+    --strict \
+    --verbose=2 \
+    "$SIGNED_VERIFY_PKG/Payload/Library/PrivilegedHelperTools/capsomnia-pmset"
   echo "$SIGNED_PKG"
 fi

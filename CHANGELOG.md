@@ -6,6 +6,26 @@ All notable changes to Capsomnia will be documented in this file.
 
 - Add an optional "Hide the Caps Lock indicator" setting to Advanced Settings that suppresses the macOS indicator shown in text fields while Caps Lock is on, via the system `redesigned_text_cursor` feature-flag override. The change requires a Mac restart; Capsomnia shows a restart reminder until the current boot reflects the on-disk state, and toggling back before restarting clears it. The privileged helper gains argument-restricted `indicator-hide` and `indicator-show` modes that edit only `/Library/Preferences/FeatureFlags/Domain/UIKit.plist`, preserve unrelated flags, and remove the file when nothing else remains. The uninstaller restores the macOS default.
 
+## 3.4.0 - 2026-08-24
+
+- Refocus the menu bar menu on day-to-day controls: choose an auto-off timer preset, see the live remaining time while it runs, open the custom timer editor, and toggle "Keep display awake" without opening Settings.
+- Keep the less frequently changed menu bar visibility and language controls in Settings, while preserving the compact 24-point LED status item.
+
+## 3.3.0 - 2026-08-23
+
+- Simplify display behavior to a single opt-in "Keep display awake" setting. By default, closing the lid puts the display to sleep while work continues. When enabled, Capsomnia prevents idle display sleep and skips its forced lid-close display sleep so the display session remains available for remote UI operation such as Computer Use.
+- Reorganize Settings around frequency of use. The regular window now puts "Keep display awake" and the auto-off timer up front, while initial setup keeps its onboarding choices and Advanced Settings holds the less frequently changed environment, login, lid-closed Caps Lock guard, and shortcut options.
+- Preserve the Developer ID signatures of the app and privileged helper through package installation by signing both executables in their final package payload locations and verifying the nested signatures after packaging.
+
+## 3.2.0 - 2026-08-23
+
+- Add an opt-in "Keep display awake" setting (default off) to Advanced Settings. While Capsomnia is on, the display no longer turns off after the idle time configured in macOS. The assertion is held in-process without new privileges, is released when Capsomnia turns off or the app quits, and is independent of "Turn display off when lid closes", which still turns the display off after the lid closes. (#88)
+
+## 3.1.2 - 2026-08-22
+
+- Preserve an explicitly disabled "Open at login" preference during package and source upgrades, while retaining the enabled-by-default behavior for new installations. (#86)
+>>>>>>> origin/main
+
 ## 3.1.1 - 2026-08-16
 
 - Prevent reselecting the current auto-off preset or opening and closing the unchanged Custom editor from restarting an active countdown. Use the existing Restart action for intentional resets. (#84)

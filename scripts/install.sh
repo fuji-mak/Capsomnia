@@ -94,6 +94,11 @@ EOF
 
 /usr/bin/defaults write "$LABEL" ForceWelcomeOnNextLaunch -bool true
 launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT"
-launchctl enable "gui/$(id -u)/$LABEL"
+launch_at_login="$(/usr/bin/defaults read "$LABEL" LaunchAtLogin 2>/dev/null || true)"
+if [[ "$launch_at_login" == "0" ]]; then
+  launchctl disable "gui/$(id -u)/$LABEL"
+else
+  launchctl enable "gui/$(id -u)/$LABEL"
+fi
 
 echo "Installed $APP_NAME."

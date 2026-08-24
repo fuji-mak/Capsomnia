@@ -1,5 +1,8 @@
 enum DisplaySleepPolicy {
-    static func shouldRequestDisplaySleep(externalDisplayConnected: Bool?) -> Bool {
-        externalDisplayConnected == false
+    static func shouldRequestDisplaySleep(
+        keepDisplayAwake: Bool,
+        externalDisplayConnected: Bool?
+    ) -> Bool {
+        !keepDisplayAwake && externalDisplayConnected == false
     }
 }

@@ -5,7 +5,7 @@ private enum PreferenceKey {
     static let showMenuBarIcon = "ShowMenuBarIcon"
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
-    static let displaySleepOnLidClose = "DisplaySleepOnLidClose"
+    static let keepDisplayAwake = "KeepDisplayAwake"
     static let ignoreExternalCapsLockOffWhileLidClosed = "IgnoreExternalCapsLockOffWhileLidClosed"
     static let autoOffMinutes = "AutoOffMinutes"
     static let shortcutKeyCode = "ShortcutKeyCode"
@@ -26,7 +26,7 @@ enum Preferences {
             PreferenceKey.showMenuBarIcon: true,
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
-            PreferenceKey.displaySleepOnLidClose: true,
+            PreferenceKey.keepDisplayAwake: false,
             PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed: false,
             PreferenceKey.autoOffMinutes: 0,
             PreferenceKey.didCompleteInitialSetup: false,
@@ -57,9 +57,11 @@ enum Preferences {
         set { defaults.set(newValue, forKey: PreferenceKey.launchAtLogin) }
     }
 
-    static var displaySleepOnLidClose: Bool {
-        get { defaults.bool(forKey: PreferenceKey.displaySleepOnLidClose) }
-        set { defaults.set(newValue, forKey: PreferenceKey.displaySleepOnLidClose) }
+    /// Keeps the display session awake while Capsomnia is on, including across
+    /// the macOS idle timeout and lid closure.
+    static var keepDisplayAwake: Bool {
+        get { defaults.bool(forKey: PreferenceKey.keepDisplayAwake) }
+        set { defaults.set(newValue, forKey: PreferenceKey.keepDisplayAwake) }
     }
 
     /// While the lid is closed the built-in keyboard cannot be pressed, so a

@@ -168,3 +168,28 @@ enum AutoOffFormatter {
         return (total / 3600, (total % 3600) / 60, total % 60)
     }
 }
+
+/// Compact labels used by the menu-bar timer item.
+enum AutoOffMenuFormatter {
+    static func title(
+        base: String,
+        turnsOffIn: String,
+        state: AutoOffDisplayState
+    ) -> String {
+        guard case let .counting(remaining) = state else { return base }
+        return "\(base) (\(turnsOffIn) \(AutoOffFormatter.countdown(remaining)))"
+    }
+
+    static func customTitle(base: String, selectedMinutes: Int) -> String {
+        guard selectedMinutes > 0,
+              !AutoOffPreset.isQuickPick(selectedMinutes) else { return base }
+        return "\(base) (\(AutoOffFormatter.durationLabel(minutes: selectedMinutes)))"
+    }
+}
+
+enum AutoOffMenuSelectionPolicy {
+    /// Reselecting the active duration must not restart a running countdown.
+    static func shouldApply(currentMinutes: Int, selectedMinutes: Int) -> Bool {
+        currentMinutes != selectedMinutes
+    }
+}

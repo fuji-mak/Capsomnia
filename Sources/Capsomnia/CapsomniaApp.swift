@@ -2,7 +2,7 @@ import AppKit
 import Carbon.HIToolbox
 import Foundation
 
-final class Capsomnia: NSObject, NSApplicationDelegate {
+final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastAppliedState: Bool?
     private var failedSleepState: Bool?
     private var nextSleepStateRetryAt = Date.distantPast
@@ -27,6 +27,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
     private var localCapsLockEventMonitor: Any?
     private var signalSources: [DispatchSourceSignal] = []
     private var statusItem: NSStatusItem?
+    private weak var autoOffStatusMenuItem: NSMenuItem?
+    private var autoOffPresetMenuItems: [NSMenuItem] = []
+    private weak var autoOffCustomMenuItem: NSMenuItem?
+    private weak var keepDisplayAwakeStatusMenuItem: NSMenuItem?
     private var settingsWindowController: SettingsWindowController?
     private let onImage = DotImage.make(color: Brand.led)
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
@@ -310,6 +314,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
 
         let strings = AppStrings.current()
         let menu = NSMenu()
+        menu.delegate = self
         let toggleCapsLockItem = NSMenuItem(
             title: strings.toggleCapsLock,
             action: #selector(toggleCapsLockFromMenu),
@@ -319,30 +324,48 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         menu.addItem(toggleCapsLockItem)
         menu.addItem(NSMenuItem.separator())
 
-        let showMenuBarItem = NSMenuItem(
-            title: strings.showMenuBarIcon,
-            action: #selector(toggleShowMenuBarIcon),
-            keyEquivalent: ""
-        )
-        showMenuBarItem.target = self
-        showMenuBarItem.state = Preferences.showMenuBarIcon ? .on : .off
-        menu.addItem(showMenuBarItem)
+        let autoOffItem = NSMenuItem(title: strings.autoOffTimer, action: nil, keyEquivalent: "")
+        let autoOffMenu = NSMenu(title: strings.autoOffTimer)
+        autoOffMenu.delegate = self
+        autoOffPresetMenuItems = []
 
-        let languageItem = NSMenuItem(title: strings.language, action: nil, keyEquivalent: "")
-        let languageMenu = NSMenu(title: strings.language)
-        for language in AppLanguage.allCases {
-            let item = NSMenuItem(
-                title: language.displayName,
-                action: #selector(selectLanguage),
+        for minutes in [0] + AutoOffPreset.minuteOptions {
+            let presetItem = NSMenuItem(
+                title: minutes == 0
+                    ? strings.autoOffOff
+                    : AutoOffFormatter.durationLabel(minutes: minutes),
+                action: #selector(selectAutoOffPreset),
                 keyEquivalent: ""
             )
-            item.target = self
-            item.representedObject = language.rawValue
-            item.state = Preferences.language == language ? .on : .off
-            languageMenu.addItem(item)
+            presetItem.target = self
+            presetItem.representedObject = minutes
+            autoOffMenu.addItem(presetItem)
+            autoOffPresetMenuItems.append(presetItem)
         }
-        menu.setSubmenu(languageMenu, for: languageItem)
-        menu.addItem(languageItem)
+
+        autoOffMenu.addItem(NSMenuItem.separator())
+        let customItem = NSMenuItem(
+            title: "\(strings.autoOffCustom)…",
+            action: #selector(openAutoOffSettings),
+            keyEquivalent: ""
+        )
+        customItem.target = self
+        autoOffMenu.addItem(customItem)
+        autoOffCustomMenuItem = customItem
+        menu.setSubmenu(autoOffMenu, for: autoOffItem)
+        menu.addItem(autoOffItem)
+        autoOffStatusMenuItem = autoOffItem
+
+        let keepDisplayAwakeItem = NSMenuItem(
+            title: strings.keepDisplayAwake,
+            action: #selector(toggleKeepDisplayAwakeFromMenu),
+            keyEquivalent: ""
+        )
+        keepDisplayAwakeItem.target = self
+        menu.addItem(keepDisplayAwakeItem)
+        keepDisplayAwakeStatusMenuItem = keepDisplayAwakeItem
+
+        menu.addItem(NSMenuItem.separator())
 
         let openItem = NSMenuItem(title: strings.openCapsomnia, action: #selector(openCapsomnia), keyEquivalent: "o")
         openItem.target = self
@@ -354,10 +377,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         menu.addItem(quitItem)
 
         item.menu = menu
+        updateStatusMenuControls()
     }
 
-    @objc private func toggleShowMenuBarIcon() {
-        setShowMenuBarIcon(!Preferences.showMenuBarIcon)
+    func menuWillOpen(_ menu: NSMenu) {
+        updateStatusMenuControls()
     }
 
     @objc private func toggleCapsLockFromMenu() {
@@ -400,13 +424,21 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc private func selectLanguage(_ sender: NSMenuItem) {
-        guard let rawValue = sender.representedObject as? String,
-              let language = AppLanguage(rawValue: rawValue) else {
-            return
-        }
+    @objc private func selectAutoOffPreset(_ sender: NSMenuItem) {
+        guard let minutes = sender.representedObject as? Int else { return }
+        guard AutoOffMenuSelectionPolicy.shouldApply(
+            currentMinutes: Preferences.autoOffMinutes,
+            selectedMinutes: minutes
+        ) else { return }
+        setAutoOffMinutes(minutes)
+    }
 
-        setLanguage(language)
+    @objc private func openAutoOffSettings() {
+        showSettingsWindow(page: currentSettingsPage())
+    }
+
+    @objc private func toggleKeepDisplayAwakeFromMenu() {
+        setKeepDisplayAwake(!Preferences.keepDisplayAwake)
     }
 
     @objc private func openCapsomnia() {
@@ -536,6 +568,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         if !enabled {
             evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: "preference")
         }
+        updateStatusMenuControls()
+        settingsWindowController?.reloadText()
         log("preference keep_display_awake=\(enabled ? "on" : "off")")
     }
 
@@ -583,6 +617,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
         Preferences.autoOffMinutes = minutes
         // Start fresh with the newly chosen duration.
         autoOffState = AutoOffState()
+        updateStatusMenuControls()
+        settingsWindowController?.reloadText()
         log("preference auto_off_minutes=\(minutes)")
 
         // Let AppKit paint the selected value before querying pmset/helper state,
@@ -621,6 +657,28 @@ final class Capsomnia: NSObject, NSApplicationDelegate {
             return .counting(remaining: max(0, deadline.timeIntervalSinceNow))
         }
         return .counting(remaining: TimeInterval(minutes) * 60)
+    }
+
+    private func updateStatusMenuControls() {
+        let strings = AppStrings.current()
+        let selectedMinutes = Preferences.autoOffMinutes
+
+        autoOffStatusMenuItem?.title = AutoOffMenuFormatter.title(
+            base: strings.autoOffTimer,
+            turnsOffIn: strings.autoOffTurnsOffIn,
+            state: autoOffDisplayState()
+        )
+        for item in autoOffPresetMenuItems {
+            guard let minutes = item.representedObject as? Int else { continue }
+            item.state = minutes == selectedMinutes ? .on : .off
+        }
+        autoOffCustomMenuItem?.title = AutoOffMenuFormatter.customTitle(
+            base: strings.autoOffCustom,
+            selectedMinutes: selectedMinutes
+        ) + "…"
+        autoOffCustomMenuItem?.state = selectedMinutes > 0
+            && !AutoOffPreset.isQuickPick(selectedMinutes) ? .on : .off
+        keepDisplayAwakeStatusMenuItem?.state = Preferences.keepDisplayAwake ? .on : .off
     }
 
     private func configureGlobalHotKey() {

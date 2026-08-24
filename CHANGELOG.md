@@ -4,6 +4,11 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 3.4.0 - 2026-08-24
+
+- Refocus the menu bar menu on day-to-day controls: choose an auto-off timer preset, see the live remaining time while it runs, open the custom timer editor, and toggle "Keep display awake" without opening Settings.
+- Keep the less frequently changed menu bar visibility and language controls in Settings, while preserving the compact 24-point LED status item.
+
 ## 3.3.0 - 2026-08-23
 
 - Simplify display behavior to a single opt-in "Keep display awake" setting. By default, closing the lid puts the display to sleep while work continues. When enabled, Capsomnia prevents idle display sleep and skips its forced lid-close display sleep so the display session remains available for remote UI operation such as Computer Use.

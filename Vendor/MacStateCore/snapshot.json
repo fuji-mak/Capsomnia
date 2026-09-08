@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/fuji-mak/MacReady",
+  "sha256": {
+    "LICENSE": "5a7c8e2e0288f5b7fe774cfab7a38d634162af2b6bd9c05c9c12ff8a052b1200",
+    "Package.swift": "7b3b4b8ee3683a094e253c848719801da222372cccbc3672cca256ade67d62dd",
+    "Sources/MacStateCore/ClamshellStateReader.swift": "71559187ce9bc17ffcc375a02dc5794d66f7a7e32a3864c4f1afb7fbd3287cfc",
+    "Sources/MacStateCore/ExternalDisplayReader.swift": "1ab97e84928ca3c8a91f4c79e8d038bebd1e73f697130ae944e376e9e2bf625d",
+    "Sources/MacStateCore/MacSnapshot.swift": "91f3b83af97942397b093aa83806ecdcaec3b8e62230be1dcc181debebb58a52",
+    "Sources/MacStateCore/PowerStateReader.swift": "e4b5e3ec0e94e6b852cc6168e11ebc53e6c34fc35f76c13c9fe2e5a080fc1075",
+    "Sources/MacStateCore/SleepStateReader.swift": "42891b01d06720f6be0b4e981d98d60c48afde01833279407648b5bb79d4bfcb",
+    "Sources/MacStateCore/TemperatureReader.swift": "51a7813e2cc97ac620d579332cb9e5cdacf4a754dab9a85f03f4e4615828324c"
+  },
+  "source_directory": "Sources/MacStateCore",
+  "version": "0.1.1"
+}

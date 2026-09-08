@@ -2,7 +2,18 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
-## Unreleased
+## 4.0.0 - 2026-09-08
+
+- Add the local control service for the independently distributed cpsm CLI and
+  capsomnia Skill: awake mode, one-shot timers, settings and JSON diagnostics.
+- Explicit CLI off requests immediate sleep after verifying sleep prevention has
+  been released. Keyboard shortcut editing stays in the GUI.
+- Add an Advanced Settings download card for cpsm, MacReady and their common
+  Skills, using a signed and notarized Tools installer with automatic shared Skill placement and Claude Code compatibility links. The app package remains app-only.
+- Consume versioned library snapshots from the independent cpsm and MacReady
+  repositories, keeping the app build self-contained.
+
+- Migrate existing updater cache permissions so the CLI service also starts after upgrading from 3.5.0.
 
 ## 3.5.0 - 2026-09-06
 

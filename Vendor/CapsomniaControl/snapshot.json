@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/fuji-mak/cpsm",
+  "sha256": {
+    "LICENSE": "5a7c8e2e0288f5b7fe774cfab7a38d634162af2b6bd9c05c9c12ff8a052b1200",
+    "Package.swift": "72b33799ece7318356eb83bdd1e8505c0b785a3dd3cecaf80b495342bbc13fdb",
+    "Sources/CapsomniaControl/ControlProtocol.swift": "892a74b9bbf72ca01f936d213dad8b381c398e7615c35ccef7eb9a6da02207c6",
+    "Sources/CapsomniaControl/ControlTransport.swift": "489d152b3f1cd332e2201207c7682830d6241be9780eb92ac52bbe37d726c728"
+  },
+  "source_directory": "Sources/CapsomniaControl",
+  "version": "0.1.1"
+}

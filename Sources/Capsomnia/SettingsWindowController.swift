@@ -17,6 +17,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let advancedHeader = NSView()
     private let advancedTitleLabel = brandLabel(size: 20, weight: .bold, color: Brand.text)
     private let backButton = NSButton()
+    private let toolsDownloadButton = DisclosureButton(symbolName: "arrow.down.to.line", height: 44)
 
     private let explainerCard = brandCard()
     private let explainerOnTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
@@ -92,11 +93,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     )
 
     private let updateHeading = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
-    private let updateVersionLabel = brandLabel(size: 18, weight: .semibold, color: Brand.led, wraps: true)
-    private let updateCurrentVersionLabel = brandLabel(size: 12, color: Brand.textDim, wraps: true)
-    private let updateButton = LEDButton()
+    private let updateVersionLabel = brandLabel(size: 13, weight: .semibold, color: Brand.led, wraps: true)
+    private let updateCurrentVersionLabel = brandLabel(size: 11, color: Brand.textDim, wraps: true)
+    private let updateButton = LEDButton(height: 30)
     private let releaseNotesButton = NSButton()
     private let updateVersionRow = NSStackView()
+    private let updateActionRow = NSStackView()
     private var updateCard = NSView()
     private let updateCardStack = NSStackView()
     private var automaticUpdateChecksRow = NSView()
@@ -107,6 +109,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let currentVersion: String
     private let onUpdate: (String) -> Void
     private let onReleaseNotes: (String) -> Void
+    private let onToolsDownload: () -> Void
+    private let autoOffDescriptionProvider: () -> String?
 
     private let shortcutHeading = brandLabel(
         size: 11,
@@ -170,7 +174,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onFinishInitialSetup: @escaping () -> Void,
         currentVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0",
         onUpdate: @escaping (String) -> Void = { _ in },
-        onReleaseNotes: @escaping (String) -> Void = { _ in }
+        onReleaseNotes: @escaping (String) -> Void = { _ in },
+        onToolsDownload: @escaping () -> Void = {},
+        autoOffDescriptionProvider: @escaping () -> String? = { nil }
     ) {
         self.onDedicatedCapsLockModeChange = onDedicatedCapsLockModeChange
         self.onShowMenuBarIconChange = onShowMenuBarIconChange
@@ -188,6 +194,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.currentVersion = currentVersion
         self.onUpdate = onUpdate
         self.onReleaseNotes = onReleaseNotes
+        self.onToolsDownload = onToolsDownload
+        self.autoOffDescriptionProvider = autoOffDescriptionProvider
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: Self.settingsContentWidth, height: 480),
@@ -266,7 +274,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         automaticUpdateChecksToggle.setAccessibilityLabel(strings.automaticUpdateChecks)
 
         autoOffControl.setStrings(
-            desc: strings.autoOffTimerDesc,
+            desc: autoOffDescriptionProvider() ?? strings.autoOffTimerDesc,
             off: strings.autoOffOff,
             custom: strings.autoOffCustom,
             turnsOffIn: strings.autoOffTurnsOffIn,
@@ -285,10 +293,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         shortcutRecorder.setAccessibilityLabel(strings.keyboardShortcut)
         shortcutRecorder.setAccessibilityHelp(strings.keyboardShortcutDesc)
 
+        updateToolsDownloading(toolsDownloading)
         updateHeading.stringValue = strings.updatesHeading.uppercased()
-        updateVersionLabel.stringValue = availableUpdateVersion.map { "Capsomnia \($0)" } ?? ""
+        updateVersionLabel.stringValue = availableUpdateVersion.map { String(format: strings.updateAvailableVersionFormat, $0) } ?? ""
         updateCurrentVersionLabel.stringValue = String(format: strings.updateCurrentVersionFormat, currentVersion)
-        updateButton.title = strings.updateDownloadAndInstall
+        updateButton.title = strings.updateAction
+        updateButton.toolTip = strings.updateDownloadAndInstall
+        updateButton.setAccessibilityHelp(strings.updateDownloadAndInstall)
         releaseNotesButton.attributedTitle = NSAttributedString(
             string: strings.releaseNotes,
             attributes: [
@@ -345,6 +356,23 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         autoOffControl.stopDisplayUpdates()
         guard page == .initialPreferences else { return }
         finishInitialSetup()
+    }
+
+    private var toolsDownloading = false
+    private var toolsMessage: String?
+
+    func updateToolsDownloading(_ downloading: Bool) {
+        toolsDownloading = downloading
+        if downloading { toolsMessage = nil }
+        toolsDownloadButton.isEnabled = !downloading
+        toolsDownloadButton.setTitle(toolsMessage ?? (downloading ? ToolsDownloadText.current.installing : ToolsDownloadText.current.entryTitle))
+        toolsDownloadButton.toolTip = ToolsDownloadText.current.entryDescription
+        toolsDownloadButton.setAccessibilityHelp(ToolsDownloadText.current.entryDescription)
+    }
+
+    func updateToolsMessage(_ message: String?) {
+        toolsMessage = message
+        toolsDownloadButton.setTitle(message ?? (toolsDownloading ? ToolsDownloadText.current.installing : ToolsDownloadText.current.entryTitle))
     }
 
     private func resizeToFit() {
@@ -410,6 +438,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         advancedColumns.addArrangedSubview(advancedLeftColumn)
         advancedColumns.addArrangedSubview(advancedRightColumn)
         advancedRightSpacer.translatesAutoresizingMaskIntoConstraints = false
+        advancedRightSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0).isActive = true
         advancedRightSpacer.setContentHuggingPriority(
             NSLayoutConstraint.Priority(1),
             for: .vertical
@@ -419,6 +448,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         rootStack.addArrangedSubview(appHeader)
         rootStack.addArrangedSubview(bodyStack)
         rootStack.setCustomSpacing(20, after: appHeader)
+
+        toolsDownloadButton.onClick = { [weak self] in self?.onToolsDownload() }
+        updateToolsDownloading(toolsDownloading)
 
         contentView.addSubview(rootStack)
         window?.contentView = contentView
@@ -441,7 +473,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             advancedColumns.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             preferencesCard.widthAnchor.constraint(equalTo: advancedLeftColumn.widthAnchor),
             systemCard.widthAnchor.constraint(equalTo: advancedLeftColumn.widthAnchor),
-            shortcutCard.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor)
+            shortcutCard.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
+            toolsDownloadButton.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
+            advancedRightColumn.bottomAnchor.constraint(equalTo: advancedColumns.bottomAnchor),
+            toolsDownloadButton.bottomAnchor.constraint(equalTo: advancedRightColumn.bottomAnchor)
         ]
 
         NSLayoutConstraint.activate([
@@ -504,10 +539,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             advancedRightColumn.addArrangedSubview(shortcutCard)
             advancedRightColumn.addArrangedSubview(updateHeading)
             advancedRightColumn.addArrangedSubview(updateCard)
+            advancedRightColumn.addArrangedSubview(advancedRightSpacer)
+            advancedRightColumn.addArrangedSubview(toolsDownloadButton)
+            advancedRightColumn.setCustomSpacing(16, after: updateCard)
+            advancedRightColumn.setCustomSpacing(0, after: advancedRightSpacer)
             advancedRightColumn.setCustomSpacing(22, after: shortcutCard)
             advancedRightColumn.setCustomSpacing(8, after: updateHeading)
             updateCardWidthConstraint?.isActive = true
-            advancedRightColumn.addArrangedSubview(advancedRightSpacer)
             advancedRightColumn.setCustomSpacing(8, after: shortcutHeading)
 
             bodyStack.setCustomSpacing(24, after: advancedHeader)
@@ -785,6 +823,21 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         updateVersionLabel.setContentHuggingPriority(.required, for: .horizontal)
         releaseNotesButton.setContentHuggingPriority(.required, for: .horizontal)
         releaseNotesButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let versionDetails = NSStackView(views: [updateVersionRow, updateCurrentVersionLabel])
+        configureColumn(versionDetails)
+        versionDetails.spacing = 3
+        versionDetails.setHuggingPriority(.defaultLow, for: .horizontal)
+        updateVersionRow.widthAnchor.constraint(equalTo: versionDetails.widthAnchor).isActive = true
+        updateCurrentVersionLabel.widthAnchor.constraint(equalTo: versionDetails.widthAnchor).isActive = true
+        updateButton.setContentHuggingPriority(.required, for: .horizontal)
+        updateButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        updateActionRow.orientation = .horizontal
+        updateActionRow.alignment = .centerY
+        updateActionRow.spacing = 16
+        updateActionRow.translatesAutoresizingMaskIntoConstraints = false
+        updateActionRow.addArrangedSubview(versionDetails)
+        updateActionRow.addArrangedSubview(updateButton)
+        updateButton.trailingAnchor.constraint(equalTo: updateActionRow.trailingAnchor).isActive = true
         configureColumn(updateCardStack)
         updateCardStack.spacing = 14
         let card = brandCard()
@@ -808,17 +861,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         clearArrangedSubviews(updateCardStack)
         var rows: [NSView] = [automaticUpdateChecksRow]
         if availableUpdateVersion != nil {
-            rows += [updateDivider, updateVersionRow, updateCurrentVersionLabel, updateButton]
+            rows += [updateDivider, updateActionRow]
         }
         rows.forEach { updateCardStack.addArrangedSubview($0) }
         updateRowWidthConstraints = rows.map {
             $0.widthAnchor.constraint(equalTo: updateCardStack.widthAnchor)
         }
         NSLayoutConstraint.activate(updateRowWidthConstraints)
-        if availableUpdateVersion != nil {
-            updateCardStack.setCustomSpacing(8, after: updateVersionRow)
-            updateCardStack.setCustomSpacing(18, after: updateCurrentVersionLabel)
-        }
     }
 
     private func buildAutoOffCard() -> NSView {

@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `3.5.0`
+Current version: `4.0.0`
 
 [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
@@ -30,7 +30,7 @@ Turn Caps Lock on when local work should keep running. Turn Caps Lock off when y
 
 It is useful for AI agents, mobile access, and other long-running or remote work.
 
-Capsomnia does not collect telemetry or require an account. Its only network use is an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), plus downloading the installer from GitHub when you choose to update. Capsomnia sends no telemetry, identifiers, or personal data.
+Capsomnia does not collect telemetry or require an account. Its only network use is an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), plus downloading installers from GitHub when you choose to update or install CLI & Skill. Capsomnia sends no telemetry, identifiers, or personal data.
 
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="Caps Lock light on" width="560">
@@ -56,6 +56,23 @@ Install the signed package:
 Release packages are signed with Developer ID and notarized by Apple. The package installs `Capsomnia.app` in `/Applications`, installs the signed native privileged sleep-control helper, adds a narrow sudoers rule, and starts the LaunchAgent. Capsomnia opens after installation and starts automatically at login afterward.
 
 The package build and install scripts are public in [`scripts/build-pkg.sh`](scripts/build-pkg.sh) and [`scripts/notarize-pkg.sh`](scripts/notarize-pkg.sh).
+
+## CLI & Skill
+
+In **Advanced Settings → Download Capsomnia CLI & Skill**, confirm **Install** in the dialog to add both tools.
+Capsomnia downloads the package and installs it after macOS authentication,
+then shows a completion dialog. There are no agent or folder choices. The app's own package
+contains only the app and its helper; `Capsomnia-Tools.pkg`, published in the cpsm
+repository, adds the optional tools.
+
+- **[cpsm](https://github.com/fuji-mak/cpsm)**: Capsomnia CLI and common `capsomnia`
+  Skill. Requires this app; one-shot timers and explicit off include sleep.
+- **[MacReady](https://github.com/fuji-mak/MacReady)**: independent read-only Mac
+  state CLI and `macready` Skill. Does not require the app.
+
+The app downloads the signed and notarized Tools package from the cpsm GitHub release.
+Skills are shared in `~/.agents/skills/`, with automatic Claude Code links.
+Normal CLI usage stays local. [Distribution and compatibility](docs/distribution.md).
 
 ## Build From Source
 

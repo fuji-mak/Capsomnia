@@ -1,5 +1,6 @@
 import AppKit
 import Carbon.HIToolbox
+import CapsomniaControl
 import Foundation
 
 final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -10,7 +11,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var nextDisplaySleepRetryAt = Date.distantPast
     private var nextDisplayAwakeRetryAt = Date.distantPast
     private let displayAwakeAssertion = DisplayAwakeAssertion()
-    private var autoOffState = AutoOffState()
+    private var sessionTimer = SessionAutoOffTimer()
+    private var controlServer: ControlServer?
+    private var isControlMutationInFlight = false
     private var isAutoOffToggleInFlight = false
     private var didRequestDisplaySleepForClosedLid = false
     private var hasLoggedMissingClamshellState = false
@@ -33,6 +36,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private weak var keepDisplayAwakeStatusMenuItem: NSMenuItem?
     private weak var checkForUpdatesMenuItem: NSMenuItem?
     private var updateController: UpdateController?
+    private lazy var toolsDownloadController: ToolsDownloadController = {
+        let controller = ToolsDownloadController()
+        controller.onDownloadingChange = { [weak self] downloading in
+            self?.settingsWindowController?.updateToolsDownloading(downloading)
+        }
+        controller.onStatusChange = { [weak self] message in
+            self?.settingsWindowController?.updateToolsMessage(message)
+        }
+        return controller
+    }()
     private var settingsWindowController: SettingsWindowController?
     private let onImage = DotImage.make(color: Brand.led)
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
@@ -101,9 +114,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         installPollingMonitor()
         log("start")
         applyCurrentCapsLockState(reason: "startup")
+        startControlServer()
 
         if shouldShowInitialSetup {
             showSettingsWindow(page: .initialPreferences)
+        } else if ProcessInfo.processInfo.arguments.contains("--show-settings") {
+            showSettingsWindow(page: .settings)
         }
 
         DispatchQueue.main.async { [weak self] in
@@ -119,6 +135,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        controlServer?.stop()
         dedicatedCapsLockFilter.stop()
         if let globalCapsLockEventMonitor {
             NSEvent.removeMonitor(globalCapsLockEventMonitor)
@@ -536,11 +553,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 },
                 onReleaseNotes: { [weak self] version in
                     self?.updateController?.openReleaseNotes(version: version)
-                }
+                },
+                onToolsDownload: { [weak self] in
+                    self?.toolsDownloadController.promptDownload(from: self?.settingsWindowController?.window)
+                },
+                autoOffDescriptionProvider: { [weak self] in self?.sessionTimerDescription() }
             )
         }
 
         settingsWindowController?.updateAvailableVersion(updateController?.availableVersion)
+        settingsWindowController?.updateToolsDownloading(toolsDownloadController.isDownloading)
         settingsWindowController?.show(page: page)
     }
 
@@ -630,14 +652,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Returns `true` when an auto-off was triggered this call.
     @discardableResult
     private func evaluateAutoOff(capsLockOn: Bool, reason: String) -> Bool {
-        let result = AutoOffPolicy.evaluate(
+        let previousSource = sessionTimer.source
+        let didFire = sessionTimer.evaluate(
             capsLockOn: capsLockOn,
-            autoOffMinutes: Preferences.autoOffMinutes,
-            now: Date(),
-            state: autoOffState
+            defaultMinutes: Preferences.autoOffMinutes,
+            now: Date()
         )
-        autoOffState = result.state
-        let didFire = result.shouldFire
+        if previousSource != sessionTimer.source { settingsWindowController?.reloadText() }
         if didFire {
             fireAutoOff(reason: reason)
         }
@@ -650,7 +671,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Prevent input-source-change recovery from re-asserting Caps Lock and
         // undoing the auto-off while the off is being applied.
         suppressInputSourceRecoveryForUserAction(reason: "auto_off")
-        autoOffState = AutoOffState()
         log("auto_off elapsed reason=\(reason)")
         capsLockToggleCoordinator.requestSet(false) { [weak self] result in
             guard let self else { return }
@@ -661,10 +681,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    private func setAutoOffMinutes(_ minutes: Int) {
+    private func setAutoOffMinutes(_ minutes: Int, preserveSessionOverride: Bool = false) {
         Preferences.autoOffMinutes = minutes
-        // Start fresh with the newly chosen duration.
-        autoOffState = AutoOffState()
+        // CLI settings alter the default without replacing a one-shot timer.
+        if !preserveSessionOverride || sessionTimer.overrideSeconds == nil {
+            sessionTimer.reset()
+        }
         updateStatusMenuControls()
         settingsWindowController?.reloadText()
         log("preference auto_off_minutes=\(minutes)")
@@ -682,14 +704,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func restartAutoOff() {
-        let minutes = Preferences.autoOffMinutes
-        guard minutes > 0 else { return }
-        autoOffState = AutoOffPolicy.restarted(
+        sessionTimer.restart(
             capsLockOn: currentCapsLockState,
-            autoOffMinutes: minutes,
+            defaultMinutes: Preferences.autoOffMinutes,
             now: Date()
         )
-        log("auto_off restart minutes=\(minutes)")
+        log("auto_off restart")
         applyCurrentCapsLockState(reason: "restart")
     }
 
@@ -698,13 +718,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard currentCapsLockState else {
             return .idle(minutes: minutes)
         }
-        guard minutes > 0 else {
-            return .infinite
-        }
-        if let deadline = autoOffState.deadline {
+        let seconds = sessionTimer.duration(defaultMinutes: minutes)
+        guard seconds > 0 else { return .infinite }
+        if let deadline = sessionTimer.deadline {
             return .counting(remaining: max(0, deadline.timeIntervalSinceNow))
         }
-        return .counting(remaining: TimeInterval(minutes) * 60)
+        return .counting(remaining: seconds)
     }
 
     private func updateStatusMenuControls() {
@@ -795,7 +814,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func applyCurrentCapsLockState(reason: String) {
         // While an auto-off toggle is being applied on the background queue,
         // pause state application; the toggle's completion re-syncs afterward.
-        if isAutoOffToggleInFlight {
+        if isAutoOffToggleInFlight || isControlMutationInFlight {
             return
         }
 
@@ -1199,5 +1218,255 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } else {
             try? data.write(to: url)
         }
+    }
+}
+
+
+// MARK: - Local CLI control
+extension Capsomnia {
+    private func startControlServer() {
+        do {
+            let server = try ControlServer(bundleIdentifier: appLabel) { [weak self] request, reply in
+                guard let self else {
+                    reply(ControlResponse(ok: false, error: "Capsomnia is shutting down."))
+                    return
+                }
+                self.handleControl(request, reply: reply)
+            }
+            try server.start()
+            controlServer = server
+        } catch {
+            log("cli_server failed=\(error.localizedDescription)")
+        }
+    }
+
+    private func handleControl(_ request: ControlRequest, reply: @escaping (ControlResponse) -> Void) {
+        guard request.version == 1 else {
+            reply(ControlResponse(ok: false, error: "CLI/app protocol mismatch. Update both together."))
+            return
+        }
+        let args = request.arguments
+        func fail(_ message: String) { reply(ControlResponse(ok: false, error: message)) }
+        func succeed(_ value: JSONValue) { reply(ControlResponse(ok: true, result: value)) }
+        if args == ["status"] { succeed(controlStatus()); return }
+        if args == ["doctor"] { succeed(controlDoctor()); return }
+        if args == ["timer", "status"] { succeed(controlTimerStatus()); return }
+        if args.count >= 2 && args[0...1] == ["settings", "get"] {
+            let settings = controlSettings()
+            if args.count == 2 { succeed(.object(settings)); return }
+            if args.count == 3, let value = settings[args[2]] { succeed(.object([args[2]: value])); return }
+            fail("Unknown setting. Run cpsm settings get."); return
+        }
+        guard !isControlMutationInFlight && !isAutoOffToggleInFlight && !autoOffSleepCoordinator.isPending else {
+            fail("A power operation is already in progress. Check status before trying again."); return
+        }
+        if args == ["on"] || args == ["off"] || args == ["toggle"] {
+            guard let current = capsLockStateReader.currentState() else {
+                fail("Caps Lock state is unavailable."); return
+            }
+            let target = args[0] == "toggle" ? !current : args[0] == "on"
+            requestControlState(target, reply: reply)
+            return
+        }
+        if args.count == 3 && args[0...1] == ["timer", "set"] {
+            guard let seconds = ControlInput.duration(args[2]) else {
+                fail("Use a duration from 1s to 24h, for example 90m or 2h."); return
+            }
+            requestControlState(true, timerSeconds: seconds, reply: reply)
+            return
+        }
+        if args == ["timer", "cancel"] {
+            guard capsLockStateReader.currentState() != nil else {
+                fail("Caps Lock state is unavailable."); return
+            }
+            if currentCapsLockState { sessionTimer.cancel() } else { sessionTimer.reset() }
+            updateStatusMenuControls()
+            settingsWindowController?.reloadText()
+            succeed(controlTimerStatus()); return
+        }
+        if args == ["timer", "restart"] {
+            guard currentCapsLockState, sessionTimer.deadline != nil else {
+                fail("There is no running timer. Use cpsm timer set <duration>."); return
+            }
+            restartAutoOff()
+            settingsWindowController?.reloadText()
+            succeed(controlTimerStatus()); return
+        }
+        if args.count == 4 && args[0...1] == ["settings", "set"] {
+            do {
+                try setControlSetting(args[2], value: args[3])
+                settingsWindowController?.reloadText()
+                succeed(.object([args[2]: controlSettings()[args[2]] ?? .null]))
+            } catch { fail(error.localizedDescription) }
+            return
+        }
+        fail("Unknown command. Run cpsm --help.")
+    }
+
+    private func requestControlState(
+        _ target: Bool,
+        timerSeconds: TimeInterval? = nil,
+        reply: @escaping (ControlResponse) -> Void
+    ) {
+        if target && !ensureDedicatedCapsLockFilter(promptForPermission: false, reason: "cli") {
+            reply(ControlResponse(ok: false, error: "Complete Accessibility setup in Capsomnia before turning it on."))
+            return
+        }
+        isControlMutationInFlight = true
+        suppressInputSourceRecoveryForUserAction(reason: "cli")
+        ExplicitAwakeCommand.run(
+            target: target,
+            setCapsLock: { value, completion in
+                self.capsLockToggleCoordinator.requestSet(value, completion: completion)
+            },
+            synchronize: { value in
+                // Refresh the explicit-action bypass after asynchronous HID work.
+                self.suppressInputSourceRecoveryForUserAction(reason: "cli")
+                if let timerSeconds {
+                    self.sessionTimer.set(seconds: timerSeconds, now: Date())
+                }
+                _ = self.sessionTimer.evaluate(
+                    capsLockOn: value, defaultMinutes: Preferences.autoOffMinutes, now: Date()
+                )
+                self.nextSleepStateRetryAt = .distantPast
+                self.nextSleepStateVerificationAt = .distantPast
+                self.apply(capsLockOn: value, reason: "cli")
+                return self.failedSleepState == nil && SleepStateReader.isDisabled() == value
+            },
+            readCapsLock: { self.capsLockStateReader.currentState() },
+            sleep: { SystemSleepRequester.request() },
+            completion: { result in
+                self.isControlMutationInFlight = false
+                self.updateStatusMenuControls()
+                self.settingsWindowController?.reloadText()
+                switch result {
+                case .success(let sleepRequested):
+                    reply(ControlResponse(ok: true, result: self.controlStatus(sleepRequested: sleepRequested)))
+                case .failure(let error):
+                    reply(ControlResponse(ok: false, error: error.localizedDescription))
+                }
+            }
+        )
+    }
+
+    private func controlStatus(sleepRequested: Bool = false) -> JSONValue {
+        .object([
+            "app_running": .bool(true),
+            "app_version": .string(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "development"),
+            "app_path": .string(Bundle.main.bundlePath),
+            "caps_lock": capsLockStateReader.currentState().map(JSONValue.bool) ?? .null,
+            "sleep_disabled": SleepStateReader.isDisabled().map(JSONValue.bool) ?? .null,
+            "sleep_requested": .bool(sleepRequested),
+            "timer": controlTimerStatus()
+        ])
+    }
+
+    private func sessionTimerDescription() -> String? {
+        guard sessionTimer.overrideSeconds != nil else { return nil }
+        let cancelled = sessionTimer.overrideSeconds == 0
+        switch Preferences.language {
+        case .japanese:
+            return cancelled
+                ? "今回のタイマーは解除済みです。下の設定は次回オン時に適用されます。"
+                : "CLIで設定した今回限りのタイマーです。下の保存済み設定は変更されません。"
+        case .english:
+            return cancelled
+                ? "Timer cancelled for this session. Saved settings below apply next time."
+                : "One-shot CLI timer. Your saved settings below are unchanged."
+        case .korean:
+            return cancelled
+                ? "이번 타이머는 취소되었습니다. 아래 저장된 설정은 다음에 적용됩니다."
+                : "CLI로 설정한 일회성 타이머입니다. 아래 저장된 설정은 유지됩니다."
+        case .simplifiedChinese:
+            return cancelled
+                ? "本次定时器已取消。下方保存的设置将在下次开启时应用。"
+                : "CLI 设置的一次性定时器。下方保存的设置保持不变。"
+        }
+    }
+
+    private func controlTimerStatus() -> JSONValue {
+        let deadline = sessionTimer.deadline
+        return .object([
+            "active": .bool(deadline != nil),
+            "source": .string(sessionTimer.source),
+            "duration_seconds": .number(sessionTimer.duration(defaultMinutes: Preferences.autoOffMinutes)),
+            "remaining_seconds": deadline.map { .number(max(0, $0.timeIntervalSinceNow)) } ?? .null,
+            "deadline": deadline.map { .string(ISO8601DateFormatter().string(from: $0)) } ?? .null,
+            "saved_minutes": .number(Double(Preferences.autoOffMinutes))
+        ])
+    }
+
+    private func controlSettings() -> [String: JSONValue] {
+        [
+            "dedicated-caps-lock-mode": .bool(Preferences.dedicatedCapsLockMode),
+            "show-menu-bar-icon": .bool(Preferences.showMenuBarIcon),
+            "language": .string(Preferences.language.rawValue),
+            "launch-at-login": .bool(Preferences.launchAtLogin),
+            "keep-display-awake": .bool(Preferences.keepDisplayAwake),
+            "ignore-external-caps-lock-off-while-lid-closed": .bool(Preferences.ignoreExternalCapsLockOffWhileLidClosed),
+            "auto-off-minutes": .number(Double(Preferences.autoOffMinutes)),
+            "automatic-update-checks": .bool(Preferences.automaticUpdateChecks),
+            "shortcut": Preferences.keyboardShortcut.map { .string($0.displayValue) } ?? .null
+        ]
+    }
+
+    private func setControlSetting(_ key: String, value: String) throws {
+        if key == "language" {
+            guard let language = AppLanguage(rawValue: value) else {
+                throw ExplicitAwakeCommand.Failure("Language must be en, ja, ko or zh-Hans.")
+            }
+            setLanguage(language)
+            return
+        }
+        if key == "auto-off-minutes" {
+            guard let minutes = Int(value), (0...AutoOffPreset.maxCustomMinutes).contains(minutes) else {
+                throw ExplicitAwakeCommand.Failure("auto-off-minutes must be 0...1440.")
+            }
+            setAutoOffMinutes(minutes, preserveSessionOverride: true)
+            return
+        }
+        if key == "shortcut" {
+            throw ExplicitAwakeCommand.Failure("Shortcut registration is available only in the app settings.")
+        }
+        guard let enabled = ControlInput.boolean(value) else {
+            throw ExplicitAwakeCommand.Failure("Use on/off or true/false for a boolean setting.")
+        }
+        switch key {
+        case "dedicated-caps-lock-mode":
+            setDedicatedCapsLockMode(enabled)
+            if dedicatedModeError {
+                throw ExplicitAwakeCommand.Failure("Setting saved, but Accessibility permission is required in the app.")
+            }
+        case "show-menu-bar-icon": setShowMenuBarIcon(enabled)
+        case "launch-at-login":
+            try LaunchAgentManager.setEnabled(enabled)
+            Preferences.launchAtLogin = enabled
+            rebuildStatusMenu()
+        case "keep-display-awake": setKeepDisplayAwake(enabled)
+        case "ignore-external-caps-lock-off-while-lid-closed": setIgnoreExternalCapsLockOffWhileLidClosed(enabled)
+        case "automatic-update-checks": Preferences.automaticUpdateChecks = enabled
+        default: throw ExplicitAwakeCommand.Failure("Unknown setting. Run cpsm settings get.")
+        }
+    }
+
+    private func controlDoctor() -> JSONValue {
+        let helperExists = FileManager.default.isExecutableFile(atPath: helperPath)
+        let capsLock = capsLockStateReader.currentState()
+        let sleepDisabled = SleepStateReader.isDisabled()
+        var issues: [JSONValue] = []
+        if !helperExists { issues.append(.string("Privileged helper missing. Install the Capsomnia app package.")) }
+        if capsLock == nil { issues.append(.string("Caps Lock state is unavailable.")) }
+        if sleepDisabled == nil { issues.append(.string("Sleep prevention state is unavailable.")) }
+        if let capsLock, let sleepDisabled, capsLock != sleepDisabled {
+            issues.append(.string("Caps Lock and sleep prevention are not synchronized."))
+        }
+        if dedicatedModeError { issues.append(.string("Accessibility setup is required for dedicated Caps Lock mode.")) }
+        return .object([
+            "healthy": .bool(issues.isEmpty), "issues": .array(issues),
+            "helper_available": .bool(helperExists), "status": controlStatus(),
+            "launch_agent_installed": .bool(FileManager.default.fileExists(atPath: "/Library/LaunchAgents/\(appLabel).plist") || FileManager.default.fileExists(atPath:
+                FileManager.default.homeDirectoryForCurrentUser
+                    .appendingPathComponent("Library/LaunchAgents/\(appLabel).plist").path))
+        ])
     }
 }

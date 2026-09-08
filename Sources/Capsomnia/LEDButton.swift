@@ -10,10 +10,11 @@ final class LEDButton: NSView {
         set {
             label.stringValue = newValue
             setAccessibilityLabel(newValue)
+            invalidateIntrinsicContentSize()
         }
     }
 
-    init() {
+    init(height: CGFloat = 38) {
         super.init(frame: .zero)
         wantsLayer = true
         layer?.cornerRadius = 11
@@ -31,7 +32,7 @@ final class LEDButton: NSView {
         addSubview(label)
 
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: 38),
+            heightAnchor.constraint(equalToConstant: height),
             label.centerXAnchor.constraint(equalTo: centerXAnchor),
             label.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
@@ -44,6 +45,10 @@ final class LEDButton: NSView {
     }
 
     required init?(coder: NSCoder) { nil }
+
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: label.intrinsicContentSize.width + 28, height: NSView.noIntrinsicMetric)
+    }
 
     override var acceptsFirstResponder: Bool {
         true

@@ -378,16 +378,19 @@ final class AutoOffTimerControl: NSView {
         let state = displayProvider?() ?? .idle(minutes: minutes)
         switch state {
         case let .idle(armedMinutes):
+            restartButton.isHidden = minutes == 0
             captionLabel.isHidden = true
             captionLabel.stringValue = ""
             countdownLabel.stringValue = AutoOffFormatter.durationLabel(minutes: armedMinutes)
             countdownLabel.textColor = armedMinutes > 0 ? Brand.text : Brand.textDim
         case .infinite:
+            restartButton.isHidden = true
             captionLabel.isHidden = true
             captionLabel.stringValue = ""
             countdownLabel.stringValue = "∞"
             countdownLabel.textColor = Brand.textDim
         case let .counting(remaining):
+            restartButton.isHidden = false
             captionLabel.isHidden = false
             captionLabel.stringValue = turnsOffInText.uppercased()
             countdownLabel.stringValue = AutoOffFormatter.countdown(remaining)

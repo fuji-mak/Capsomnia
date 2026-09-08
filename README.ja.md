@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-現在のバージョン: `3.5.0`
+現在のバージョン: `4.0.0`
 
 [English README](README.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
@@ -30,7 +30,7 @@
 
 AIエージェントの実行、モバイル接続、その他長時間の実行や遠隔での作業に有効です。
 
-Capsomnia はテレメトリを収集せず、アカウントも必要としません。ネットワーク通信は、GitHubの公開リリース情報を読み取る1日1回のアップデート確認（詳細設定でオフにできます）と、アップデートを選択した際のGitHubからのインストーラのダウンロードだけです。テレメトリや識別子、個人情報を送信することはありません。
+Capsomnia はテレメトリを収集せず、アカウントも必要としません。ネットワーク通信は、GitHubの公開リリース情報を読み取る1日1回のアップデート確認（詳細設定でオフにできます）と、アップデートやCLI & Skill導入を選択した際のGitHubからのインストーラのダウンロードだけです。テレメトリや識別子、個人情報を送信することはありません。
 
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="Caps Lock ランプ点灯" width="560">
@@ -56,6 +56,21 @@ Capsomnia はテレメトリを収集せず、アカウントも必要としま�
 リリース用パッケージは Developer ID で署名し、Apple の公証を通しています。パッケージは `Capsomnia.app` を `/Applications` に配置し、署名済みネイティブ privileged helper、限定的な sudoers rule、LaunchAgent を設定します。インストール後、Capsomnia が開き、以降はログイン時に自動起動します。
 
 パッケージのビルドとインストール処理は [`scripts/build-pkg.sh`](scripts/build-pkg.sh) と [`scripts/notarize-pkg.sh`](scripts/notarize-pkg.sh) で公開しています。
+
+## CLI & Skill
+
+**詳細設定 → Capsomnia CLI & Skillをダウンロード** の確認ダイアログで「インストール」を押すと、両ツールをまとめて取得し、
+macOSの認証後にアプリ内で導入を完了します。導入先の選択はなく、完了後は「完了しました」と表示します。
+アプリpkgはアプリ・helper用のままです。
+
+- **[cpsm](https://github.com/fuji-mak/cpsm)**：CapsomniaのCLIと共通Skill。
+  アプリ必須で、今回限りのタイマーや、OFFからスリープまでを操作できます。
+- **[MacReady](https://github.com/fuji-mak/MacReady)**：Macの状態をJSONで読み取る
+  独立CLIとSkill。アプリなしでも利用できます。
+
+署名・公証済みの `Capsomnia-Tools.pkg` をcpsmのGitHubリリースから取得します。Skillは `~/.agents/skills/` に共通配置し、
+Claude Code用のリンクを自動で作成します。
+[配布構成と確認手順](docs/distribution.md)を参照してください。
 
 ## ソースからビルド
 

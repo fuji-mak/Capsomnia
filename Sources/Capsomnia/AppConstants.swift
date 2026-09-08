@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 let appName = "Capsomnia"
-let appLabel = "com.github.fuji-mak.capsomnia"
+let appLabel = Bundle.main.bundleIdentifier ?? "com.github.fuji-mak.capsomnia"
 /// Developer ID team that signs Capsomnia's release packages
 /// (scripts/build-pkg.sh). Downloaded update installers must be signed by
 /// this team before they are opened.
@@ -133,6 +133,8 @@ struct AppStrings {
     let updateAvailableMenuFormat: String
     let updateAvailableTitle: String
     let updateAvailableBodyFormat: String
+    let updateAction: String
+    let updateAvailableVersionFormat: String
     let updateDownloadAndInstall: String
     let updateLater: String
     let updateUpToDateTitle: String
@@ -204,6 +206,8 @@ struct AppStrings {
                 updateAvailableMenuFormat: "Update available — %@",
                 updateAvailableTitle: "Update available",
                 updateAvailableBodyFormat: "Capsomnia %@ is available — you have %@. Download the installer and open it? The download is removed automatically after the update.",
+                updateAction: "Update",
+                updateAvailableVersionFormat: "%@ available",
                 updateDownloadAndInstall: "Download & Install",
                 updateLater: "Later",
                 updateUpToDateTitle: "You’re up to date",
@@ -269,6 +273,8 @@ struct AppStrings {
                 updateAvailableMenuFormat: "업데이트 있음 — %@",
                 updateAvailableTitle: "업데이트가 있습니다",
                 updateAvailableBodyFormat: "Capsomnia %@ 버전을 사용할 수 있습니다. 현재 버전은 %@입니다. 설치 프로그램을 다운로드해서 열까요? 다운로드한 파일은 업데이트 후 자동으로 제거됩니다.",
+                updateAction: "업데이트",
+                updateAvailableVersionFormat: "%@ 사용 가능",
                 updateDownloadAndInstall: "다운로드 및 설치",
                 updateLater: "나중에",
                 updateUpToDateTitle: "최신 버전입니다",
@@ -334,6 +340,8 @@ struct AppStrings {
                 updateAvailableMenuFormat: "アップデートあり — %@",
                 updateAvailableTitle: "アップデートがあります",
                 updateAvailableBodyFormat: "Capsomnia %@ が利用できます（現在は %@）。インストーラをダウンロードして開きますか？ダウンロードしたファイルはアップデート後に自動で削除されます。",
+                updateAction: "更新",
+                updateAvailableVersionFormat: "%@が利用可能",
                 updateDownloadAndInstall: "ダウンロードしてインストール",
                 updateLater: "あとで",
                 updateUpToDateTitle: "最新の状態です",
@@ -399,6 +407,8 @@ struct AppStrings {
                 updateAvailableMenuFormat: "有可用更新 — %@",
                 updateAvailableTitle: "有可用更新",
                 updateAvailableBodyFormat: "Capsomnia %@ 已发布，当前版本为 %@。要下载并打开安装器吗？更新完成后会自动移除下载的文件。",
+                updateAction: "更新",
+                updateAvailableVersionFormat: "%@ 可用",
                 updateDownloadAndInstall: "下载并安装",
                 updateLater: "稍后",
                 updateUpToDateTitle: "已是最新版本",

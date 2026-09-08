@@ -8,8 +8,14 @@ final class DisclosureButton: NSView {
     private var isHovered = false
 
     var onClick: (() -> Void)?
+    var isEnabled = true {
+        didSet {
+            setAccessibilityEnabled(isEnabled)
+            alphaValue = isEnabled ? 1 : 0.55
+        }
+    }
 
-    init() {
+    init(symbolName: String = "chevron.forward", height: CGFloat = 52) {
         super.init(frame: .zero)
 
         translatesAutoresizingMaskIntoConstraints = false
@@ -29,13 +35,12 @@ final class DisclosureButton: NSView {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
         chevronHolder.translatesAutoresizingMaskIntoConstraints = false
         chevronHolder.wantsLayer = true
         chevronHolder.layer?.cornerRadius = 9
 
         chevronView.image = NSImage(
-            systemSymbolName: "chevron.forward",
+            systemSymbolName: symbolName,
             accessibilityDescription: nil
         )
         chevronView.symbolConfiguration = NSImage.SymbolConfiguration(
@@ -54,7 +59,7 @@ final class DisclosureButton: NSView {
         addSubview(content)
 
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: 52),
+            heightAnchor.constraint(equalToConstant: height),
             chevronHolder.widthAnchor.constraint(equalToConstant: 30),
             chevronHolder.heightAnchor.constraint(equalToConstant: 30),
             chevronView.centerXAnchor.constraint(equalTo: chevronHolder.centerXAnchor),
@@ -85,6 +90,7 @@ final class DisclosureButton: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
         window?.makeFirstResponder(self)
         onClick?()
     }
@@ -100,6 +106,7 @@ final class DisclosureButton: NSView {
     }
 
     override func keyDown(with event: NSEvent) {
+        guard isEnabled else { return }
         if event.keyCode == 36 || event.charactersIgnoringModifiers == " " {
             onClick?()
         } else {
@@ -108,6 +115,7 @@ final class DisclosureButton: NSView {
     }
 
     override func accessibilityPerformPress() -> Bool {
+        guard isEnabled else { return false }
         onClick?()
         return true
     }

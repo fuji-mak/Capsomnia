@@ -1,45 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleDevelopmentRegion</key>
-  <string>en</string>
-
-  <key>CFBundleDisplayName</key>
-  <string>Capsomnia</string>
-
-  <key>CFBundleExecutable</key>
-  <string>Capsomnia</string>
-
-  <key>CFBundleIconFile</key>
-  <string>AppIcon</string>
-
-  <key>CFBundleIdentifier</key>
-  <string>com.github.fuji-mak.capsomnia</string>
-
-  <key>CFBundleInfoDictionaryVersion</key>
-  <string>6.0</string>
-
-  <key>CFBundleName</key>
-  <string>Capsomnia</string>
-
-  <key>CFBundlePackageType</key>
-  <string>APPL</string>
-
-  <key>CFBundleShortVersionString</key>
-  <string>3.5.0</string>
-
-  <key>CFBundleVersion</key>
-  <string>3.5.0</string>
-
-  <key>LSMinimumSystemVersion</key>
-  <string>13.5</string>
-
-  <key>LSUIElement</key>
-  <true/>
-
-  <key>NSHighResolutionCapable</key>
-  <true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Capsomnia</string>
+	<key>CFBundleExecutable</key>
+	<string>Capsomnia</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.github.fuji-mak.capsomnia</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Capsomnia</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>4.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>4.0.0</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.5</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>CapsomniaToolsPackageURL</key>
+	<string>https://github.com/fuji-mak/cpsm/releases/latest/download/Capsomnia-Tools.pkg</string>
 </dict>
 </plist>

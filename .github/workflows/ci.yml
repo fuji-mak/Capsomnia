@@ -11,6 +11,8 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Verify vendored library snapshots
+        run: python3 scripts/sync-vendor.py --check
       - name: Build release executable
         run: swift build -c release
       - name: Run test suite
@@ -32,6 +34,10 @@ jobs:
           zsh -n scripts/install.sh
           zsh -n scripts/notarize-pkg.sh
           zsh -n scripts/uninstall.sh
+          zsh -n scripts/build-tools-pkg.sh
+          zsh -n scripts/build-local-cli-preview.sh
+          zsh -n scripts/prepare-distribution.sh
+          zsh -n scripts/notarize-distribution.sh
 
   intel-compatibility:
     name: Intel x86_64 compatibility

@@ -33,6 +33,7 @@ cd "$ROOT_DIR"
 /usr/bin/install -m 0755 ".build/release/$APP_NAME" "$MACOS_DIR/$APP_NAME"
 /usr/bin/install -m 0644 "resources/Info.plist" "$CONTENTS_DIR/Info.plist"
 /usr/bin/install -m 0644 "resources/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
+/usr/bin/install -m 0644 "LICENSE" "$RESOURCES_DIR/LICENSE"
 /usr/bin/install -m 0755 "scripts/uninstall.sh" "$RESOURCES_DIR/uninstall.sh"
 
 echo "$APP_BUNDLE"

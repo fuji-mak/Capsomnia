@@ -5,6 +5,10 @@ Capsomnia releases publish two package assets:
 - `Capsomnia-<version>.pkg` for versioned downloads
 - `Capsomnia.pkg` for stable `releases/latest/download/Capsomnia.pkg` links
 
+The optional `Capsomnia-Tools.pkg` bundle is built and published in the
+[cpsm repository](https://github.com/fuji-mak/cpsm). Publish that bundle before
+the Capsomnia release that links to it. See [distribution preparation](docs/distribution.md).
+
 ## Version Updates
 
 Before building a release, update:

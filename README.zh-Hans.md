@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-当前版本：`3.5.0`
+当前版本：`4.0.0`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [한국어 README](README.ko.md)
 
@@ -32,7 +32,7 @@ Capsomnia是一款小巧的macOS菜单栏应用，可将Caps Lock变成MacBook�
 
 它适用于AI智能体、移动端访问，以及其他耗时较长或需要远程操作的任务。
 
-Capsomnia不会收集遥测数据，也不需要账户。其唯一的网络用途是每天一次的可选更新检查（读取 GitHub 的公开发布信息，可在高级设置中关闭），以及在您选择更新时从 GitHub 下载安装器。Capsomnia 不会发送遥测数据、标识符或个人信息。
+Capsomnia不会收集遥测数据，也不需要账户。其唯一的网络用途是每天一次的可选更新检查（读取 GitHub 的公开发布信息，可在高级设置中关闭），以及在您选择更新或安装 CLI & Skill 时从 GitHub 下载安装器。Capsomnia 不会发送遥测数据、标识符或个人信息。
 
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="Caps Lock 指示灯亮起" width="560">
@@ -228,3 +228,7 @@ Capsomnia 1.0.0是首个正式稳定版本。发布历史请参阅[CHANGELOG.md]
 ## 许可证
 
 MIT
+
+## CLI & Skill
+
+可在高级设置的 CLI & Skill 中一起安装 cpsm、MacReady 和通用 Skill。cpsm需要Capsomnia应用，MacReady可独立运行。Skill安装到通用位置，并自动创建Claude Code所需的链接。应用从GitHub下载已签名并通过公证的Tools软件包，安装后显示完成对话框。[发布准备](docs/distribution.md)。

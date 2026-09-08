@@ -27,7 +27,7 @@ Please include:
 
 Capsomnia's menu bar app runs as the current user. It does not run as root.
 
-Capsomnia does not collect telemetry or require an account. Its only network use is an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), plus downloading the installer from GitHub when you choose to update. Capsomnia sends no telemetry, identifiers, or personal data; the requests carry only standard network metadata.
+Capsomnia does not collect telemetry or require an account. Its only network use is an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), plus downloading installers from GitHub when you choose to update or install CLI & Skill. Capsomnia sends no telemetry, identifiers, or personal data; the requests carry only standard network metadata.
 
 When "Prevent all-caps typing" is disabled, Capsomnia does not request Input Monitoring or inspect keyboard events. When enabled, it requires Accessibility permission for a local active Core Graphics event filter. The filter removes only the Caps Lock modifier and suppresses the Caps Lock modifier-change event; it does not log, persist, or transmit event contents. If the filter is unavailable, Capsomnia turns sleep prevention off and reports an error instead of acting on the physical switch.
 
@@ -52,3 +52,17 @@ When an auto-off timer expires, Capsomnia first turns Caps Lock off through the 
 Package installs keep `/Applications/Capsomnia.app`, the helper, and the system LaunchAgent owned by `root:wheel`. The packaged helper and app are signed with the same Developer ID. The app process still runs as the signed-in user. Capsomnia verifies the actual `SleepDisabled` state after each change and every ten seconds afterward. If the helper cannot apply a sleep-state change, the actual state cannot be verified, or the setting drifts, Capsomnia shows a red status indicator and retries instead of reporting the requested state as active.
 
 The LaunchAgent restarts Capsomnia after crashes. If the app is force-killed while crash recovery is disabled or unavailable, the last system sleep setting can remain active. Users can restore normal behavior with `sudo pmset -a disablesleep 0`.
+
+## Optional local control (4.0.0 candidate)
+
+cpsm communicates with a Unix socket owned by the signed-in user. The endpoint
+directory is mode 0700, socket mode 0600, and both peers verify the effective UID.
+There is no network listener. The CLI does not add privileged helper modes.
+Explicit CLI off, including a toggle targeting off, verifies Caps Lock and
+sleep-prevention release before requesting sleep as the signed-in user.
+
+The optional Tools download uses an HTTPS release URL. Capsomnia checks the
+installer's Developer ID team before opening it and marks it as a downloaded
+file. Local preview builds may use an explicitly configured file URL. Tools
+installers contain two CLIs and optional common Skills, written as the console
+user. App uninstallation leaves these separately installed tools in place.

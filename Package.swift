@@ -11,9 +11,17 @@ let package = Package(
         .executable(name: "Capsomnia", targets: ["Capsomnia"]),
         .executable(name: "capsomnia-pmset", targets: ["CapsomniaPmsetHelper"])
     ],
+    dependencies: [
+        .package(path: "Vendor/CapsomniaControl"),
+        .package(path: "Vendor/MacStateCore")
+    ],
     targets: [
         .executableTarget(
-            name: "Capsomnia"
+            name: "Capsomnia",
+            dependencies: [
+                .product(name: "CapsomniaControl", package: "CapsomniaControl"),
+                .product(name: "MacStateCore", package: "MacStateCore")
+            ]
         ),
         .executableTarget(
             name: "CapsomniaPmsetHelper"

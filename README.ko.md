@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT 라이선스" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-현재 버전: `3.5.0`
+현재 버전: `4.0.0`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md)
 
@@ -30,7 +30,7 @@ Capsomnia는 Caps Lock을 MacBook 덮개를 닫은 채 작업할 때 쓰는 물�
 
 AI 에이전트를 돌리거나 모바일로 접속하는 등, 오래 걸리거나 원격으로 진행하는 작업에 유용합니다.
 
-Capsomnia는 텔레메트리를 수집하거나 계정을 요구하지 않습니다. 네트워크 사용은 GitHub의 공개 릴리스 정보를 읽는 하루 1회의 선택적 업데이트 확인(고급 설정에서 끌 수 있습니다)과, 업데이트를 선택했을 때 GitHub에서 설치 프로그램을 다운로드하는 것이 전부입니다. 텔레메트리, 식별자, 개인 정보는 전송하지 않습니다.
+Capsomnia는 텔레메트리를 수집하거나 계정을 요구하지 않습니다. 네트워크 사용은 GitHub의 공개 릴리스 정보를 읽는 하루 1회의 선택적 업데이트 확인(고급 설정에서 끌 수 있습니다)과, 업데이트 또는 CLI & Skill 설치를 선택했을 때 GitHub에서 설치 프로그램을 다운로드하는 것입니다. 텔레메트리, 식별자, 개인 정보는 전송하지 않습니다.
 
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="켜진 Caps Lock 표시등" width="560">
@@ -226,3 +226,7 @@ Capsomnia 1.0.0은 첫 번째 안정 공개 버전입니다. 릴리스 기록은
 ## 라이선스
 
 MIT
+
+## CLI & Skill
+
+고급 설정의 CLI & Skill에서 cpsm, MacReady 및 공통 Skill을 함께 설치할 수 있습니다. cpsm은 Capsomnia 앱이 필요하며, MacReady는 독립적으로 작동합니다. Skill은 공통 위치에 설치되며 Claude Code용 링크도 자동으로 생성됩니다. 서명 및 공증된 Tools 패키지를 GitHub에서 다운로드하고 설치 완료 대화상자를 표시합니다. [배포 준비](docs/distribution.md).

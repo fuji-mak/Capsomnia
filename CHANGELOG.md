@@ -2,6 +2,13 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## Unreleased
+
+- Follow the upstream 4.0 codebase while replacing Caps Lock-based power control with a persisted menu, shortcut, and CLI wake request.
+- Add a default-on battery policy that releases sleep prevention on battery and restores the saved request when AC power returns.
+- Report the effective policy state through the menu, status indicator, `cpsm status`, settings output, and `cpsm doctor`.
+- Keep manual update checks available but default automatic checks to off, since installing an upstream package replaces the personal fork.
+
 ## 4.0.0 - 2026-09-08
 
 - Add the local control service for the independently distributed cpsm CLI and

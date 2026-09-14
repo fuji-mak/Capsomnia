@@ -24,6 +24,19 @@ Current version: `4.0.0`
 
 [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
+## Personal Fork Features
+
+This fork follows the upstream 4.0 codebase, including its CLI, Skill, update checks, and distribution tooling, while changing wake control to an explicit power policy:
+
+- **Keep awake** persists the requested state without using Caps Lock as the power switch.
+- **Turn off keep-awake on battery** is enabled by default. On battery, Capsomnia releases sleep prevention without terminating running processes.
+- Returning to AC power restores the previously requested keep-awake state automatically.
+- The menu checkmark, status dot, title, tooltip, CLI status, and doctor output report the effective policy state.
+- The global shortcut and `cpsm on/off/toggle` operate the same persisted request used by the menu.
+- Login startup, auto-off timers, display-awake behavior, the restricted helper, CLI/Skill installation, and manual update checks remain available from upstream 4.0.
+
+The battery policy temporarily overrides the saved request; it does not erase it. Automatic update checks default to off in this fork because installing an upstream package replaces the custom behavior. Where the upstream documentation below describes Caps Lock as the wake switch, this fork uses the menu, shortcut, and CLI request instead.
+
 Capsomnia is a small macOS menu bar app that turns Caps Lock into a physical keep-awake switch for closed-lid MacBook work.
 
 Turn Caps Lock on when local work should keep running. Turn Caps Lock off when you want normal sleep behavior back.

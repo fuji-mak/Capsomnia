@@ -13,6 +13,8 @@ private enum PreferenceKey {
     static let shortcutKey = "ShortcutKey"
     static let didCompleteInitialSetup = "DidCompleteInitialSetup"
     static let forceWelcomeOnNextLaunch = "ForceWelcomeOnNextLaunch"
+    static let awakeRequested = "AwakeRequested"
+    static let disableKeepAwakeOnBattery = "DisableKeepAwakeOnBattery"
     static let automaticUpdateChecks = "AutomaticUpdateChecks"
     static let lastUpdateCheckAt = "LastUpdateCheckAt"
     static let lastKnownReleaseVersion = "LastKnownReleaseVersion"
@@ -34,7 +36,9 @@ enum Preferences {
             PreferenceKey.autoOffMinutes: 0,
             PreferenceKey.didCompleteInitialSetup: false,
             PreferenceKey.forceWelcomeOnNextLaunch: false,
-            PreferenceKey.automaticUpdateChecks: true
+            PreferenceKey.awakeRequested: true,
+            PreferenceKey.disableKeepAwakeOnBattery: true,
+            PreferenceKey.automaticUpdateChecks: false
         ])
     }
 
@@ -124,6 +128,16 @@ enum Preferences {
     static var didCompleteInitialSetup: Bool {
         get { defaults.bool(forKey: PreferenceKey.didCompleteInitialSetup) }
         set { defaults.set(newValue, forKey: PreferenceKey.didCompleteInitialSetup) }
+    }
+
+    static var awakeRequested: Bool {
+        get { defaults.bool(forKey: PreferenceKey.awakeRequested) }
+        set { defaults.set(newValue, forKey: PreferenceKey.awakeRequested) }
+    }
+
+    static var disableKeepAwakeOnBattery: Bool {
+        get { defaults.bool(forKey: PreferenceKey.disableKeepAwakeOnBattery) }
+        set { defaults.set(newValue, forKey: PreferenceKey.disableKeepAwakeOnBattery) }
     }
 
     /// Daily background checks against the GitHub releases API. Manual

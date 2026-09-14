@@ -212,7 +212,7 @@ final class UpdateCheckTests: XCTestCase {
         ))
     }
 
-    func testAutomaticUpdateChecksDefaultsToOn() {
+    func testAutomaticUpdateChecksDefaultToOffForPersonalFork() {
         let previous = UserDefaults.standard.object(forKey: "AutomaticUpdateChecks")
         UserDefaults.standard.removeObject(forKey: "AutomaticUpdateChecks")
         defer {
@@ -222,10 +222,10 @@ final class UpdateCheckTests: XCTestCase {
         }
         Preferences.registerDefaults()
 
-        XCTAssertTrue(Preferences.automaticUpdateChecks)
-
-        Preferences.automaticUpdateChecks = false
         XCTAssertFalse(Preferences.automaticUpdateChecks)
+
+        Preferences.automaticUpdateChecks = true
+        XCTAssertTrue(Preferences.automaticUpdateChecks)
         UserDefaults.standard.removeObject(forKey: "AutomaticUpdateChecks")
     }
 

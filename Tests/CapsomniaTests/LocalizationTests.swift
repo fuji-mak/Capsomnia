@@ -25,6 +25,8 @@ final class LocalizationTests: XCTestCase {
             XCTAssertFalse(strings.dedicatedCapsLockMode.isEmpty)
             XCTAssertFalse(strings.dedicatedCapsLockModeDesc.isEmpty)
             XCTAssertFalse(strings.toggleCapsLock.isEmpty)
+            XCTAssertFalse(strings.keepAwakeBatteryLocked.isEmpty)
+            XCTAssertFalse(strings.disableKeepAwakeOnBattery.isEmpty)
             XCTAssertFalse(strings.showMenuBarIcon.isEmpty)
             XCTAssertFalse(strings.keepDisplayAwake.isEmpty)
             XCTAssertFalse(strings.keepDisplayAwakeDesc.isEmpty)
@@ -82,8 +84,8 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(AppLanguage.korean.displayName, "한국어")
         XCTAssertEqual(strings.language, "언어")
         XCTAssertEqual(strings.settingsTitle, "설정")
-        XCTAssertEqual(strings.explainerOnTitle, "Caps Lock 켜기")
-        XCTAssertEqual(strings.explainerOffTitle, "Caps Lock 끄기")
+        XCTAssertEqual(strings.explainerOnTitle, "잠자기 방지 켜기")
+        XCTAssertEqual(strings.explainerOffTitle, "잠자기 방지 끄기")
     }
 
     func testLanguagePopUpTracksSelectedLanguage() {

@@ -10,13 +10,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var nextSleepStateVerificationAt = Date.distantPast
     private var nextDisplaySleepRetryAt = Date.distantPast
     private var nextDisplayAwakeRetryAt = Date.distantPast
+    private var nextClosedLidDimmingRetryAt = Date.distantPast
     private let displayAwakeAssertion = DisplayAwakeAssertion()
+    private let closedLidDimmingController = ClosedLidDisplayDimmingController()
     private var sessionTimer = SessionAutoOffTimer()
     private var controlServer: ControlServer?
     private var isControlMutationInFlight = false
     private var isAutoOffToggleInFlight = false
     private var didRequestDisplaySleepForClosedLid = false
     private var hasLoggedMissingClamshellState = false
+    private var hasLoggedMissingDimmingClamshellState = false
     private var hasLoggedMissingCapsLockState = false
     private var hasLoggedMissingDisplayState = false
     private var hasLoggedMissingSleepState = false
@@ -152,6 +155,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         pendingAutoOffPreferenceApplyWorkItem?.cancel()
         pendingAutoOffPreferenceApplyWorkItem = nil
         DistributedNotificationCenter.default().removeObserver(self)
+        if closedLidDimmingController.isDimmed {
+            let restored = closedLidDimmingController.setDimmed(false)
+            log("terminate built_in_display_restore succeeded=\(restored ? "true" : "false")")
+        }
         displayAwakeAssertion.setActive(false)
         guard shouldRestoreSleepOnTerminate else { return }
 
@@ -1007,15 +1014,63 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             capsLockOn: capsLockOn,
             sleepPreventionConfirmed: sleepPreventionConfirmed
         )
-        guard shouldHold != displayAwakeAssertion.isActive else { return }
-        guard Date() >= nextDisplayAwakeRetryAt else { return }
+        let now = Date()
+        if shouldHold != displayAwakeAssertion.isActive,
+           now >= nextDisplayAwakeRetryAt {
+            let succeeded = displayAwakeAssertion.setActive(shouldHold)
+            nextDisplayAwakeRetryAt = succeeded
+                ? .distantPast
+                : now.addingTimeInterval(helperRetryInterval)
+            log(
+                "\(reason) display_awake_assertion=\(shouldHold ? "on" : "off")"
+                    + " succeeded=\(succeeded ? "true" : "false")"
+            )
+        }
 
-        let succeeded = displayAwakeAssertion.setActive(shouldHold)
-        nextDisplayAwakeRetryAt = succeeded
+        syncClosedLidDisplayDimming(
+            capsLockOn: capsLockOn,
+            sleepPreventionConfirmed: sleepPreventionConfirmed,
+            reason: reason
+        )
+    }
+
+    private func syncClosedLidDisplayDimming(
+        capsLockOn: Bool,
+        sleepPreventionConfirmed: Bool,
+        reason: String
+    ) {
+        let modeCanDim = Preferences.keepDisplayAwake
+            && capsLockOn
+            && sleepPreventionConfirmed
+            && displayAwakeAssertion.isActive
+        let clamshellClosed = modeCanDim ? ClamshellStateReader.isClosed() : nil
+
+        if modeCanDim, clamshellClosed == nil {
+            if !hasLoggedMissingDimmingClamshellState {
+                log("\(reason) clamshell_state_unavailable")
+                hasLoggedMissingDimmingClamshellState = true
+            }
+        } else if clamshellClosed != nil {
+            hasLoggedMissingDimmingClamshellState = false
+        }
+
+        let shouldDim = ClosedLidDisplayDimmingPolicy.shouldDim(
+            keepDisplayAwake: Preferences.keepDisplayAwake,
+            capsLockOn: capsLockOn,
+            sleepPreventionConfirmed: sleepPreventionConfirmed,
+            displayAwakeAssertionActive: displayAwakeAssertion.isActive,
+            clamshellClosed: clamshellClosed
+        )
+        guard shouldDim != closedLidDimmingController.isDimmed else { return }
+
+        let now = Date()
+        guard now >= nextClosedLidDimmingRetryAt else { return }
+        let succeeded = closedLidDimmingController.setDimmed(shouldDim)
+        nextClosedLidDimmingRetryAt = succeeded
             ? .distantPast
-            : Date().addingTimeInterval(helperRetryInterval)
+            : now.addingTimeInterval(helperRetryInterval)
         log(
-            "\(reason) display_awake_assertion=\(shouldHold ? "on" : "off")"
+            "\(reason) built_in_display=\(shouldDim ? "dimmed" : "restored")"
                 + " succeeded=\(succeeded ? "true" : "false")"
         )
     }

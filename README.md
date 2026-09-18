@@ -115,7 +115,7 @@ On first launch, Capsomnia explains how the Caps Lock switch works and lets you 
 - whether to prevent all-caps typing while Capsomnia is on
 - English, Japanese, Simplified Chinese, or Korean
 
-"Open at login" is enabled by default and does not appear in initial setup. Open Capsomnia again later to use the two day-to-day controls directly: the opt-in "Keep display awake" setting and the optional auto-off timer. "Keep display awake" is off by default, so closing the lid normally puts the display to sleep. The timer is also off by default. Each time Capsomnia is enabled, the selected duration starts from the beginning; the restart button resets the current countdown. Advanced Settings contains the less frequently changed menu bar, all-caps prevention, language, login, lid-closed Caps Lock guard, and global shortcut options, plus an optional "Hide the Caps Lock indicator" setting that removes the macOS indicator shown in text fields while Caps Lock is on. Hiding the indicator changes a system-wide feature-flag override and takes effect after restarting the Mac; Capsomnia shows a reminder until the restart happens, and uninstalling restores the macOS default. "Show menu bar icon" remains independent when "Prevent all-caps typing" is enabled. If the icon is hidden, a red dot appears temporarily when an error occurs.
+"Open at login" is enabled by default and does not appear in initial setup. Open Capsomnia again later to use the two day-to-day controls directly: the opt-in "Keep display awake" setting and the optional auto-off timer. "Keep display awake" is off by default, so closing the lid normally puts the display to sleep. The timer is also off by default. Each time Capsomnia is enabled, the selected duration starts from the beginning; the restart button resets the current countdown. Advanced Settings contains the less frequently changed menu bar, all-caps prevention, language, login, lid-closed Caps Lock guard, and global shortcut options, plus an optional "Hide the Caps Lock indicator" toggle. This uses an undocumented system-wide macOS feature flag, may affect other text-cursor indicators, and takes effect after restarting the Mac. Capsomnia shows a reminder until the restart happens. It saves the previous target value before changing it and restores that value when the toggle is turned off or Capsomnia is uninstalled. "Show menu bar icon" remains independent when "Prevent all-caps typing" is enabled. If the icon is hidden, a red dot appears temporarily when an error occurs.
 
 The menu bar menu keeps the same day-to-day controls close at hand: choose Off or a timer preset, see the remaining time while it runs, open the custom timer editor, and toggle "Keep display awake" without opening Settings. Menu bar visibility and language remain in Settings.
 
@@ -163,7 +163,7 @@ From a source clone, this is equivalent:
 ./scripts/uninstall.sh
 ```
 
-The uninstaller unloads the LaunchAgent, stops Capsomnia, removes `Capsomnia.app` from `/Applications` or `~/Applications`, removes the helper, removes the sudoers rule, restores normal sleep behavior, and restores the macOS Caps Lock indicator default. Administrator authentication may be required.
+The uninstaller unloads the LaunchAgent, stops Capsomnia, removes `Capsomnia.app` from `/Applications` or `~/Applications`, removes the helper and sudoers rule, restores normal sleep behavior, and restores the Caps Lock indicator setting captured before Capsomnia changed it. Administrator authentication may be required.
 
 ## Security Model
 
@@ -185,9 +185,10 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
 ```
 
-The sudoers rule is limited to those five exact commands. The helper only accepts `on`, `off`, `display-sleep`, `indicator-hide`, and `indicator-show`. The first three only call:
+The sudoers rule is limited to those six exact commands. The helper only accepts `on`, `off`, `display-sleep`, `indicator-hide`, `indicator-show`, and `indicator-restore`. The first three only call:
 
 ```sh
 /usr/bin/pmset -a disablesleep 1
@@ -195,7 +196,7 @@ The sudoers rule is limited to those five exact commands. The helper only accept
 /usr/bin/pmset displaysleepnow
 ```
 
-`indicator-hide` and `indicator-show` only edit the fixed file `/Library/Preferences/FeatureFlags/Domain/UIKit.plist`. Hiding writes the `redesigned_text_cursor` override that suppresses the macOS Caps Lock indicator; showing removes only that override and deletes the file when nothing else remains in it. Unrelated flags in the same file are preserved.
+The indicator modes only edit the fixed file `/Library/Preferences/FeatureFlags/Domain/UIKit.plist`. Hiding saves the original presence and value of `redesigned_text_cursor.Enabled` in a root-owned `0600` backup before writing the override. Showing restores it, while uninstall-only `indicator-restore` does nothing when Capsomnia has no backup. Unrelated flags are preserved, and unreadable or malformed plist data causes the operation to fail without replacing or deleting the file. This is an undocumented macOS feature flag and may affect other text-cursor indicators.
 
 After an auto-off timer has successfully turned Caps Lock off and confirmed `SleepDisabled=0`, the app runs `/usr/bin/pmset sleepnow` directly as the current user. This immediate sleep request does not use `sudo` and does not expand the helper or sudoers permissions.
 
@@ -237,7 +238,8 @@ sudo -n -l /Library/PrivilegedHelperTools/capsomnia-pmset on \
   /Library/PrivilegedHelperTools/capsomnia-pmset off \
   /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep \
   /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide \
-  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
 ```
 
 If the helper permission check fails, run `./scripts/install.sh` again. Capsomnia checks the Caps Lock state every 250 milliseconds, so the menu bar dot may update by up to roughly a quarter second after the physical LED changes.

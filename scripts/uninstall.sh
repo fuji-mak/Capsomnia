@@ -17,9 +17,20 @@ launchctl bootout "gui/$(id -u)" "$SYSTEM_LAUNCH_AGENT" 2>/dev/null || true
 /usr/bin/pkill -x "$APP_NAME" 2>/dev/null || true
 
 sudo "$HELPER_PATH" off 2>/dev/null || sudo /usr/bin/pmset -a disablesleep 0 2>/dev/null || true
-# Restore the macOS Caps Lock indicator default; older helpers without this
-# mode exit non-zero, which is fine.
-sudo "$HELPER_PATH" indicator-show 2>/dev/null || true
+# Restore the exact setting captured when Capsomnia first hid the indicator.
+# If no backup exists, the helper leaves any pre-existing override untouched.
+if [[ -x "$HELPER_PATH" ]]; then
+    set +e
+    sudo "$HELPER_PATH" indicator-restore
+    INDICATOR_RESTORE_STATUS=$?
+    set -e
+    # Exit 64 means an older helper that predates indicator backups. Any
+    # actual restore error stops uninstall so the helper and backup survive.
+    if (( INDICATOR_RESTORE_STATUS != 0 && INDICATOR_RESTORE_STATUS != 64 )); then
+        echo "Could not restore the Caps Lock indicator setting; uninstall stopped." >&2
+        exit "$INDICATOR_RESTORE_STATUS"
+    fi
+fi
 
 rm -f "$LAUNCH_AGENT"
 rm -rf "$APP_BUNDLE"

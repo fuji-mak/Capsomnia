@@ -113,7 +113,7 @@ cd Capsomnia
 - Capsomniaがオンの時の大文字固定を防ぐか
 - 日本語・英語・簡体字中国語・韓国語から使用言語を選択
 
-「ログイン時に起動」は既定でオンになり、初回設定には表示されません。あとからCapsomniaをもう一度開くと、普段変更する「画面をスリープさせない」と自動オフタイマーをすぐ操作できます。「画面をスリープさせない」は既定でオフのため、通常は蓋を閉じると画面がスリープします。タイマーも既定でオフです。Capsomniaをオンにするたび選択時間の最初から開始し、再スタートボタンで現在のカウントダウンを最初から数え直せます。詳細設定には、変更頻度の低いメニューバー表示、大文字固定防止、言語、ログイン時起動、蓋閉じ中のCaps Lock保護、グローバルショートカットに加え、Caps Lockがオンのときにテキスト入力欄へ表示されるmacOSのインジケータを非表示にする「Caps Lockインジケータを非表示」をまとめています。インジケータの非表示はシステム全体のfeature flag設定を変更し、Macの再起動後に反映されます。再起動するまでCapsomniaがリマインダーを表示し、アンインストール時はmacOSの既定へ戻します。「大文字固定を防ぐ」を有効にしていても、「メニューバーに表示」は独立して変更できます。メニューバーを非表示にしている場合も、エラー中は赤い丸を一時表示します。
+「ログイン時に起動」は既定でオンになり、初回設定には表示されません。あとからCapsomniaをもう一度開くと、普段変更する「画面をスリープさせない」と自動オフタイマーをすぐ操作できます。「画面をスリープさせない」は既定でオフのため、通常は蓋を閉じると画面がスリープします。タイマーも既定でオフです。Capsomniaをオンにするたび選択時間の最初から開始し、再スタートボタンで現在のカウントダウンを最初から数え直せます。詳細設定には、変更頻度の低いメニューバー表示、大文字固定防止、言語、ログイン時起動、蓋閉じ中のCaps Lock保護、グローバルショートカットに加え、「Caps Lockインジケータを非表示」トグルをまとめています。この機能はmacOSの非公開なシステム全体feature flagを使うため、ほかのテキストカーソル表示にも影響する場合があり、Macの再起動後に反映されます。変更前の対象値を保存し、トグルをオフにしたときやアンインストール時に元へ戻します。「大文字固定を防ぐ」を有効にしていても、「メニューバーに表示」は独立して変更できます。メニューバーを非表示にしている場合も、エラー中は赤い丸を一時表示します。
 
 メニューバーメニューからも、日常的な操作をすぐ行えます。タイマーのオフまたはプリセットを選び、動作中の残り時間を確認し、カスタムタイマー設定を開き、「画面をスリープさせない」を設定画面を開かずに切り替えられます。メニューバー表示と言語の設定は設定画面に残しています。
 
@@ -161,7 +161,7 @@ git pull
 ./scripts/uninstall.sh
 ```
 
-アンインストーラは LaunchAgent を unload し、Capsomnia を停止し、`/Applications` または `~/Applications` の `Capsomnia.app`、helper、sudoers rule を削除し、通常のスリープ動作へ戻し、Caps LockインジケータもmacOSの既定へ戻します。管理者認証が必要になることがあります。
+アンインストーラは LaunchAgent を unload し、Capsomnia を停止し、`/Applications` または `~/Applications` の `Capsomnia.app`、helper、sudoers rule を削除し、通常のスリープ動作へ戻します。Capsomniaがインジケータ設定を変更していた場合は、変更前に保存した値へ戻します。管理者認証が必要になることがあります。
 
 ## セキュリティモデル
 
@@ -175,7 +175,7 @@ git pull
 
 クラッシュ復帰が無効または利用できない状態でCapsomniaを強制終了すると、最後のシステムスリープ設定が残る場合があります。その場合は下記の手動復旧コマンドで通常状態へ戻してください。
 
-アプリが昇格権限で呼び出すのは次の5コマンドだけです。
+アプリとアンインストーラが昇格権限で呼び出すのは次の6コマンドだけです。
 
 ```sh
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
@@ -183,9 +183,10 @@ sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
 ```
 
-sudoers rule はこの 5 コマンドに限定されています。helper も `on`、`off`、`display-sleep`、`indicator-hide`、`indicator-show` だけを受け付け、最初の 3 モードは内部で次の `pmset` だけを実行します。
+sudoers rule はこの 6 コマンドに限定されています。helper も `on`、`off`、`display-sleep`、`indicator-hide`、`indicator-show`、`indicator-restore` だけを受け付け、最初の 3 モードは内部で次の `pmset` だけを実行します。
 
 ```sh
 /usr/bin/pmset -a disablesleep 1
@@ -193,7 +194,7 @@ sudoers rule はこの 5 コマンドに限定されています。helper も `o
 /usr/bin/pmset displaysleepnow
 ```
 
-`indicator-hide` と `indicator-show` は固定ファイル `/Library/Preferences/FeatureFlags/Domain/UIKit.plist` だけを編集します。非表示ではmacOSのCaps Lockインジケータを抑止する `redesigned_text_cursor` の上書き設定を書き込み、表示ではその上書き設定だけを取り除き、ほかに何も残らない場合にファイルを削除します。同じファイル内の無関係なflagは保持します。
+インジケータ用モードが編集する設定ファイルは `/Library/Preferences/FeatureFlags/Domain/UIKit.plist` に固定されています。非表示にする前に `redesigned_text_cursor.Enabled` の有無と元の値をroot所有・`0600`のバックアップへ保存し、表示時に復元します。アンインストール専用の `indicator-restore` はバックアップがない場合は何も変更しません。同じファイル内の無関係なflagは保持し、plistやバックアップを正常に読めない場合は上書きも削除もせず失敗します。この非公開設定はほかのテキストカーソル表示にも影響する場合があります。
 
 自動オフタイマーは、Caps Lockを正常にオフにして`SleepDisabled=0`を確認した後、現在のユーザー権限で`/usr/bin/pmset sleepnow`を直接実行します。この明示的なスリープ要求は`sudo`を使わず、helperやsudoersの権限を追加しません。
 
@@ -235,7 +236,8 @@ sudo -n -l /Library/PrivilegedHelperTools/capsomnia-pmset on \
   /Library/PrivilegedHelperTools/capsomnia-pmset off \
   /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep \
   /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide \
-  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
 ```
 
 helper 権限の確認に失敗する場合は、`./scripts/install.sh` をもう一度実行してください。CapsomniaはCaps Lock状態を250ミリ秒ごとに確認するため、物理LEDの切り替えからメニューバーの丸の更新まで最大でおよそ0.25秒かかる場合があります。

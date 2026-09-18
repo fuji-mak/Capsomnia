@@ -139,7 +139,7 @@ trap cleanup EXIT
 
 cat > "$sudoers_tmp" <<SUDOERS
 # Allow Capsomnia to run only its fixed privileged helper.
-$console_user ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off, $HELPER_PATH display-sleep, $HELPER_PATH indicator-hide, $HELPER_PATH indicator-show
+$console_user ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off, $HELPER_PATH display-sleep, $HELPER_PATH indicator-hide, $HELPER_PATH indicator-show, $HELPER_PATH indicator-restore
 SUDOERS
 
 /usr/sbin/visudo -cf "$sudoers_tmp"

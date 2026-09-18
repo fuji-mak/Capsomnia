@@ -28,7 +28,7 @@ let package = Package(
         ),
         .testTarget(
             name: "CapsomniaTests",
-            dependencies: ["Capsomnia"]
+            dependencies: ["Capsomnia", "CapsomniaPmsetHelper"]
         )
     ],
     swiftLanguageVersions: [.v5]

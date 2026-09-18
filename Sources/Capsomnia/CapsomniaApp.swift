@@ -660,9 +660,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// the window reloads.
     private func setHideCapsLockIndicator(_ hidden: Bool) {
         let result = runHelper(hidden ? indicatorHideHelperMode : indicatorShowHelperMode)
+        let applied = result.status == 0 && CapsLockIndicatorFeatureFlag.isHidden() == hidden
         log(
             "preference hide_caps_lock_indicator=\(hidden ? "on" : "off")"
-                + " helper_status=\(result.status) stdout=\(result.stdout) stderr=\(result.stderr)"
+                + " helper_status=\(result.status) applied=\(applied)"
+                + " stdout=\(result.stdout) stderr=\(result.stderr)"
         )
         settingsWindowController?.reloadText()
     }

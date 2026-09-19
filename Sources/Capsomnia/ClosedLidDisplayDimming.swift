@@ -21,24 +21,53 @@ enum ClosedLidDisplayDimmingPolicy {
 /// Temporarily lowers only the built-in display to minimum brightness and
 /// restores the exact value that was present before dimming.
 final class ClosedLidDisplayDimmingController {
+    private static let savedBrightnessKey = "ClosedLidSavedBrightness"
+
     private let readBrightness: () -> Float?
     private let writeBrightness: (Float) -> Bool
+    private let persistBrightness: (Float?) -> Void
     private var savedBrightness: Float?
 
     convenience init() {
         let brightness = DisplayServicesBrightness()
         self.init(
             readBrightness: { brightness.read() },
-            writeBrightness: { brightness.write($0) }
+            writeBrightness: { brightness.write($0) },
+            loadSavedBrightness: {
+                guard let value = UserDefaults.standard.object(
+                    forKey: ClosedLidDisplayDimmingController.savedBrightnessKey
+                ) as? NSNumber else {
+                    return nil
+                }
+                return value.floatValue
+            },
+            persistBrightness: { value in
+                if let value {
+                    UserDefaults.standard.set(
+                        value,
+                        forKey: ClosedLidDisplayDimmingController.savedBrightnessKey
+                    )
+                } else {
+                    UserDefaults.standard.removeObject(
+                        forKey: ClosedLidDisplayDimmingController.savedBrightnessKey
+                    )
+                }
+            }
         )
     }
 
     init(
         readBrightness: @escaping () -> Float?,
-        writeBrightness: @escaping (Float) -> Bool
+        writeBrightness: @escaping (Float) -> Bool,
+        loadSavedBrightness: @escaping () -> Float? = { nil },
+        persistBrightness: @escaping (Float?) -> Void = { _ in }
     ) {
         self.readBrightness = readBrightness
         self.writeBrightness = writeBrightness
+        self.persistBrightness = persistBrightness
+        if let brightness = loadSavedBrightness(), brightness.isFinite {
+            savedBrightness = min(max(brightness, 0), 1)
+        }
     }
 
     var isDimmed: Bool {
@@ -52,14 +81,21 @@ final class ClosedLidDisplayDimmingController {
         if dimmed {
             guard savedBrightness == nil else { return true }
             guard let brightness = readBrightness() else { return false }
-            guard writeBrightness(0) else { return false }
-            savedBrightness = min(max(brightness, 0), 1)
+            let clampedBrightness = min(max(brightness, 0), 1)
+            savedBrightness = clampedBrightness
+            persistBrightness(clampedBrightness)
+            guard writeBrightness(0) else {
+                savedBrightness = nil
+                persistBrightness(nil)
+                return false
+            }
             return true
         }
 
         guard let brightness = savedBrightness else { return true }
         guard writeBrightness(brightness) else { return false }
         savedBrightness = nil
+        persistBrightness(nil)
         return true
     }
 }

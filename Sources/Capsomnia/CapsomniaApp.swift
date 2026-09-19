@@ -82,6 +82,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
 
+        restoreSavedDisplayBrightnessIfNeeded(reason: "startup")
         Preferences.registerDefaults()
 
         let controller = UpdateController(log: { [weak self] message in
@@ -1014,6 +1015,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             capsLockOn: capsLockOn,
             sleepPreventionConfirmed: sleepPreventionConfirmed
         )
+        if !shouldHold {
+            // Restore while the display assertion is still active. Releasing
+            // it first can make the built-in panel unavailable under a closed lid.
+            syncClosedLidDisplayDimming(
+                capsLockOn: capsLockOn,
+                sleepPreventionConfirmed: sleepPreventionConfirmed,
+                reason: reason
+            )
+        }
+
         let now = Date()
         if shouldHold != displayAwakeAssertion.isActive,
            now >= nextDisplayAwakeRetryAt {
@@ -1027,11 +1038,19 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             )
         }
 
-        syncClosedLidDisplayDimming(
-            capsLockOn: capsLockOn,
-            sleepPreventionConfirmed: sleepPreventionConfirmed,
-            reason: reason
-        )
+        if shouldHold {
+            syncClosedLidDisplayDimming(
+                capsLockOn: capsLockOn,
+                sleepPreventionConfirmed: sleepPreventionConfirmed,
+                reason: reason
+            )
+        }
+    }
+
+    private func restoreSavedDisplayBrightnessIfNeeded(reason: String) {
+        guard closedLidDimmingController.isDimmed else { return }
+        let restored = closedLidDimmingController.setDimmed(false)
+        log("\(reason) built_in_display_crash_restore succeeded=\(restored ? "true" : "false")")
     }
 
     private func syncClosedLidDisplayDimming(
@@ -1076,6 +1095,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func apply(capsLockOn: Bool, reason: String) {
+        if !capsLockOn, closedLidDimmingController.isDimmed {
+            // Restore before the helper reenables system sleep. With a closed
+            // lid, waiting until after that transition can be too late.
+            syncClosedLidDisplayDimming(
+                capsLockOn: false,
+                sleepPreventionConfirmed: false,
+                reason: reason
+            )
+        }
+
         let now = Date()
         if failedSleepState == capsLockOn, now < nextSleepStateRetryAt {
             return

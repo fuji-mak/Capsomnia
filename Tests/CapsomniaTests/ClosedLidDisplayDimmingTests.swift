@@ -63,13 +63,18 @@ final class ClosedLidDisplayDimmingControllerTests: XCTestCase {
     }
 
     func testFailedDimDoesNotClaimDisplayIsDimmed() {
+        var persisted: [Float?] = []
         let controller = ClosedLidDisplayDimmingController(
             readBrightness: { 0.5 },
-            writeBrightness: { _ in false }
+            writeBrightness: { _ in false },
+            persistBrightness: { persisted.append($0) }
         )
 
         XCTAssertFalse(controller.setDimmed(true))
         XCTAssertFalse(controller.isDimmed)
+        XCTAssertEqual(persisted.count, 2)
+        XCTAssertEqual(persisted[0], 0.5)
+        XCTAssertNil(persisted[1])
     }
 
     func testFailedRestoreKeepsBrightnessForRetry() {
@@ -109,5 +114,26 @@ final class ClosedLidDisplayDimmingControllerTests: XCTestCase {
         XCTAssertTrue(controller.setDimmed(false))
         XCTAssertFalse(controller.isDimmed)
         XCTAssertEqual(writes, [0, 0])
+    }
+
+    func testRestoresPersistedBrightnessFromAnEarlierProcess() {
+        var writes: [Float] = []
+        var persisted: [Float?] = []
+        let controller = ClosedLidDisplayDimmingController(
+            readBrightness: { XCTFail("Recovery must not replace the saved value"); return nil },
+            writeBrightness: {
+                writes.append($0)
+                return true
+            },
+            loadSavedBrightness: { 0.61 },
+            persistBrightness: { persisted.append($0) }
+        )
+
+        XCTAssertTrue(controller.isDimmed)
+        XCTAssertTrue(controller.setDimmed(false))
+        XCTAssertFalse(controller.isDimmed)
+        XCTAssertEqual(writes, [0.61])
+        XCTAssertEqual(persisted.count, 1)
+        XCTAssertNil(persisted[0])
     }
 }

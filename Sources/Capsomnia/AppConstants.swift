@@ -9,6 +9,8 @@ let appLabel = Bundle.main.bundleIdentifier ?? "com.github.fuji-mak.capsomnia"
 let developerTeamID = "ZJZ8627852"
 let helperPath = "/Library/PrivilegedHelperTools/capsomnia-pmset"
 let displaySleepHelperMode = "display-sleep"
+let indicatorHideHelperMode = "indicator-hide"
+let indicatorShowHelperMode = "indicator-show"
 let logDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent("Library/Logs/Capsomnia")
 let logPath = logDirectoryURL
@@ -98,6 +100,9 @@ struct AppStrings {
     let keepDisplayAwakeDesc: String
     let ignoreExternalCapsLockOffWhileLidClosed: String
     let ignoreExternalCapsLockOffWhileLidClosedDesc: String
+    let hideCapsLockIndicator: String
+    let hideCapsLockIndicatorDesc: String
+    let hideCapsLockIndicatorRestartNote: String
     let autoOffTimer: String
     let autoOffTimerDesc: String
     let autoOffOff: String
@@ -171,6 +176,9 @@ struct AppStrings {
                 keepDisplayAwakeDesc: "Keeps the display awake while Capsomnia is on. Useful when using Computer Use or similar tools.",
                 ignoreExternalCapsLockOffWhileLidClosed: "Ignore Caps Lock turn-offs while the lid is closed",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "While the lid is closed, sleep prevention stays on even if Caps Lock is turned off — for example by a remote desktop client syncing its keyboard state. The menu bar, the toggle shortcut, and the auto-off timer still turn it off.",
+                hideCapsLockIndicator: "Hide the Caps Lock indicator",
+                hideCapsLockIndicatorDesc: "Hide the Caps Lock indicator shown in text fields.",
+                hideCapsLockIndicatorRestartNote: "Restart your Mac to apply this change.",
                 autoOffTimer: "Auto-off timer",
                 autoOffTimerDesc: "After the set time, Capsomnia turns awake mode off and puts your Mac to sleep.",
                 autoOffOff: "Off",
@@ -238,6 +246,9 @@ struct AppStrings {
                 keepDisplayAwakeDesc: "Capsomnia가 켜져 있는 동안 화면이 잠자기 상태로 전환되지 않도록 합니다. Computer Use 등을 사용할 때 유용합니다.",
                 ignoreExternalCapsLockOffWhileLidClosed: "덮개를 닫은 동안 Caps Lock에 의한 끄기 무시",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "덮개가 닫혀 있는 동안에는 Caps Lock이 꺼져도 잠자기 방지를 유지합니다. 원격 데스크톱 연결 등으로 의도치 않게 해제되는 것을 방지합니다. 메뉴 막대, 전환 단축키, 자동 종료 타이머로는 평소대로 끌 수 있습니다.",
+                hideCapsLockIndicator: "Caps Lock 표시기 숨기기",
+                hideCapsLockIndicatorDesc: "텍스트 입력란에 표시되는 Caps Lock 표시기를 숨깁니다.",
+                hideCapsLockIndicatorRestartNote: "변경 사항을 적용하려면 Mac을 재시동하세요.",
                 autoOffTimer: "자동 종료 타이머",
                 autoOffTimerDesc: "설정한 시간이 지나면 절전 방지를 끄고 Mac을 잠자기 상태로 전환합니다.",
                 autoOffOff: "끄기",
@@ -305,6 +316,9 @@ struct AppStrings {
                 keepDisplayAwakeDesc: "Capsomniaがオンの時に画面をスリープしないようにします。Computer Useなどを使う際に有効です。",
                 ignoreExternalCapsLockOffWhileLidClosed: "蓋を閉じている間はCaps Lockによるオフを無視",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "蓋を閉じている間は、Caps Lockがオフになってもスリープ抑止を維持します。リモートデスクトップ接続などで意図せず解除されるのを防ぎます。メニューバー・切り替えショートカット・自動オフタイマーからは通常どおりオフにできます。",
+                hideCapsLockIndicator: "Caps Lockインジケータを非表示",
+                hideCapsLockIndicatorDesc: "テキスト入力欄に表示されるCaps Lockインジケータを非表示にします。",
+                hideCapsLockIndicatorRestartNote: "変更を反映するにはMacを再起動してください。",
                 autoOffTimer: "自動オフタイマー",
                 autoOffTimerDesc: "設定した時間が経過すると、スリープ抑止を解除してMacをスリープさせます。",
                 autoOffOff: "オフ",
@@ -372,6 +386,9 @@ struct AppStrings {
                 keepDisplayAwakeDesc: "Capsomnia 开启时防止显示屏进入睡眠。使用 Computer Use 等工具时很有用。",
                 ignoreExternalCapsLockOffWhileLidClosed: "合盖期间忽略 Caps Lock 的关闭操作",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "合盖期间，即使 Caps Lock 被关闭也会保持防睡眠，防止远程桌面连接等意外解除防睡眠。菜单栏、切换快捷键和自动关闭定时器仍可正常关闭。",
+                hideCapsLockIndicator: "隐藏大写锁定指示器",
+                hideCapsLockIndicatorDesc: "隐藏文本输入框中显示的 Caps Lock 指示器。",
+                hideCapsLockIndicatorRestartNote: "重新启动 Mac 后此更改才会生效。",
                 autoOffTimer: "自动关闭定时器",
                 autoOffTimerDesc: "设定时间结束后会关闭防睡眠并让 Mac 进入睡眠。",
                 autoOffOff: "关闭",

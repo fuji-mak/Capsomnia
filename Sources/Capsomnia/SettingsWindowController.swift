@@ -78,6 +78,24 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let externalCapsLockOffToggle = LEDToggle(
         isOn: Preferences.ignoreExternalCapsLockOffWhileLidClosed
     )
+    private let hideIndicatorTitle = brandLabel(
+        size: 13,
+        weight: .medium,
+        color: Brand.text
+    )
+    private let hideIndicatorDesc = brandLabel(
+        size: 12,
+        color: Brand.textDim,
+        wraps: true
+    )
+    private let hideIndicatorRestartNote = brandLabel(
+        size: 12,
+        color: Brand.led,
+        wraps: true
+    )
+    // The real value arrives through capsLockIndicatorStateProvider in
+    // updateValues(); property initializers run before init parameters exist.
+    private let hideIndicatorToggle = LEDToggle(isOn: false)
     private let automaticUpdateChecksTitle = brandLabel(
         size: 13,
         weight: .medium,
@@ -149,6 +167,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let onLaunchAtLoginChange: (Bool) -> Void
     private let onKeepDisplayAwakeChange: (Bool) -> Void
     private let onIgnoreExternalCapsLockOffWhileLidClosedChange: (Bool) -> Void
+    private let onHideCapsLockIndicatorChange: (Bool) -> Void
+    private let capsLockIndicatorStateProvider: () -> CapsLockIndicatorDisplayState
     private let onAutoOffMinutesChange: (Int) -> Void
     private let onAutoOffRestart: () -> Void
     private let autoOffDisplayProvider: () -> AutoOffDisplayState
@@ -165,6 +185,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
         onKeepDisplayAwakeChange: @escaping (Bool) -> Void,
         onIgnoreExternalCapsLockOffWhileLidClosedChange: @escaping (Bool) -> Void,
+        onHideCapsLockIndicatorChange: @escaping (Bool) -> Void,
+        capsLockIndicatorStateProvider: @escaping () -> CapsLockIndicatorDisplayState,
         onAutoOffMinutesChange: @escaping (Int) -> Void,
         onAutoOffRestart: @escaping () -> Void,
         autoOffDisplayProvider: @escaping () -> AutoOffDisplayState,
@@ -184,6 +206,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
         self.onKeepDisplayAwakeChange = onKeepDisplayAwakeChange
         self.onIgnoreExternalCapsLockOffWhileLidClosedChange = onIgnoreExternalCapsLockOffWhileLidClosedChange
+        self.onHideCapsLockIndicatorChange = onHideCapsLockIndicatorChange
+        self.capsLockIndicatorStateProvider = capsLockIndicatorStateProvider
         self.onAutoOffMinutesChange = onAutoOffMinutesChange
         self.onAutoOffRestart = onAutoOffRestart
         self.autoOffDisplayProvider = autoOffDisplayProvider
@@ -266,6 +290,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         externalCapsLockOffTitle.stringValue = strings.ignoreExternalCapsLockOffWhileLidClosed
         externalCapsLockOffDesc.stringValue = strings.ignoreExternalCapsLockOffWhileLidClosedDesc
         externalCapsLockOffToggle.setAccessibilityLabel(strings.ignoreExternalCapsLockOffWhileLidClosed)
+        hideIndicatorTitle.stringValue = strings.hideCapsLockIndicator
+        hideIndicatorDesc.stringValue = strings.hideCapsLockIndicatorDesc
+        hideIndicatorRestartNote.stringValue = strings.hideCapsLockIndicatorRestartNote
+        hideIndicatorToggle.setAccessibilityLabel(strings.hideCapsLockIndicator)
         openAtLoginTitle.stringValue = strings.openAtLogin
         openAtLoginDesc.stringValue = strings.openAtLoginDesc
         openAtLoginToggle.setAccessibilityLabel(strings.openAtLogin)
@@ -725,6 +753,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onIgnoreExternalCapsLockOffWhileLidClosedChange(enabled)
             self?.updateValues()
         }
+        hideIndicatorToggle.onToggle = { [weak self] enabled in
+            self?.onHideCapsLockIndicatorChange(enabled)
+            self?.updateValues()
+        }
         openAtLoginToggle.onToggle = { [weak self] enabled in
             self?.onLaunchAtLoginChange(enabled)
             self?.updateValues()
@@ -734,6 +766,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             desc: externalCapsLockOffDesc,
             accessory: externalCapsLockOffToggle
         )
+        let hideIndicatorRow = settingRow(
+            title: hideIndicatorTitle,
+            desc: hideIndicatorDesc,
+            accessory: hideIndicatorToggle
+        )
         let openAtLoginRow = settingRow(
             title: openAtLoginTitle,
             desc: openAtLoginDesc,
@@ -742,12 +779,15 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let card = brandCard()
         let rows: [NSView] = [
             externalCapsLockOffRow, brandDivider(),
+            hideIndicatorRow, hideIndicatorRestartNote, brandDivider(),
             openAtLoginRow
         ]
         let stack = NSStackView(views: rows)
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 14
+        stack.detachesHiddenViews = true
+        stack.setCustomSpacing(6, after: hideIndicatorRow)
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         card.addSubview(stack)
@@ -896,6 +936,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         languagePopUp.setSelected(Preferences.language.rawValue)
         keepDisplayAwakeToggle.setOn(Preferences.keepDisplayAwake)
         externalCapsLockOffToggle.setOn(Preferences.ignoreExternalCapsLockOffWhileLidClosed)
+        let indicatorState = capsLockIndicatorStateProvider()
+        hideIndicatorToggle.setOn(indicatorState.hidden)
+        let noteWasHidden = hideIndicatorRestartNote.isHidden
+        hideIndicatorRestartNote.isHidden = !indicatorState.restartPending
+        if noteWasHidden != hideIndicatorRestartNote.isHidden, window?.isVisible == true {
+            resizeToFit()
+        }
         openAtLoginToggle.setOn(Preferences.launchAtLogin)
         automaticUpdateChecksToggle.setOn(Preferences.automaticUpdateChecks)
         shortcutRecorder.setShortcut(Preferences.keyboardShortcut)

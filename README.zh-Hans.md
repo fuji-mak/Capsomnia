@@ -100,7 +100,7 @@ Capsomnia适合长时间运行的本地任务、AI编程智能体、SSH会话、
 - Capsomnia开启时，是否防止输入锁定为大写
 - 使用英语、日语、简体中文或韩语
 
-“登录时启动”默认开启，不会显示在初始设置中。之后再次打开Capsomnia时，可以直接操作日常更常用的“保持显示屏常亮”和自动关闭定时器。“保持显示屏常亮”默认关闭，因此通常合盖后显示屏会进入睡眠。定时器也默认关闭。每次开启Capsomnia时都会从所选时长重新开始，也可以使用重启按钮重置当前倒计时。高级设置集中放置较少修改的菜单栏显示、防止大写锁定、语言、登录时启动、合盖期间的Caps Lock保护和全局快捷键。启用“防止输入锁定为大写”时，“显示菜单栏图标”仍可独立开关。即使隐藏菜单栏图标，发生错误时也会暂时显示红色圆点。
+“登录时启动”默认开启，不会显示在初始设置中。之后再次打开Capsomnia时，可以直接操作日常更常用的“保持显示屏常亮”和自动关闭定时器。“保持显示屏常亮”默认关闭，因此通常合盖后显示屏会进入睡眠。定时器也默认关闭。每次开启Capsomnia时都会从所选时长重新开始，也可以使用重启按钮重置当前倒计时。高级设置集中放置较少修改的菜单栏显示、防止大写锁定、语言、登录时启动、合盖期间的Caps Lock保护和全局快捷键，以及“隐藏大写锁定指示器”开关。此功能使用未公开的macOS系统级feature flag，可能影响其他文本光标指示器，并在重新启动后生效。Capsomnia会保存更改前的目标值，并在关闭开关或卸载时恢复。启用“防止输入锁定为大写”时，“显示菜单栏图标”仍可独立开关。即使隐藏菜单栏图标，发生错误时也会暂时显示红色圆点。
 
 菜单栏菜单也提供常用操作：选择关闭或定时器预设、查看运行中的剩余时间、打开自定义定时器设置，以及无需打开设置窗口即可切换“保持显示屏常亮”。菜单栏显示和语言选项仍保留在设置中。
 
@@ -148,7 +148,7 @@ git pull
 ./scripts/uninstall.sh
 ```
 
-卸载程序会卸载LaunchAgent、停止Capsomnia、删除`/Applications`或`~/Applications`中的`Capsomnia.app`、删除辅助程序和sudoers规则，并恢复正常睡眠行为。过程中可能需要管理员认证。
+卸载程序会卸载LaunchAgent、停止Capsomnia、删除`/Applications`或`~/Applications`中的`Capsomnia.app`、删除辅助程序和sudoers规则，并恢复正常睡眠行为。如果Capsomnia更改过指示器设置，还会恢复之前保存的值。过程中可能需要管理员认证。
 
 ## 安全模型
 
@@ -162,21 +162,26 @@ Capsomnia的菜单栏应用不会以root身份运行。修改系统睡眠设置�
 
 如果在崩溃恢复被禁用或不可用时强制结束Capsomnia，最后一次系统睡眠设置可能会保持生效。请使用下面的手动恢复命令恢复正常睡眠行为。
 
-应用以提升权限调用的命令仅限以下三个：
+应用和卸载程序以提升权限调用的命令仅限以下六个：
 
 ```sh
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
 sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
 ```
 
-sudoers规则仅允许以上三个完全匹配的命令。辅助程序只接受`on`、`off`和`display-sleep`，内部只调用：
+sudoers规则仅允许以上六个完全匹配的命令。辅助程序只接受`on`、`off`、`display-sleep`、`indicator-hide`、`indicator-show`和`indicator-restore`，前三个模式内部只调用：
 
 ```sh
 /usr/bin/pmset -a disablesleep 1
 /usr/bin/pmset -a disablesleep 0
 /usr/bin/pmset displaysleepnow
 ```
+
+指示器模式只编辑固定设置文件`/Library/Preferences/FeatureFlags/Domain/UIKit.plist`。隐藏前会把`redesigned_text_cursor.Enabled`原先是否存在及其值保存到root所有、权限为`0600`的备份中，显示时再恢复。卸载专用的`indicator-restore`在没有备份时不会做任何更改。无关flag会被保留；如果plist或备份无法正常读取，操作会失败且不会覆盖或删除文件。此未公开设置可能影响其他文本光标指示器。
 
 自动关闭定时器会在成功关闭Caps Lock并确认`SleepDisabled=0`后，以当前用户身份直接运行`/usr/bin/pmset sleepnow`。该立即睡眠请求不使用`sudo`，也不会扩大辅助程序或sudoers权限。
 
@@ -216,7 +221,10 @@ Capsomnia的LaunchAgent只会在应用崩溃或其他非正常退出后重新启
 ```sh
 sudo -n -l /Library/PrivilegedHelperTools/capsomnia-pmset on \
   /Library/PrivilegedHelperTools/capsomnia-pmset off \
-  /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
+  /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
 ```
 
 如果辅助程序权限检查失败，请再次运行`./scripts/install.sh`。Capsomnia每250毫秒检查一次Caps Lock状态，因此从物理指示灯变化到菜单栏圆点更新，最多可能延迟约0.25秒。

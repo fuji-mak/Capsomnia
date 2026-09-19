@@ -43,9 +43,14 @@ The sudoers rule only permits the current user to run:
 /Library/PrivilegedHelperTools/capsomnia-pmset on
 /Library/PrivilegedHelperTools/capsomnia-pmset off
 /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
+/Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide
+/Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
+/Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
 ```
 
-The helper is a compiled executable. It does not invoke a shell or load shell startup files. It only accepts `on`, `off`, and `display-sleep`, and only executes `/usr/bin/pmset -a disablesleep` or `/usr/bin/pmset displaysleepnow`.
+The helper is a compiled executable. It does not invoke a shell or load shell startup files. It only accepts `on`, `off`, `display-sleep`, `indicator-hide`, `indicator-show`, and `indicator-restore`. The first three only execute `/usr/bin/pmset -a disablesleep` or `/usr/bin/pmset displaysleepnow`.
+
+The indicator modes back the optional "Hide the Caps Lock indicator" setting. They only edit the fixed file `/Library/Preferences/FeatureFlags/Domain/UIKit.plist`. Before changing `redesigned_text_cursor.Enabled`, `indicator-hide` stores whether that value existed and its original value in `/Library/Application Support/Capsomnia/CapsLockIndicatorBackup.plist`, owned by root with mode `0600`. `indicator-show` restores that state after an explicit toggle-off. The uninstall-only `indicator-restore` restores it only when the backup exists, so a pre-existing user override is left untouched. Unrelated flags are preserved. Existing plist or backup data that cannot be read and validated is never replaced or deleted. The setting uses an undocumented system-wide macOS feature flag, may affect other text-cursor indicators, and takes effect after a restart.
 
 When an auto-off timer expires, Capsomnia first turns Caps Lock off through the existing HID path and confirms that `SleepDisabled=0`. Only then does the app invoke `/usr/bin/pmset sleepnow` directly as the signed-in user. This immediate sleep request does not use `sudo`, does not add a helper mode, and does not expand the sudoers rule. If Caps Lock cannot be turned off or the sleep-prevention state cannot be confirmed, Capsomnia does not request sleep.
 

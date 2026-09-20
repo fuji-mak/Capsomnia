@@ -4,6 +4,16 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 4.2.0 - 2026-09-20
+
+- While "Keep display awake" is active, temporarily lower only the built-in
+  display to minimum brightness when the lid is closed. The display session
+  stays available for remote UI operation such as Computer Use, and external
+  displays are left unchanged.
+- Restore the exact previous brightness before display-awake or system-sleep
+  prevention is released. Persist the saved value so restoration can be
+  retried after an unexpected app termination.
+
 ## 4.1.0 - 2026-09-19
 
 - Add an optional "Hide the Caps Lock indicator" setting to Advanced Settings

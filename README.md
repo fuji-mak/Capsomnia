@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `4.1.0`
+Current version: `4.2.0`
 
 [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
@@ -93,7 +93,7 @@ The source installer builds `Capsomnia.app` locally, places it in `~/Application
 - Custom toggle shortcut: turn Capsomnia on or off with another key combination even if Caps Lock is assigned elsewhere. The green Caps Lock light continues to show the current state.
 - Auto-off timer (optional): choose a preset from 15 minutes to 8 hours or a custom duration from 1 minute to 24 hours. When time expires, Capsomnia turns off, confirms that sleep prevention is released, and immediately puts the Mac to sleep.
 - Caps Lock off: restores normal sleep behavior.
-- Display behavior: by default, closing the lid puts the display to sleep while work keeps running. Enable "Keep display awake" to keep the display session available after the macOS idle time or closing the lid, so remote UI operation such as Computer Use can continue.
+- Display behavior: by default, closing the lid puts the display to sleep while work keeps running. Enable "Keep display awake" to keep the display session available after the macOS idle time or closing the lid, so remote UI operation such as Computer Use can continue. While the lid is closed in this mode, Capsomnia temporarily lowers only the built-in display to minimum brightness to reduce power use and heat, then restores the exact previous brightness when the lid opens. External displays are not changed.
 - Quitting the app restores normal sleep behavior.
 
 Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions, builds, downloads, and unattended scripts.

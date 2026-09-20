@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-当前版本：`4.1.0`
+当前版本：`4.2.0`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [한국어 README](README.ko.md)
 
@@ -78,7 +78,7 @@ cd Capsomnia
 - 自定义切换快捷键：即使已将Caps Lock分配给其他按键，也可以使用自定义快捷键开启或关闭Capsomnia。绿色Caps Lock指示灯仍会显示当前状态。
 - 自动关闭定时器（可选）：可选择15分钟到8小时的预设，或设置1分钟到24小时的自定义时长。到时后，Capsomnia会关闭，确认防休眠已解除，然后立即让Mac进入睡眠。
 - Caps Lock关闭：恢复正常睡眠行为。
-- 显示行为：默认情况下，Capsomnia开启时合盖会让显示屏进入睡眠，但后台任务继续运行。启用“保持显示屏常亮”后，即使达到macOS的空闲时间或合上盖子，也会保持显示会话可用，以便继续使用Computer Use等远程操作。
+- 显示行为：默认情况下，Capsomnia开启时合盖会让显示屏进入睡眠，但后台任务继续运行。启用“保持显示屏常亮”后，即使达到macOS的空闲时间或合上盖子，也会保持显示会话可用，以便继续使用Computer Use等远程操作。在此模式下合盖时，Capsomnia只会暂时将内置显示屏降至最低亮度，以减少耗电和发热；开盖后会准确恢复之前的亮度。外接显示器不会被更改。
 - 退出应用：恢复正常睡眠行为。
 
 Capsomnia适合长时间运行的本地任务、AI编程智能体、SSH会话、构建、下载和无人值守脚本。

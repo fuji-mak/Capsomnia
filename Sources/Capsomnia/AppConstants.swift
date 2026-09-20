@@ -163,7 +163,7 @@ struct AppStrings {
         case .english:
             AppStrings(
                 dedicatedCapsLockMode: "Prevent all-caps typing",
-                dedicatedCapsLockModeDesc: "When Capsomnia is on, Caps Lock no longer forces uppercase input. Shift still types uppercase letters. Requires Accessibility permission.",
+                dedicatedCapsLockModeDesc: "When Capsomnia is on, Caps Lock no longer forces uppercase input. In secure password fields, Caps Lock temporarily turns off and returns when focus leaves. Shift still types uppercase letters. Requires Accessibility permission.",
                 toggleCapsLock: "Toggle Caps Lock",
                 showMenuBarIcon: "Show menu bar icon",
                 showMenuBarIconDesc: "Display the LED status dot in the menu bar.",
@@ -233,7 +233,7 @@ struct AppStrings {
         case .korean:
             AppStrings(
                 dedicatedCapsLockMode: "대문자 고정 방지",
-                dedicatedCapsLockModeDesc: "Capsomnia가 켜져 있을 때 입력이 대문자로 고정되지 않도록 합니다. Shift를 누른 대문자 입력은 그대로 사용할 수 있습니다. 손쉬운 사용 권한이 필요합니다.",
+                dedicatedCapsLockModeDesc: "Capsomnia가 켜져 있을 때 입력이 대문자로 고정되지 않도록 합니다. 보안 암호 입력란에서는 Caps Lock을 잠시 끄고 포커스가 벗어나면 다시 켭니다. Shift를 누른 대문자 입력은 그대로 사용할 수 있습니다. 손쉬운 사용 권한이 필요합니다.",
                 toggleCapsLock: "Caps Lock 전환",
                 showMenuBarIcon: "메뉴 막대에 표시",
                 showMenuBarIconDesc: "메뉴 막대에 LED 상태 표시를 보여 줍니다.",
@@ -303,7 +303,7 @@ struct AppStrings {
         case .japanese:
             AppStrings(
                 dedicatedCapsLockMode: "大文字固定を防ぐ",
-                dedicatedCapsLockModeDesc: "Capsomniaがオンのときに、入力が大文字になるのを無効化します。Shiftでの大文字入力は維持します。アクセシビリティ権限が必要です。",
+                dedicatedCapsLockModeDesc: "Capsomniaがオンのときに、入力が大文字になるのを防ぎます。安全なパスワード入力欄ではCaps Lockを一時的にオフにし、フォーカスが外れるとオンへ戻します。Shiftでの大文字入力は維持します。アクセシビリティ権限が必要です。",
                 toggleCapsLock: "Caps Lockを切り替え",
                 showMenuBarIcon: "メニューバーに表示",
                 showMenuBarIconDesc: "メニューバーにLEDステータスを表示します。",
@@ -373,7 +373,7 @@ struct AppStrings {
         case .simplifiedChinese:
             AppStrings(
                 dedicatedCapsLockMode: "防止输入锁定为大写",
-                dedicatedCapsLockModeDesc: "Capsomnia 开启时，防止输入被锁定为大写。仍可按住 Shift 输入大写字母。需要辅助功能权限。",
+                dedicatedCapsLockModeDesc: "Capsomnia 开启时，防止输入被锁定为大写。在安全密码输入框中会暂时关闭 Caps Lock，并在焦点移开后重新开启。仍可按住 Shift 输入大写字母。需要辅助功能权限。",
                 toggleCapsLock: "切换 Caps Lock",
                 showMenuBarIcon: "显示菜单栏图标",
                 showMenuBarIconDesc: "在菜单栏中显示 LED 状态指示灯。",

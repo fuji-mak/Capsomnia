@@ -161,29 +161,28 @@ test("the sitemap lists every localized URL and alternate", () => {
   assert.ok(sitemap.includes(`hreflang="x-default" href="${siteUrl}"`));
 });
 
-test("the Chinese page links to English and Simplified Chinese READMEs", () => {
-  const html = readFileSync(
-    new URL("../docs/zh-hans/index.html", import.meta.url),
-    "utf8"
-  );
+const localizedReadmes = {
+  en: "README.md",
+  ja: "README.ja.md",
+  "zh-Hans": "README.zh-Hans.md",
+  ko: "README.ko.md",
+};
 
-  assert.ok(html.includes("/blob/main/README.md"));
-  assert.ok(html.includes("/blob/main/README.zh-Hans.md"));
-  assert.ok(html.includes("README（简体中文）"));
-  assert.ok(html.includes("简体中文文档"));
-  assert.doesNotMatch(html, /\/blob\/main\/README\.ja\.md/);
-});
+test("each page links to its own-language README and the author site", () => {
+  for (const page of pages) {
+    const html = readFileSync(new URL(page.file, import.meta.url), "utf8");
 
-test("the Korean page links to English and Korean READMEs", () => {
-  const html = readFileSync(
-    new URL("../docs/ko/index.html", import.meta.url),
-    "utf8"
-  );
+    assert.ok(html.includes(`/blob/main/${localizedReadmes[page.code]}`));
+    for (const [code, readme] of Object.entries(localizedReadmes)) {
+      if (code !== page.code) {
+        assert.ok(
+          !html.includes(`/blob/main/${readme}`),
+          `${page.code} page links to ${readme}`
+        );
+      }
+    }
 
-  assert.ok(html.includes("/blob/main/README.md"));
-  assert.ok(html.includes("/blob/main/README.ko.md"));
-  assert.ok(html.includes("한국어 README"));
-  assert.ok(html.includes("한국어 문서"));
-  assert.doesNotMatch(html, /\/blob\/main\/README\.ja\.md/);
-  assert.doesNotMatch(html, /\/blob\/main\/README\.zh-Hans\.md/);
+    assert.ok(html.includes('href="https://fuji-maki.me/'));
+    assert.ok(html.includes('rel="me noopener noreferrer"'));
+  }
 });

@@ -4,6 +4,12 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- When "Prevent uppercase typing" is enabled, temporarily turn off physical
+  Caps Lock while a secure password field is focused and Secure Input is active,
+  keeping awake mode and its timer running.
+- Restore Caps Lock after leaving secure input, while respecting explicit
+  off actions and recovering the temporary override after an unexpected exit.
+
 ## 4.2.0 - 2026-09-20
 
 - While "Keep display awake" is active, temporarily lower only the built-in

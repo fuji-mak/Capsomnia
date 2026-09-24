@@ -2,6 +2,7 @@ import Foundation
 
 private enum PreferenceKey {
     static let dedicatedCapsLockMode = "DedicatedCapsLockMode"
+    static let secureInputCapsLockOverrideActive = "SecureInputCapsLockOverrideActive"
     static let showMenuBarIcon = "ShowMenuBarIcon"
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
@@ -28,6 +29,7 @@ enum Preferences {
     static func registerDefaults() {
         defaults.register(defaults: [
             PreferenceKey.dedicatedCapsLockMode: false,
+            PreferenceKey.secureInputCapsLockOverrideActive: false,
             PreferenceKey.showMenuBarIcon: true,
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
@@ -43,6 +45,13 @@ enum Preferences {
     static var dedicatedCapsLockMode: Bool {
         get { defaults.bool(forKey: PreferenceKey.dedicatedCapsLockMode) }
         set { defaults.set(newValue, forKey: PreferenceKey.dedicatedCapsLockMode) }
+    }
+
+    /// Tracks ownership of a physical Caps Lock turn-off so an unexpected app
+    /// exit can restore the logical on-state at the next launch.
+    static var secureInputCapsLockOverrideActive: Bool {
+        get { defaults.bool(forKey: PreferenceKey.secureInputCapsLockOverrideActive) }
+        set { defaults.set(newValue, forKey: PreferenceKey.secureInputCapsLockOverrideActive) }
     }
 
     static var showMenuBarIcon: Bool {

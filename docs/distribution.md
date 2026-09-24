@@ -1,6 +1,6 @@
 # Capsomnia・cpsm・MacReady 配布準備
 
-現在の配布版は **Capsomnia 4.2.0 / cpsm 0.1.1 / MacReady 0.1.1** です。
+現在の配布版は **Capsomnia 4.2.1 / cpsm 0.1.1 / MacReady 0.1.1** です。
 **本人の確認が済むまで公開しません。** 候補pkgを作る工程と、Appleへの公証提出・
 GitHubへの公開工程は別です。ビルドしてもメインで使用中のアプリは置き換えません。
 
@@ -112,7 +112,7 @@ NOTARY_PROFILE=capsomnia-notary ./scripts/notarize-distribution.sh
    固定名pkg・版数入りpkg・各SHA256SUMS.txtを添付。cpsm側には同梱版の
    `Capsomnia-Tools.pkg`、`Capsomnia-Tools-0.1.1.pkg`、`Tools-SHA256SUMS.txt`も添付します。
    Skillはリポジトリ内でも取得可能です。
-5. cpsm側の同梱Toolsが取得できる状態で、Capsomnia `v4.2.0` に本体pkgを添付して公開。
+5. cpsm側の同梱Toolsが取得できる状態で、Capsomnia `v4.2.1` に本体pkgを添付して公開。
    `Info.plist` の取得先は以下のcpsm最新リリースURLです。Toolsの更新にアプリの再公開は不要です。
    cpsmの最新リリースには同名の同梱pkgを必ず添付し、対応するCapsomniaとの互換性を確認します。
 

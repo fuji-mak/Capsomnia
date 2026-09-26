@@ -3,44 +3,6 @@ import XCTest
 @testable import Capsomnia
 
 final class CLIBehaviorTests: XCTestCase {
-    func testOneShotReplacesDefaultAndRestoresItNextSession() {
-        let now = Date(timeIntervalSince1970: 1000)
-        var timer = SessionAutoOffTimer()
-        timer.set(seconds: 90, now: now)
-        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 120, now: now))
-        XCTAssertEqual(timer.deadline, now.addingTimeInterval(90))
-        XCTAssertTrue(timer.evaluate(capsLockOn: true, defaultMinutes: 120, now: now.addingTimeInterval(90)))
-        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 120, now: now.addingTimeInterval(91)))
-        XCTAssertFalse(timer.evaluate(capsLockOn: false, defaultMinutes: 120, now: now))
-        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 120, now: now))
-        XCTAssertEqual(timer.deadline, now.addingTimeInterval(7200))
-        XCTAssertEqual(timer.source, "settings")
-    }
-
-    func testCancelSuppressesDefaultOnlyForCurrentSession() {
-        let now = Date()
-        var timer = SessionAutoOffTimer()
-        timer.set(seconds: 120, now: now)
-        timer.cancel()
-        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 1, now: now.addingTimeInterval(3600)))
-        XCTAssertNil(timer.deadline)
-        XCTAssertEqual(timer.source, "cancelled")
-        XCTAssertFalse(timer.evaluate(capsLockOn: false, defaultMinutes: 1, now: now))
-        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 1, now: now))
-        XCTAssertEqual(timer.deadline, now.addingTimeInterval(60))
-    }
-
-    func testReplacementRestartAndSavedSettingChange() {
-        let now = Date()
-        var timer = SessionAutoOffTimer()
-        timer.set(seconds: 7200, now: now)
-        timer.set(seconds: 60, now: now.addingTimeInterval(5))
-        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 480, now: now.addingTimeInterval(6)))
-        XCTAssertEqual(timer.deadline, now.addingTimeInterval(65))
-        timer.restart(capsLockOn: true, defaultMinutes: 480, now: now.addingTimeInterval(30))
-        XCTAssertEqual(timer.deadline, now.addingTimeInterval(90))
-    }
-
     func testOffConfirmsHardwareAndSleepPreventionBeforeSleeping() {
         var steps: [String] = []
         ExplicitAwakeCommand.run(

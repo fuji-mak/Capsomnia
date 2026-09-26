@@ -494,8 +494,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             log("\(source)_toggle_capslock target=\(target ? "on" : "off") succeeded=true")
         case .unavailable:
             log("\(source)_toggle_capslock failed=hid_system_unavailable")
-        case .readFailed:
-            log("\(source)_toggle_capslock failed=read_state")
         case let .writeFailed(target):
             log("\(source)_toggle_capslock target=\(target ? "on" : "off") failed=write_state")
         case let .verificationFailed(target, actual):
@@ -546,7 +544,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     self?.setLanguage(language)
                 },
                 onLaunchAtLoginChange: { [weak self] enabled in
-                    self?.setLaunchAtLogin(enabled)
+                    do {
+                        try self?.setLaunchAtLogin(enabled)
+                    } catch {
+                        self?.rebuildStatusMenu()
+                        self?.log("preference launch_at_login_error=\(error.localizedDescription)")
+                    }
                 },
                 onKeepDisplayAwakeChange: { [weak self] enabled in
                     self?.setKeepDisplayAwake(enabled)
@@ -577,8 +580,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     self?.setKeyboardShortcutRecording(isRecording)
                 },
                 onAutomaticUpdateChecksChange: { [weak self] enabled in
-                    Preferences.automaticUpdateChecks = enabled
-                    self?.log("preference automatic_update_checks=\(enabled ? "on" : "off")")
+                    self?.setAutomaticUpdateChecks(enabled)
                 },
                 onFinishInitialSetup: { [weak self] in
                     Preferences.didCompleteInitialSetup = true
@@ -648,16 +650,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         log("preference language=\(language.rawValue)")
     }
 
-    private func setLaunchAtLogin(_ enabled: Bool) {
-        do {
-            try LaunchAgentManager.setEnabled(enabled)
-            Preferences.launchAtLogin = enabled
-            rebuildStatusMenu()
-            log("preference launch_at_login=\(enabled ? "on" : "off")")
-        } catch {
-            rebuildStatusMenu()
-            log("preference launch_at_login_error=\(error.localizedDescription)")
-        }
+    private func setLaunchAtLogin(_ enabled: Bool) throws {
+        try LaunchAgentManager.setEnabled(enabled)
+        Preferences.launchAtLogin = enabled
+        rebuildStatusMenu()
+        log("preference launch_at_login=\(enabled ? "on" : "off")")
+    }
+
+    private func setAutomaticUpdateChecks(_ enabled: Bool) {
+        Preferences.automaticUpdateChecks = enabled
+        log("preference automatic_update_checks=\(enabled ? "on" : "off")")
     }
 
     private func setKeepDisplayAwake(_ enabled: Bool) {
@@ -1702,13 +1704,10 @@ extension Capsomnia {
                 throw ExplicitAwakeCommand.Failure("Setting saved, but Accessibility permission is required in the app.")
             }
         case "show-menu-bar-icon": setShowMenuBarIcon(enabled)
-        case "launch-at-login":
-            try LaunchAgentManager.setEnabled(enabled)
-            Preferences.launchAtLogin = enabled
-            rebuildStatusMenu()
+        case "launch-at-login": try setLaunchAtLogin(enabled)
         case "keep-display-awake": setKeepDisplayAwake(enabled)
         case "ignore-external-caps-lock-off-while-lid-closed": setIgnoreExternalCapsLockOffWhileLidClosed(enabled)
-        case "automatic-update-checks": Preferences.automaticUpdateChecks = enabled
+        case "automatic-update-checks": setAutomaticUpdateChecks(enabled)
         default: throw ExplicitAwakeCommand.Failure("Unknown setting. Run cpsm settings get.")
         }
     }

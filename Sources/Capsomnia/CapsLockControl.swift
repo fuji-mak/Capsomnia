@@ -5,7 +5,6 @@ import IOKit.hidsystem
 enum CapsLockToggleResult: Equatable {
     case changed(to: Bool)
     case unavailable
-    case readFailed
     case writeFailed(target: Bool)
     case verificationFailed(target: Bool, actual: Bool?)
 }
@@ -131,33 +130,6 @@ final class SystemCapsLockStateReader {
 }
 
 enum SystemCapsLockController {
-    static func toggle() -> CapsLockToggleResult {
-        guard let connection = CapsLockHIDSystem.openConnection() else {
-            return .unavailable
-        }
-        defer { IOServiceClose(connection) }
-
-        return toggle(
-            readState: {
-                CapsLockHIDSystem.readState(connection: connection)
-            },
-            setState: { target in
-                set(target, connection: connection)
-            }
-        )
-    }
-
-    static func toggle(
-        readState: () -> Bool?,
-        setState: (Bool) -> CapsLockToggleResult
-    ) -> CapsLockToggleResult {
-        guard let current = readState() else {
-            return .readFailed
-        }
-
-        return setState(!current)
-    }
-
     static func set(_ target: Bool) -> CapsLockToggleResult {
         guard let connection = CapsLockHIDSystem.openConnection() else {
             return .unavailable
@@ -202,11 +174,9 @@ enum SystemCapsLockController {
 
 final class CapsLockToggleCoordinator {
     private let queue: OperationQueue
-    private let toggle: () -> CapsLockToggleResult
     private let setState: (Bool) -> CapsLockToggleResult
 
     init(
-        toggle: @escaping () -> CapsLockToggleResult = SystemCapsLockController.toggle,
         setState: @escaping (Bool) -> CapsLockToggleResult = SystemCapsLockController.set
     ) {
         let queue = OperationQueue()
@@ -214,22 +184,10 @@ final class CapsLockToggleCoordinator {
         queue.qualityOfService = .userInitiated
         queue.maxConcurrentOperationCount = 1
         self.queue = queue
-        self.toggle = toggle
         self.setState = setState
     }
 
-    func requestToggle(completion: @escaping (CapsLockToggleResult) -> Void) {
-        let toggle = self.toggle
-        queue.addOperation {
-            let result = toggle()
-            OperationQueue.main.addOperation {
-                completion(result)
-            }
-        }
-    }
-
-    /// Set Caps Lock to an explicit state on the same serialized queue as
-    /// `requestToggle`, so an auto-off never races a manual toggle.
+    /// Serialize explicit state changes so an auto-off never races a manual toggle.
     func requestSet(_ target: Bool, completion: @escaping (CapsLockToggleResult) -> Void) {
         let setState = self.setState
         queue.addOperation {

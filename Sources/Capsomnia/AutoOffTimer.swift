@@ -37,17 +37,6 @@ enum AutoOffDisplayState: Equatable {
     case counting(remaining: TimeInterval)
 }
 
-/// The timer bookkeeping the app delegate keeps between polls.
-///
-/// - `deadline` is set while awake mode is counting down.
-struct AutoOffState: Equatable {
-    var deadline: Date?
-
-    init(deadline: Date? = nil) {
-        self.deadline = deadline
-    }
-}
-
 /// Carries an elapsed auto-off through the existing Caps Lock and helper
 /// synchronization path, then requests immediate system sleep exactly once.
 ///
@@ -83,65 +72,6 @@ final class AutoOffSleepCoordinator {
 
         isPending = false
         return requestSleep()
-    }
-}
-
-/// Pure scheduling policy for the auto-off timer. No side effects, so the whole
-/// behavior can be unit-tested without hardware, timers, or a run loop.
-enum AutoOffPolicy {
-    /// Advance the timer state and decide whether awake mode should turn off now.
-    ///
-    /// - Parameters:
-    ///   - capsLockOn: whether awake mode (Caps Lock) is currently on.
-    ///   - autoOffMinutes: the configured duration; `0` disables the timer.
-    ///   - now: the current instant.
-    ///   - state: the current timer state.
-    /// - Returns: the next `state` to persist and `shouldFire`, which is `true`
-    ///   exactly once when the countdown reaches zero.
-    static func evaluate(
-        capsLockOn: Bool,
-        autoOffMinutes: Int,
-        now: Date,
-        state: AutoOffState
-    ) -> (state: AutoOffState, shouldFire: Bool) {
-        // Timer disabled: no deadline, no memory.
-        guard autoOffMinutes > 0 else {
-            return (AutoOffState(), false)
-        }
-
-        let fullDuration = TimeInterval(autoOffMinutes) * 60
-
-        guard capsLockOn else {
-            // Turning awake mode off ends the current timer session. The next
-            // re-enable always starts a fresh full-duration countdown.
-            return (AutoOffState(), false)
-        }
-
-        // Awake mode is on.
-        if let deadline = state.deadline {
-            if now >= deadline {
-                return (AutoOffState(), true)
-            }
-            return (AutoOffState(deadline: deadline), false)
-        }
-
-        // Just turned on (or the timer was just re-armed): begin a fresh countdown.
-        return (AutoOffState(deadline: now.addingTimeInterval(fullDuration)), false)
-    }
-
-    /// A fresh full-duration state for the explicit Restart action.
-    static func restarted(
-        capsLockOn: Bool,
-        autoOffMinutes: Int,
-        now: Date
-    ) -> AutoOffState {
-        guard autoOffMinutes > 0 else { return AutoOffState() }
-        let fullDuration = TimeInterval(autoOffMinutes) * 60
-        if capsLockOn {
-            return AutoOffState(deadline: now.addingTimeInterval(fullDuration))
-        }
-        // Awake mode is off: the next re-enable starts the full duration anyway.
-        return AutoOffState()
     }
 }
 

@@ -2,71 +2,6 @@ import XCTest
 @testable import Capsomnia
 
 final class CapsLockControlTests: XCTestCase {
-    func testToggleTurnsOffStateOn() {
-        var state = false
-        let result = SystemCapsLockController.toggle(
-            readState: { state },
-            setState: { target in
-                state = target
-                return .changed(to: target)
-            }
-        )
-
-        XCTAssertEqual(result, .changed(to: true))
-        XCTAssertTrue(state)
-    }
-
-    func testToggleTurnsOnStateOff() {
-        var state = true
-        let result = SystemCapsLockController.toggle(
-            readState: { state },
-            setState: { target in
-                state = target
-                return .changed(to: target)
-            }
-        )
-
-        XCTAssertEqual(result, .changed(to: false))
-        XCTAssertFalse(state)
-    }
-
-    func testToggleDoesNotWriteWhenStateCannotBeRead() {
-        var didWrite = false
-        let result = SystemCapsLockController.toggle(
-            readState: { nil },
-            setState: { _ in
-                didWrite = true
-                return .changed(to: true)
-            }
-        )
-
-        XCTAssertEqual(result, .readFailed)
-        XCTAssertFalse(didWrite)
-    }
-
-    func testToggleReportsWriteFailure() {
-        let result = SystemCapsLockController.toggle(
-            readState: { false },
-            setState: { target in .writeFailed(target: target) }
-        )
-
-        XCTAssertEqual(result, .writeFailed(target: true))
-    }
-
-    func testToggleReportsVerificationFailure() {
-        let result = SystemCapsLockController.toggle(
-            readState: { false },
-            setState: { target in
-                .verificationFailed(target: target, actual: false)
-            }
-        )
-
-        XCTAssertEqual(
-            result,
-            .verificationFailed(target: true, actual: false)
-        )
-    }
-
     func testConfirmationRequiresConsecutiveMatches() {
         var states: [Bool?] = [true, false, true, true, true]
         var waitCount = 0
@@ -99,7 +34,7 @@ final class CapsLockControlTests: XCTestCase {
         )
     }
 
-    func testSystemToggleWhenHardwareTestIsEnabled() throws {
+    func testSystemSetRoundTripWhenHardwareTestIsEnabled() throws {
         try XCTSkipUnless(
             ProcessInfo.processInfo.environment["CAPSOMNIA_HARDWARE_TEST"] == "1",
             "Set CAPSOMNIA_HARDWARE_TEST=1 to exercise the real Caps Lock state."
@@ -115,7 +50,7 @@ final class CapsLockControlTests: XCTestCase {
         }
 
         XCTAssertEqual(
-            SystemCapsLockController.toggle(),
+            SystemCapsLockController.set(!initial),
             .changed(to: !initial)
         )
         XCTAssertEqual(
@@ -124,7 +59,7 @@ final class CapsLockControlTests: XCTestCase {
         )
 
         XCTAssertEqual(
-            SystemCapsLockController.toggle(),
+            SystemCapsLockController.set(initial),
             .changed(to: initial)
         )
         XCTAssertEqual(

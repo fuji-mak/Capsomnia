@@ -25,7 +25,6 @@ with p.open('rb') as f:
     info = plistlib.load(f)
 # Same settings/identity as the installed app. Only run one copy at a time.
 info['CFBundleDisplayName'] = 'Capsomnia CLI Preview'
-info.pop('CapsomniaCLIGuideURL', None)
 info['CapsomniaToolsPackageURL'] = package.as_uri()
 with p.open('wb') as f:
     plistlib.dump(info, f)

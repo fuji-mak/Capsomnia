@@ -1,99 +1,86 @@
 import XCTest
 @testable import Capsomnia
 
-final class AutoOffPolicyTests: XCTestCase {
+final class SessionAutoOffTimerTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_000_000)
 
-    // MARK: Disabled
+    func testDisabledDefaultClearsCountdownWithoutFiring() {
+        var timer = SessionAutoOffTimer()
+        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 30, now: now))
+        XCTAssertEqual(timer.deadline, now.addingTimeInterval(30 * 60))
 
-    func testDisabledTimerClearsStateAndNeverFires() {
-        let onResult = AutoOffPolicy.evaluate(
-            capsLockOn: true,
-            autoOffMinutes: 0,
-            now: now,
-            state: AutoOffState(deadline: now.addingTimeInterval(-1))
-        )
-        XCTAssertEqual(onResult.state, AutoOffState())
-        XCTAssertFalse(onResult.shouldFire)
+        XCTAssertFalse(timer.evaluate(
+            capsLockOn: true, defaultMinutes: 0, now: now.addingTimeInterval(30 * 60)
+        ))
+        XCTAssertNil(timer.deadline)
     }
 
-    // MARK: Arming / counting (awake on)
+    func testSavedTimerKeepsDeadlineAndFiresOnlyOnce() {
+        var timer = SessionAutoOffTimer()
+        let deadline = now.addingTimeInterval(30 * 60)
+        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 30, now: now))
+        XCTAssertEqual(timer.deadline, deadline)
 
-    func testArmsFullDurationOnFirstStart() {
-        let result = AutoOffPolicy.evaluate(
-            capsLockOn: true,
-            autoOffMinutes: 30,
-            now: now,
-            state: AutoOffState()
-        )
-        XCTAssertEqual(result.state.deadline, now.addingTimeInterval(30 * 60))
-        XCTAssertFalse(result.shouldFire)
+        XCTAssertFalse(timer.evaluate(
+            capsLockOn: true, defaultMinutes: 60, now: deadline.addingTimeInterval(-1)
+        ))
+        XCTAssertEqual(timer.deadline, deadline)
+        XCTAssertTrue(timer.evaluate(capsLockOn: true, defaultMinutes: 60, now: deadline))
+        XCTAssertNil(timer.deadline)
+        XCTAssertFalse(timer.evaluate(
+            capsLockOn: true, defaultMinutes: 60, now: deadline.addingTimeInterval(1)
+        ))
+        XCTAssertNil(timer.deadline)
     }
 
-    func testKeepsExistingDeadlineWhileCountingDown() {
-        let deadline = now.addingTimeInterval(5 * 60)
-        let result = AutoOffPolicy.evaluate(
-            capsLockOn: true,
-            autoOffMinutes: 30,
-            now: now,
-            state: AutoOffState(deadline: deadline)
-        )
-        XCTAssertEqual(result.state.deadline, deadline)
-        XCTAssertFalse(result.shouldFire)
+    func testTurningOffClearsCountdownAndNextEnableStartsFullDuration() {
+        var timer = SessionAutoOffTimer()
+        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 60, now: now))
+        XCTAssertEqual(timer.deadline, now.addingTimeInterval(60 * 60))
+
+        XCTAssertFalse(timer.evaluate(
+            capsLockOn: false, defaultMinutes: 60, now: now.addingTimeInterval(20 * 60)
+        ))
+        XCTAssertNil(timer.deadline)
+
+        let nextEnable = now.addingTimeInterval(30 * 60)
+        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 60, now: nextEnable))
+        XCTAssertEqual(timer.deadline, nextEnable.addingTimeInterval(60 * 60))
     }
 
-    func testFiresWhenDeadlineReached() {
-        let result = AutoOffPolicy.evaluate(
-            capsLockOn: true,
-            autoOffMinutes: 30,
-            now: now,
-            state: AutoOffState(deadline: now)
-        )
-        XCTAssertEqual(result.state, AutoOffState())
-        XCTAssertTrue(result.shouldFire)
+    func testOneShotReplacesDefaultAndRestoresItNextSession() {
+        var timer = SessionAutoOffTimer()
+        timer.set(seconds: 90, now: now)
+        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 120, now: now))
+        XCTAssertEqual(timer.deadline, now.addingTimeInterval(90))
+        XCTAssertTrue(timer.evaluate(capsLockOn: true, defaultMinutes: 120, now: now.addingTimeInterval(90)))
+        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 120, now: now.addingTimeInterval(91)))
+        XCTAssertFalse(timer.evaluate(capsLockOn: false, defaultMinutes: 120, now: now))
+        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 120, now: now))
+        XCTAssertEqual(timer.deadline, now.addingTimeInterval(7200))
+        XCTAssertEqual(timer.source, "settings")
     }
 
-    // MARK: Re-enable behavior
-
-    func testTurningOffClearsTheCurrentCountdown() {
-        let result = AutoOffPolicy.evaluate(
-            capsLockOn: false,
-            autoOffMinutes: 60,
-            now: now,
-            state: AutoOffState(deadline: now.addingTimeInterval(40 * 60))
-        )
-        XCTAssertEqual(result.state, AutoOffState())
-        XCTAssertFalse(result.shouldFire)
+    func testCancelSuppressesDefaultOnlyForCurrentSession() {
+        var timer = SessionAutoOffTimer()
+        timer.set(seconds: 120, now: now)
+        timer.cancel()
+        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 1, now: now.addingTimeInterval(3600)))
+        XCTAssertNil(timer.deadline)
+        XCTAssertEqual(timer.source, "cancelled")
+        XCTAssertFalse(timer.evaluate(capsLockOn: false, defaultMinutes: 1, now: now))
+        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 1, now: now))
+        XCTAssertEqual(timer.deadline, now.addingTimeInterval(60))
     }
 
-    func testReenableAlwaysStartsTheFullDuration() {
-        let result = AutoOffPolicy.evaluate(
-            capsLockOn: true,
-            autoOffMinutes: 60,
-            now: now,
-            state: AutoOffState()
-        )
-        XCTAssertEqual(result.state.deadline, now.addingTimeInterval(60 * 60))
-        XCTAssertFalse(result.shouldFire)
-    }
-
-    // MARK: Explicit restart
-
-    func testRestartedArmsFullDurationWhenAwake() {
-        let state = AutoOffPolicy.restarted(capsLockOn: true, autoOffMinutes: 120, now: now)
-        XCTAssertEqual(state.deadline, now.addingTimeInterval(120 * 60))
-    }
-
-    func testRestartedWhileOffLeavesTheNextEnableFresh() {
-        let state = AutoOffPolicy.restarted(capsLockOn: false, autoOffMinutes: 120, now: now)
-        XCTAssertEqual(state, AutoOffState())
-    }
-
-    func testRestartedIsEmptyWhenTimerDisabled() {
-        XCTAssertEqual(
-            AutoOffPolicy.restarted(capsLockOn: true, autoOffMinutes: 0, now: now),
-            AutoOffState()
-        )
+    func testReplacementRestartAndSavedSettingChange() {
+        var timer = SessionAutoOffTimer()
+        timer.set(seconds: 7200, now: now)
+        timer.set(seconds: 60, now: now.addingTimeInterval(5))
+        XCTAssertFalse(timer.evaluate(capsLockOn: true, defaultMinutes: 480, now: now.addingTimeInterval(6)))
+        XCTAssertEqual(timer.deadline, now.addingTimeInterval(65))
+        timer.restart(capsLockOn: true, defaultMinutes: 480, now: now.addingTimeInterval(30))
+        XCTAssertEqual(timer.deadline, now.addingTimeInterval(90))
     }
 }
 

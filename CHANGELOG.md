@@ -4,6 +4,15 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 4.2.2 - 2026-09-27
+
+- Simplify settings labels and descriptions in all four supported languages,
+  and remove the redundant note from initial setup.
+- Remove temporary CLI and Skill installer packages after installation succeeds,
+  fails, or is cancelled, while preserving the original source package.
+- Remove unused code and consolidate auto-off scheduling, settings layout, and
+  GUI/CLI preference updates. Consolidate redundant tests and CI checks.
+
 ## 4.2.1 - 2026-09-24
 
 - When "Prevent uppercase typing" is enabled, temporarily turn off physical

@@ -19,7 +19,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let backButton = NSButton()
     private let toolsDownloadButton = DisclosureButton(symbolName: "arrow.down.to.line", height: 44)
 
-    private let explainerCard = brandCard()
+    private var explainerCard = NSView()
     private let explainerOnTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
     private let explainerOnDesc = brandLabel(size: 12, color: Brand.textDim, wraps: true)
     private let explainerOffTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
@@ -156,7 +156,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         registrationFailed: ""
     )
 
-    private let noteLabel = brandLabel(size: 12, color: Brand.textFaint, wraps: true)
     private let doneButton = LEDButton()
 
     private let rootStack = NSStackView()
@@ -358,7 +357,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         releaseNotesButton.setAccessibilityLabel(strings.releaseNotes)
         layoutUpdateRows()
 
-        noteLabel.stringValue = strings.initialSettingsNote
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
 
         appHeader.isHidden = isAdvancedSettings
@@ -460,7 +458,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         appHeader.setCustomSpacing(14, after: headerIcon)
         appHeader.translatesAutoresizingMaskIntoConstraints = false
 
-        buildExplainerCard()
+        explainerCard = buildExplainerCard()
 
         preferencesCard = buildPreferencesCard()
         keepDisplayAwakeCard = buildKeepDisplayAwakeCard()
@@ -505,7 +503,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         initialPreferencesLayoutConstraints = [
             explainerCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             preferencesCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
-            noteLabel.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
         ]
         settingsLayoutConstraints = [
@@ -555,7 +552,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             bodyStack.addArrangedSubview(explainerCard)
             bodyStack.addArrangedSubview(preferencesHeading)
             bodyStack.addArrangedSubview(preferencesCard)
-            bodyStack.addArrangedSubview(noteLabel)
             bodyStack.addArrangedSubview(doneButton)
             bodyStack.setCustomSpacing(8, after: preferencesHeading)
             NSLayoutConstraint.activate(initialPreferencesLayoutConstraints)
@@ -614,30 +610,40 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         }
     }
 
-    private func buildExplainerCard() {
+    private func cardRows(_ rows: [NSView], spacing: CGFloat = 14) -> NSStackView {
+        let stack = NSStackView(views: rows)
+        configureColumn(stack)
+        stack.spacing = spacing
+        stack.detachesHiddenViews = true
+        NSLayoutConstraint.activate(rows.map {
+            $0.widthAnchor.constraint(equalTo: stack.widthAnchor)
+        })
+        return stack
+    }
+
+    private func settingsCard(
+        _ content: NSView,
+        insets: NSEdgeInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+    ) -> NSView {
+        let card = brandCard()
+        content.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(content)
+        NSLayoutConstraint.activate([
+            content.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: insets.left),
+            content.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -insets.right),
+            content.topAnchor.constraint(equalTo: card.topAnchor, constant: insets.top),
+            content.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -insets.bottom)
+        ])
+        return card
+    }
+
+    private func buildExplainerCard() -> NSView {
         let onRow = explainerRow(dot: brandStatusDot(on: true), title: explainerOnTitle, desc: explainerOnDesc)
         let offRow = explainerRow(dot: brandStatusDot(on: false), title: explainerOffTitle, desc: explainerOffDesc)
-
-        let inner = NSStackView(views: [onRow, offRow])
-        inner.orientation = .vertical
-        inner.alignment = .leading
-        inner.spacing = 14
-        inner.translatesAutoresizingMaskIntoConstraints = false
-
-        explainerCard.addSubview(inner)
-        NSLayoutConstraint.activate([
-            inner.leadingAnchor.constraint(equalTo: explainerCard.leadingAnchor, constant: 16),
-            inner.trailingAnchor.constraint(equalTo: explainerCard.trailingAnchor, constant: -16),
-            inner.topAnchor.constraint(equalTo: explainerCard.topAnchor, constant: 16),
-            inner.bottomAnchor.constraint(equalTo: explainerCard.bottomAnchor, constant: -16),
-            onRow.widthAnchor.constraint(equalTo: inner.widthAnchor),
-            offRow.widthAnchor.constraint(equalTo: inner.widthAnchor)
-        ])
+        return settingsCard(cardRows([onRow, offRow]))
     }
 
     private func buildPreferencesCard() -> NSView {
-        let card = brandCard()
-
         dedicatedCapsLockModeToggle.onToggle = { [weak self] enabled in
             self?.onDedicatedCapsLockModeChange(enabled)
             self?.updateValues()
@@ -659,39 +665,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let menuBarRow = settingRow(title: menuBarTitle, desc: menuBarDesc, accessory: menuBarToggle)
         let languageRow = settingRow(title: languageTitle, desc: nil, accessory: languagePopUp)
 
-        let divider1 = brandDivider()
-        let divider2 = brandDivider()
-
-        let inner = NSStackView(views: [
+        return settingsCard(cardRows([
             menuBarRow,
-            divider1,
+            brandDivider(),
             dedicatedCapsLockModeRow,
-            divider2,
+            brandDivider(),
             languageRow
-        ])
-        inner.orientation = .vertical
-        inner.alignment = .leading
-        inner.spacing = 14
-        inner.detachesHiddenViews = true
-        inner.translatesAutoresizingMaskIntoConstraints = false
-
-        card.addSubview(inner)
-        NSLayoutConstraint.activate([
-            inner.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
-            inner.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
-            inner.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
-            inner.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
-        ])
-        for row in [
-            menuBarRow,
-            divider1,
-            dedicatedCapsLockModeRow,
-            divider2,
-            languageRow
-        ] {
-            row.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
-        }
-        return card
+        ]))
     }
 
     /// A "title + optional description / accessory on the right" row.
@@ -765,25 +745,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             desc: keepHotspotAliveDesc,
             accessory: keepHotspotAliveToggle
         )
-        let divider = brandDivider()
-        let stack = NSStackView(views: [displayRow, divider, hotspotRow])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 14
-        stack.translatesAutoresizingMaskIntoConstraints = false
-
-        let card = brandCard()
-        card.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
-            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
-            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
-            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
-        ])
-        for row in [displayRow, divider, hotspotRow] {
-            row.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        }
-        return card
+        let stack = cardRows([displayRow, brandDivider(), hotspotRow])
+        return settingsCard(stack, insets: NSEdgeInsets(top: 16, left: 18, bottom: 16, right: 18))
     }
 
     private func buildSystemCard() -> NSView {
@@ -814,31 +777,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             desc: openAtLoginDesc,
             accessory: openAtLoginToggle
         )
-        let card = brandCard()
-        let rows: [NSView] = [
+        let stack = cardRows([
             externalCapsLockOffRow, brandDivider(),
             hideIndicatorRow, hideIndicatorRestartNote, brandDivider(),
             openAtLoginRow
-        ]
-        let stack = NSStackView(views: rows)
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 14
-        stack.detachesHiddenViews = true
-        stack.setCustomSpacing(6, after: hideIndicatorRow)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-
-        card.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
-            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
-            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
-            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
         ])
-        for row in rows {
-            row.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        }
-        return card
+        stack.setCustomSpacing(6, after: hideIndicatorRow)
+        return settingsCard(stack, insets: NSEdgeInsets(top: 16, left: 18, bottom: 16, right: 18))
     }
 
     private func buildShortcutCard() -> NSView {
@@ -846,27 +791,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         shortcutRecorder.onRecordingChange = onKeyboardShortcutRecordingChange
         shortcutDesc.setContentHuggingPriority(.required, for: .vertical)
 
-        let stack = NSStackView(views: [
-            shortcutDesc,
-            shortcutRecorder
-        ])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 5
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.setCustomSpacing(14, after: shortcutDesc)
-
-        let card = brandCard()
-        card.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
-            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
-            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 17),
-            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -18),
-            shortcutDesc.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            shortcutRecorder.widthAnchor.constraint(equalTo: stack.widthAnchor)
-        ])
-        return card
+        let stack = cardRows([shortcutDesc, shortcutRecorder])
+        return settingsCard(stack, insets: NSEdgeInsets(top: 17, left: 18, bottom: 18, right: 18))
     }
 
     private func buildUpdateCard() -> NSView {
@@ -901,12 +827,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         updateVersionLabel.setContentHuggingPriority(.required, for: .horizontal)
         releaseNotesButton.setContentHuggingPriority(.required, for: .horizontal)
         releaseNotesButton.setContentCompressionResistancePriority(.required, for: .horizontal)
-        let versionDetails = NSStackView(views: [updateVersionRow, updateCurrentVersionLabel])
-        configureColumn(versionDetails)
-        versionDetails.spacing = 3
+        let versionDetails = cardRows([updateVersionRow, updateCurrentVersionLabel], spacing: 3)
         versionDetails.setHuggingPriority(.defaultLow, for: .horizontal)
-        updateVersionRow.widthAnchor.constraint(equalTo: versionDetails.widthAnchor).isActive = true
-        updateCurrentVersionLabel.widthAnchor.constraint(equalTo: versionDetails.widthAnchor).isActive = true
         updateButton.setContentHuggingPriority(.required, for: .horizontal)
         updateButton.setContentCompressionResistancePriority(.required, for: .horizontal)
         updateActionRow.orientation = .horizontal
@@ -918,15 +840,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         updateButton.trailingAnchor.constraint(equalTo: updateActionRow.trailingAnchor).isActive = true
         configureColumn(updateCardStack)
         updateCardStack.spacing = 14
-        let card = brandCard()
-        card.addSubview(updateCardStack)
-        NSLayoutConstraint.activate([
-            updateCardStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
-            updateCardStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
-            updateCardStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 18),
-            updateCardStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -18)
-        ])
-        return card
+        return settingsCard(updateCardStack, insets: NSEdgeInsets(top: 18, left: 18, bottom: 18, right: 18))
     }
 
     @objc private func openReleaseNotes() {
@@ -957,15 +871,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onAutoOffRestart()
         }
 
-        let card = brandCard()
-        card.addSubview(autoOffControl)
-        NSLayoutConstraint.activate([
-            autoOffControl.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
-            autoOffControl.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
-            autoOffControl.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
-            autoOffControl.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14)
-        ])
-        return card
+        return settingsCard(autoOffControl, insets: NSEdgeInsets(top: 14, left: 16, bottom: 14, right: 16))
     }
 
     private func updateValues() {

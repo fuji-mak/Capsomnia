@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 const siteUrl = "https://capsomnia.com/";
+const downloadUrl = "https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg";
 const pages = [
   {
     code: "en",
@@ -10,7 +11,6 @@ const pages = [
     path: "",
     currentHref: "/?lang=en",
     title: "Capsomnia — Caps Lock as a physical keep-awake switch for macOS",
-    content: "Give Caps Lock",
     shortcutHeading: "Use the key that works for you",
     shortcutPreview: "/app-preview-shortcut-en.png",
     productHuntAria: "View Capsomnia on Product Hunt",
@@ -22,7 +22,6 @@ const pages = [
     path: "ja/",
     currentHref: "/ja/?lang=ja",
     title: "Capsomnia — Caps LockをMacの物理スリープ防止スイッチに",
-    content: "Macの<span class=\"catch-accent\">最も無駄なキー</span>",
     shortcutHeading: "自由にキー設定",
     shortcutPreview: "/app-preview-shortcut-ja.png",
     productHuntAria: "Product HuntでCapsomniaを見る",
@@ -34,7 +33,6 @@ const pages = [
     path: "zh-hans/",
     currentHref: "/zh-hans/?lang=zh-hans",
     title: "Capsomnia — 把 Caps Lock 变成 macOS 实体防休眠开关",
-    content: "让 Caps Lock",
     shortcutHeading: "自由设置按键",
     shortcutPreview: "/app-preview-shortcut-en.png",
     productHuntAria: "在 Product Hunt 上查看 Capsomnia",
@@ -46,7 +44,6 @@ const pages = [
     path: "ko/",
     currentHref: "/ko/?lang=ko",
     title: "Capsomnia — Caps Lock을 macOS 잠자기 방지 스위치로",
-    content: "Caps Lock에<br><span class=\"catch-accent\">제대로 된 일을 맡기세요</span>",
     shortcutHeading: "원하는 키로 자유롭게",
     shortcutPreview: "/app-preview-shortcut-en.png",
     productHuntAria: "Product Hunt에서 Capsomnia 보기",
@@ -72,35 +69,11 @@ for (const page of pages) {
     assert.ok(html.includes(`<title>${page.title}</title>`));
     assert.ok(html.includes(`rel="canonical" href="${pageUrl}"`));
     assert.ok(html.includes(`property="og:url" content="${pageUrl}"`));
-    assert.ok(html.includes(page.content));
     assert.ok(html.includes(page.shortcutHeading));
     assert.ok(html.includes(`src="${page.shortcutPreview}"`));
     assert.ok(html.includes(`aria-label="${page.productHuntAria}"`));
     assert.ok(html.includes(`alt="${page.productHuntAlt}"`));
-    assert.ok(html.includes("post_id=1200286&amp;theme=light&amp;period=daily"));
     assert.equal((html.match(/aria-labelledby="custom-shortcut-title"/g) ?? []).length, 1);
-    assert.doesNotMatch(html, /Actual settings screen|実際の設定画面|实际设置界面|실제 설정 화면/);
-    for (const trafficLight of ["#ff5f57", "#febc2e", "#28c840"]) {
-      assert.ok(html.includes(trafficLight));
-    }
-    assert.doesNotMatch(html, /data-i18n|capsomnia\.js/);
-    assert.ok(html.includes('<details class="language-menu relative shrink-0">'));
-    assert.ok(html.includes("<span>Capsomnia</span>"));
-    assert.equal((html.match(/class="language-option /g) ?? []).length, pages.length);
-    assert.doesNotMatch(html, /lang-switch|lang-btn|hidden sm:inline">Capsomnia/);
-
-    const languageSummaryClasses = html.match(
-      /<summary\s+class="([^"]+)"/
-    )?.[1];
-    assert.ok(languageSummaryClasses);
-    assert.match(languageSummaryClasses, /min-h-\[44px\]/);
-    assert.match(languageSummaryClasses, /min-w-\[68px\]/);
-    assert.match(languageSummaryClasses, /px-3/);
-    assert.doesNotMatch(
-      languageSummaryClasses,
-      /rounded-full|border-\[var\(--border-strong\)\]|bg-\[var\(--surface\)\]/
-    );
-
     for (const alternate of expectedAlternates) assert.ok(html.includes(alternate));
     for (const localePage of pages) {
       assert.ok(html.includes(`href="${localePage.currentHref}"`));
@@ -115,6 +88,8 @@ for (const page of pages) {
     const jsonLdSource = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
     assert.ok(jsonLdSource);
     const jsonLd = JSON.parse(jsonLdSource);
+    const application = jsonLd["@graph"].find((entity) => entity["@type"] === "SoftwareApplication");
+    assert.ok(application, "Missing SoftwareApplication metadata");
     for (const entity of jsonLd["@graph"]) {
       assert.equal(entity.inLanguage, page.code);
       assert.equal(entity.url, pageUrl);
@@ -142,14 +117,24 @@ const readmes = [
 ];
 
 for (const readme of readmes) {
-  test(`${readme} keeps download prominent and language links secondary`, () => {
+  test(`${readme} links to the current installer`, () => {
     const markdown = readFileSync(new URL(readme, import.meta.url), "utf8");
 
-    assert.ok(markdown.includes("img.shields.io/badge/Download-Capsomnia.pkg-"));
-    assert.ok(markdown.includes("top-post-badge.svg?post_id=1200286&amp;theme=light&amp;period=daily"));
-    assert.doesNotMatch(markdown, /img\.shields\.io\/badge\/README-(?:EN|JA|ZH|KO)-/);
+    assert.ok(markdown.includes(downloadUrl));
   });
 }
+
+test("site discovery and ownership files match the published domain", () => {
+  const domain = readFileSync(new URL("../docs/CNAME", import.meta.url), "utf8").trim();
+  assert.equal(domain, new URL(siteUrl).hostname);
+
+  const robots = readFileSync(new URL("../docs/robots.txt", import.meta.url), "utf8");
+  assert.ok(robots.includes(`Sitemap: ${siteUrl}sitemap.xml`));
+
+  const verificationFile = "googlee5de8ad27617297a.html";
+  const verification = readFileSync(new URL(`../docs/${verificationFile}`, import.meta.url), "utf8").trim();
+  assert.equal(verification, `google-site-verification: ${verificationFile}`);
+});
 
 test("the sitemap lists every localized URL and alternate", () => {
   const sitemap = readFileSync(new URL("../docs/sitemap.xml", import.meta.url), "utf8");

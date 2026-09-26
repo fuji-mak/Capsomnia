@@ -5,7 +5,7 @@ import XCTest
 final class ToolsDownloadTests: XCTestCase {
     func testBusyStateIncludesInstallationAndRejectsDuplicateClick() {
         let source = URL(fileURLWithPath: "/tmp/source.pkg")
-        let destination = URL(fileURLWithPath: "/tmp/downloaded.pkg")
+        let destination = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".pkg")
         var downloaded: ((Result<URL, Error>) -> Void)?
         var installed: ((Result<Void, Error>) -> Void)?
         var downloads = 0
@@ -22,7 +22,7 @@ final class ToolsDownloadTests: XCTestCase {
         controller.onDownloadingChange = { states.append($0) }
         let done = expectation(description: "Verified installation finished")
         controller.startDownload(from: source) { result in
-            XCTAssertEqual(try? result.get(), destination)
+            if case .failure(let error) = result { XCTFail("Unexpected failure: \(error)") }
             done.fulfill()
         }
         XCTAssertNil(installed)
@@ -78,17 +78,51 @@ final class ToolsDownloadTests: XCTestCase {
         XCTAssertEqual(attempts, 2)
     }
 
-    func testCancelledAuthenticationIsNotReportedAsSuccess() {
-        let controller = ToolsDownloadController(download: { source, done in done(.success(source)) },
-                                                 install: { _, _, done in done(.failure(ToolsInstallation.Failure.cancelled)) })
-        let done = expectation(description: "Cancellation delivered")
-        controller.startDownload(from: URL(fileURLWithPath: "/tmp/package.pkg")) { result in
-            guard case .failure(let error) = result else { XCTFail("Unexpected success"); done.fulfill(); return }
-            XCTAssertTrue(error is ToolsInstallation.Failure)
-            done.fulfill()
+    func testInstallationOutcomesRemoveOnlyTheTemporaryCopy() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: root) }
+        let source = root.appendingPathComponent("source.pkg")
+        let contents = Data("local package fixture".utf8)
+        try contents.write(to: source)
+
+        let outcomes: [Result<Void, Error>] = [
+            .success(()),
+            .failure(ToolsInstallation.Failure.installationFailed),
+            .failure(ToolsInstallation.Failure.cancelled)
+        ]
+        for outcome in outcomes {
+            let destination = try ToolsDownloadController.savePackage(
+                at: source, source: source, cacheDirectory: root.appendingPathComponent("cache")
+            )
+            var installed: ((Result<Void, Error>) -> Void)?
+            let installing = expectation(description: "Installation started")
+            let done = expectation(description: "Result delivered after cleanup")
+            let controller = ToolsDownloadController(download: { _, completion in
+                completion(.success(destination))
+            }, install: { package, _, completion in
+                XCTAssertEqual(package, destination)
+                installed = completion
+                installing.fulfill()
+            })
+            controller.startDownload(from: source) { result in
+                switch (outcome, result) {
+                case (.success, .success): break
+                case (.failure(let expected), .failure(let actual)):
+                    XCTAssertEqual(actual as? ToolsInstallation.Failure, expected as? ToolsInstallation.Failure)
+                default: XCTFail("Installation result changed")
+                }
+                XCTAssertFalse(fm.fileExists(atPath: destination.path))
+                XCTAssertEqual(try? Data(contentsOf: source), contents)
+                done.fulfill()
+            }
+            wait(for: [installing], timeout: 2)
+            XCTAssertTrue(fm.fileExists(atPath: destination.path), "Keep the copy until installation ends")
+            installed?(outcome)
+            wait(for: [done], timeout: 2)
+            XCTAssertFalse(controller.isDownloading)
         }
-        wait(for: [done], timeout: 2)
-        XCTAssertFalse(controller.isDownloading)
     }
 
     func testLocalPackageIsCopiedWithoutChangingSource() throws {

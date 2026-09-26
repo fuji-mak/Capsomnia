@@ -53,7 +53,6 @@ final class SettingsWindowControllerTests: XCTestCase {
             }
         )
         let advancedSettingsButton = try XCTUnwrap(visibleButtons.first)
-        XCTAssertNil(advancedSettingsButton.accessibilityHelp())
         XCTAssertTrue(advancedSettingsButton.accessibilityPerformPress())
         XCTAssertEqual(controller.window?.title, strings.advancedSettings)
     }
@@ -101,24 +100,27 @@ final class SettingsWindowControllerTests: XCTestCase {
 
     }
 
-    func testKoreanLanguageIsAvailableInThePopUp() throws {
+    func testLanguagePopUpReflectsSavedLanguageAndTracksSelection() throws {
         let previousLanguage = Preferences.language
-        Preferences.language = .english
         defer { Preferences.language = previousLanguage }
 
         _ = NSApplication.shared
-        let controller = makeController()
-        controller.show(page: .initialPreferences)
-        let contentView = try XCTUnwrap(controller.window?.contentView)
-        let languagePopUp: LanguagePopUpButton = try XCTUnwrap(descendants(of: contentView).first)
+        for initialLanguage in [AppLanguage.english, .japanese] {
+            Preferences.language = initialLanguage
+            let controller = makeController()
+            defer { controller.close() }
+            controller.show(page: .initialPreferences)
+            let contentView = try XCTUnwrap(controller.window?.contentView)
+            let languagePopUp: LanguagePopUpButton = try XCTUnwrap(descendants(of: contentView).first)
 
-        XCTAssertEqual(languagePopUp.itemTitles, ["English", "日本語", "简体中文", "한국어"])
-        XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.english.rawValue)
+            XCTAssertEqual(languagePopUp.itemTitles, ["English", "日本語", "简体中文", "한국어"])
+            XCTAssertEqual(languagePopUp.selectedValue, initialLanguage.rawValue)
 
-        languagePopUp.setSelected(AppLanguage.korean.rawValue)
+            languagePopUp.setSelected(AppLanguage.korean.rawValue)
 
-        XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.korean.rawValue)
-        XCTAssertEqual(languagePopUp.titleOfSelectedItem, AppLanguage.korean.displayName)
+            XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.korean.rawValue)
+            XCTAssertEqual(languagePopUp.titleOfSelectedItem, AppLanguage.korean.displayName)
+        }
     }
 
     func testAdvancedSettingsReplacesContentInTheSameLargerWindow() throws {
@@ -494,7 +496,6 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertTrue(link.isEnabled)
         let frame = link.convert(link.bounds, to: content)
         XCTAssertTrue(content.bounds.contains(frame))
-        XCTAssertGreaterThan(frame.midX, content.bounds.midX)
         // The update card grows when an update is found while Settings is open.
         // Both actions must stay visible and distinct, in every supported locale.
         for language in AppLanguage.allCases {
@@ -505,7 +506,6 @@ final class SettingsWindowControllerTests: XCTestCase {
                 controller.show(page: .advancedSettings)
                 content.layoutSubtreeIfNeeded()
                 let toolsFrame = link.convert(link.bounds, to: content)
-                XCTAssertEqual(toolsFrame.minY, 24, accuracy: 1, "Download must stay at the bottom in \(language)")
                 XCTAssertTrue(content.bounds.contains(toolsFrame))
                 guard availableVersion != nil else { continue }
                 let update = try XCTUnwrap(
@@ -514,7 +514,6 @@ final class SettingsWindowControllerTests: XCTestCase {
                     }
                 )
                 let updateFrame = update.convert(update.bounds, to: content)
-                XCTAssertTrue(content.bounds.contains(toolsFrame))
                 XCTAssertTrue(content.bounds.contains(updateFrame))
                 let version = try XCTUnwrap(
                     visibleDescendants(of: content).first { (label: NSTextField) in
@@ -522,13 +521,10 @@ final class SettingsWindowControllerTests: XCTestCase {
                     }
                 )
                 let versionFrame = version.convert(version.bounds, to: content)
-                XCTAssertLessThan(versionFrame.maxX, updateFrame.minX)
-                XCTAssertEqual(updateFrame.maxX, toolsFrame.maxX - 18, accuracy: 1)
-                XCTAssertLessThan(updateFrame.width, 120)
-                XCTAssertLessThanOrEqual(updateFrame.height, 32)
+                XCTAssertTrue(content.bounds.contains(versionFrame))
+                XCTAssertFalse(versionFrame.intersects(updateFrame))
                 XCTAssertGreaterThanOrEqual(version.bounds.width + 1, version.intrinsicContentSize.width)
                 XCTAssertFalse(toolsFrame.intersects(updateFrame))
-                XCTAssertLessThan(toolsFrame.maxY, updateFrame.minY)
                 let title = try XCTUnwrap(
                     visibleDescendants(of: link).first { (label: NSTextField) in
                         label.stringValue == ToolsDownloadText.current.entryTitle

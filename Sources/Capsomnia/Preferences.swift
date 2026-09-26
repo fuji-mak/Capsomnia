@@ -7,6 +7,7 @@ private enum PreferenceKey {
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
     static let keepDisplayAwake = "KeepDisplayAwake"
+    static let keepHotspotAlive = "KeepHotspotAlive"
     static let ignoreExternalCapsLockOffWhileLidClosed = "IgnoreExternalCapsLockOffWhileLidClosed"
     static let autoOffMinutes = "AutoOffMinutes"
     static let shortcutKeyCode = "ShortcutKeyCode"
@@ -34,6 +35,7 @@ enum Preferences {
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
             PreferenceKey.keepDisplayAwake: false,
+            PreferenceKey.keepHotspotAlive: false,
             PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed: false,
             PreferenceKey.autoOffMinutes: 0,
             PreferenceKey.didCompleteInitialSetup: false,
@@ -77,6 +79,14 @@ enum Preferences {
     static var keepDisplayAwake: Bool {
         get { defaults.bool(forKey: PreferenceKey.keepDisplayAwake) }
         set { defaults.set(newValue, forKey: PreferenceKey.keepDisplayAwake) }
+    }
+
+    /// While Capsomnia is on and the default route is a phone hotspot,
+    /// periodically pings the hotspot gateway so the phone does not drop the
+    /// connection for being idle.
+    static var keepHotspotAlive: Bool {
+        get { defaults.bool(forKey: PreferenceKey.keepHotspotAlive) }
+        set { defaults.set(newValue, forKey: PreferenceKey.keepHotspotAlive) }
     }
 
     /// While the lid is closed the built-in keyboard cannot be pressed, so a

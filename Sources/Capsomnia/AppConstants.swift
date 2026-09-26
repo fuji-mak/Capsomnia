@@ -98,6 +98,8 @@ struct AppStrings {
     let openAtLoginDesc: String
     let keepDisplayAwake: String
     let keepDisplayAwakeDesc: String
+    let keepHotspotAlive: String
+    let keepHotspotAliveDesc: String
     let ignoreExternalCapsLockOffWhileLidClosed: String
     let ignoreExternalCapsLockOffWhileLidClosedDesc: String
     let hideCapsLockIndicator: String
@@ -174,6 +176,8 @@ struct AppStrings {
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
                 keepDisplayAwake: "Keep display awake",
                 keepDisplayAwakeDesc: "Keeps the display awake while Capsomnia is on. Useful when using Computer Use or similar tools.",
+                keepHotspotAlive: "Keep hotspot connected",
+                keepHotspotAliveDesc: "While Capsomnia is on, pings the hotspot periodically so a phone hotspot (iPhone Personal Hotspot and similar) doesn't drop the connection when idle. Uses local network traffic only.",
                 ignoreExternalCapsLockOffWhileLidClosed: "Ignore Caps Lock turn-offs while the lid is closed",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "While the lid is closed, sleep prevention stays on even if Caps Lock is turned off — for example by a remote desktop client syncing its keyboard state. The menu bar, the toggle shortcut, and the auto-off timer still turn it off.",
                 hideCapsLockIndicator: "Hide the Caps Lock indicator",
@@ -244,6 +248,8 @@ struct AppStrings {
                 openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
                 keepDisplayAwake: "화면 켜진 상태로 유지",
                 keepDisplayAwakeDesc: "Capsomnia가 켜져 있는 동안 화면이 잠자기 상태로 전환되지 않도록 합니다. Computer Use 등을 사용할 때 유용합니다.",
+                keepHotspotAlive: "핫스팟 연결 유지",
+                keepHotspotAliveDesc: "Capsomnia가 켜져 있는 동안 핫스팟에 주기적으로 ping을 보내 iPhone 인터넷 공유 등의 휴대폰 핫스팟이 유휴 상태에서 연결을 끊지 않도록 합니다. 로컬 네트워크 트래픽만 사용합니다.",
                 ignoreExternalCapsLockOffWhileLidClosed: "덮개를 닫은 동안 Caps Lock에 의한 끄기 무시",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "덮개가 닫혀 있는 동안에는 Caps Lock이 꺼져도 잠자기 방지를 유지합니다. 원격 데스크톱 연결 등으로 의도치 않게 해제되는 것을 방지합니다. 메뉴 막대, 전환 단축키, 자동 종료 타이머로는 평소대로 끌 수 있습니다.",
                 hideCapsLockIndicator: "Caps Lock 표시기 숨기기",
@@ -314,6 +320,8 @@ struct AppStrings {
                 openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
                 keepDisplayAwake: "画面をスリープさせない",
                 keepDisplayAwakeDesc: "Capsomniaがオンの時に画面をスリープしないようにします。Computer Useなどを使う際に有効です。",
+                keepHotspotAlive: "テザリング接続を維持",
+                keepHotspotAliveDesc: "Capsomniaがオンの間、iPhoneのインターネット共有などのテザリングがアイドル時に切断されないよう、定期的に疎通確認を送ります。ローカル通信のみ使用します。",
                 ignoreExternalCapsLockOffWhileLidClosed: "蓋を閉じている間はCaps Lockによるオフを無視",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "蓋を閉じている間は、Caps Lockがオフになってもスリープ抑止を維持します。リモートデスクトップ接続などで意図せず解除されるのを防ぎます。メニューバー・切り替えショートカット・自動オフタイマーからは通常どおりオフにできます。",
                 hideCapsLockIndicator: "Caps Lockインジケータを非表示",
@@ -384,6 +392,8 @@ struct AppStrings {
                 openAtLoginDesc: "登录后自动启动 Capsomnia。",
                 keepDisplayAwake: "保持显示屏常亮",
                 keepDisplayAwakeDesc: "Capsomnia 开启时防止显示屏进入睡眠。使用 Computer Use 等工具时很有用。",
+                keepHotspotAlive: "保持热点连接",
+                keepHotspotAliveDesc: "Capsomnia 开启时，定期向热点网关发送连通性检查，防止 iPhone 个人热点等手机热点在空闲时断开连接。仅使用本地网络流量。",
                 ignoreExternalCapsLockOffWhileLidClosed: "合盖期间忽略 Caps Lock 的关闭操作",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "合盖期间，即使 Caps Lock 被关闭也会保持防睡眠，防止远程桌面连接等意外解除防睡眠。菜单栏、切换快捷键和自动关闭定时器仍可正常关闭。",
                 hideCapsLockIndicator: "隐藏大写锁定指示器",

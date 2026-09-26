@@ -573,6 +573,7 @@ final class SettingsWindowControllerTests: XCTestCase {
             onLanguageChange: { _ in },
             onLaunchAtLoginChange: { _ in },
             onKeepDisplayAwakeChange: { _ in },
+            onKeepHotspotAliveChange: { _ in },
             onIgnoreExternalCapsLockOffWhileLidClosedChange: { _ in },
             onHideCapsLockIndicatorChange: onHideCapsLockIndicatorChange,
             capsLockIndicatorStateProvider: capsLockIndicatorStateProvider,

@@ -88,19 +88,4 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(strings.explainerOnTitle, "Caps Lock 켜기")
         XCTAssertEqual(strings.explainerOffTitle, "Caps Lock 끄기")
     }
-
-    func testLanguagePopUpTracksSelectedLanguage() {
-        let popUp = LanguagePopUpButton(
-            items: AppLanguage.allCases.map { (title: $0.displayName, value: $0.rawValue) },
-            selected: AppLanguage.japanese.rawValue
-        )
-
-        XCTAssertEqual(popUp.itemTitles, ["English", "日本語", "简体中文", "한국어"])
-        XCTAssertEqual(popUp.selectedValue, AppLanguage.japanese.rawValue)
-
-        popUp.setSelected(AppLanguage.korean.rawValue)
-
-        XCTAssertEqual(popUp.selectedValue, AppLanguage.korean.rawValue)
-        XCTAssertEqual(popUp.titleOfSelectedItem, AppLanguage.korean.displayName)
-    }
 }

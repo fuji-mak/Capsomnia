@@ -3,6 +3,7 @@ import AppKit
 /// Download and install optional tools in the app, keeping Installer component
 /// choices and per-agent filesystem paths out of the user flow.
 final class ToolsDownloadController {
+    /// A successful download transfers ownership of a temporary package copy.
     typealias Download = (URL, @escaping (Result<URL, Error>) -> Void) -> Void
     typealias Install = (URL, @escaping () -> Void, @escaping (Result<Void, Error>) -> Void) -> Void
     var onDownloadingChange: ((Bool) -> Void)?
@@ -72,14 +73,19 @@ final class ToolsDownloadController {
     }
 
     func startDownload(from source: URL, window: NSWindow? = nil,
-                       completion: @escaping (Result<URL, Error>) -> Void) {
+                       completion: @escaping (Result<Void, Error>) -> Void) {
         guard !isDownloading else { return }
         isDownloading = true
         onDownloadingChange?(true)
         onStatusChange?(ToolsDownloadText.current.downloading)
         download(source) { [weak self] result in
             DispatchQueue.main.async {
-                guard let self else { return }
+                guard let self else {
+                    if case .success(let destination) = result {
+                        try? FileManager.default.removeItem(at: destination)
+                    }
+                    return
+                }
                 switch result {
                 case .success(let destination):
                     self.onStatusChange?(ToolsDownloadText.current.installing)
@@ -89,8 +95,10 @@ final class ToolsDownloadController {
                         NSApp.activate(ignoringOtherApps: true)
                         window?.makeKeyAndOrderFront(nil)
                     }) { [weak self] installed in
+                        // Installation has ended, including failure or cancelled authentication.
+                        try? FileManager.default.removeItem(at: destination)
                         DispatchQueue.main.async {
-                            self?.finish(installed.map { destination }, completion: completion)
+                            self?.finish(installed, completion: completion)
                         }
                     }
                 case .failure(let error):
@@ -100,7 +108,7 @@ final class ToolsDownloadController {
         }
     }
 
-    private func finish(_ result: Result<URL, Error>, completion: (Result<URL, Error>) -> Void) {
+    private func finish(_ result: Result<Void, Error>, completion: (Result<Void, Error>) -> Void) {
         isDownloading = false
         onDownloadingChange?(false)
         onStatusChange?(nil)

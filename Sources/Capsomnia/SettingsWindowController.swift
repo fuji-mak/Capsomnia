@@ -143,7 +143,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         registrationFailed: ""
     )
 
-    private let noteLabel = brandLabel(size: 12, color: Brand.textFaint, wraps: true)
     private let doneButton = LEDButton()
 
     private let rootStack = NSStackView()
@@ -339,7 +338,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         releaseNotesButton.setAccessibilityLabel(strings.releaseNotes)
         layoutUpdateRows()
 
-        noteLabel.stringValue = strings.initialSettingsNote
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
 
         appHeader.isHidden = isAdvancedSettings
@@ -486,7 +484,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         initialPreferencesLayoutConstraints = [
             explainerCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             preferencesCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
-            noteLabel.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
         ]
         settingsLayoutConstraints = [
@@ -536,7 +533,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             bodyStack.addArrangedSubview(explainerCard)
             bodyStack.addArrangedSubview(preferencesHeading)
             bodyStack.addArrangedSubview(preferencesCard)
-            bodyStack.addArrangedSubview(noteLabel)
             bodyStack.addArrangedSubview(doneButton)
             bodyStack.setCustomSpacing(8, after: preferencesHeading)
             NSLayoutConstraint.activate(initialPreferencesLayoutConstraints)

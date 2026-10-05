@@ -731,25 +731,20 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onKeepDisplayAwakeChange(enabled)
             self?.updateValues()
         }
-        keepHotspotAliveToggle.onToggle = { [weak self] enabled in
-            self?.onKeepHotspotAliveChange(enabled)
-            self?.updateValues()
-        }
         let displayRow = settingRow(
             title: keepDisplayAwakeTitle,
             desc: keepDisplayAwakeDesc,
             accessory: keepDisplayAwakeToggle
         )
-        let hotspotRow = settingRow(
-            title: keepHotspotAliveTitle,
-            desc: keepHotspotAliveDesc,
-            accessory: keepHotspotAliveToggle
-        )
-        let stack = cardRows([displayRow, brandDivider(), hotspotRow])
+        let stack = cardRows([displayRow])
         return settingsCard(stack, insets: NSEdgeInsets(top: 16, left: 18, bottom: 16, right: 18))
     }
 
     private func buildSystemCard() -> NSView {
+        keepHotspotAliveToggle.onToggle = { [weak self] enabled in
+            self?.onKeepHotspotAliveChange(enabled)
+            self?.updateValues()
+        }
         externalCapsLockOffToggle.onToggle = { [weak self] enabled in
             self?.onIgnoreExternalCapsLockOffWhileLidClosedChange(enabled)
             self?.updateValues()
@@ -762,6 +757,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onLaunchAtLoginChange(enabled)
             self?.updateValues()
         }
+        let hotspotRow = settingRow(
+            title: keepHotspotAliveTitle,
+            desc: keepHotspotAliveDesc,
+            accessory: keepHotspotAliveToggle
+        )
         let externalCapsLockOffRow = settingRow(
             title: externalCapsLockOffTitle,
             desc: externalCapsLockOffDesc,
@@ -778,6 +778,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             accessory: openAtLoginToggle
         )
         let stack = cardRows([
+            hotspotRow, brandDivider(),
             externalCapsLockOffRow, brandDivider(),
             hideIndicatorRow, hideIndicatorRestartNote, brandDivider(),
             openAtLoginRow

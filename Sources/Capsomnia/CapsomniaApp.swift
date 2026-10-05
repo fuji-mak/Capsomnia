@@ -44,7 +44,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var autoOffPresetMenuItems: [NSMenuItem] = []
     private weak var autoOffCustomMenuItem: NSMenuItem?
     private weak var keepDisplayAwakeStatusMenuItem: NSMenuItem?
-    private weak var keepHotspotAliveStatusMenuItem: NSMenuItem?
     private weak var checkForUpdatesMenuItem: NSMenuItem?
     private var updateController: UpdateController?
     private lazy var toolsDownloadController: ToolsDownloadController = {
@@ -427,15 +426,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(keepDisplayAwakeItem)
         keepDisplayAwakeStatusMenuItem = keepDisplayAwakeItem
 
-        let keepHotspotAliveItem = NSMenuItem(
-            title: strings.keepHotspotAlive,
-            action: #selector(toggleKeepHotspotAliveFromMenu),
-            keyEquivalent: ""
-        )
-        keepHotspotAliveItem.target = self
-        menu.addItem(keepHotspotAliveItem)
-        keepHotspotAliveStatusMenuItem = keepHotspotAliveItem
-
         menu.addItem(NSMenuItem.separator())
 
         let openItem = NSMenuItem(title: strings.openCapsomnia, action: #selector(openCapsomnia), keyEquivalent: "o")
@@ -534,10 +524,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func toggleKeepDisplayAwakeFromMenu() {
         setKeepDisplayAwake(!Preferences.keepDisplayAwake)
-    }
-
-    @objc private func toggleKeepHotspotAliveFromMenu() {
-        setKeepHotspotAlive(!Preferences.keepHotspotAlive)
     }
 
     @objc private func openCapsomnia() {
@@ -706,7 +692,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func setKeepHotspotAlive(_ enabled: Bool) {
         Preferences.keepHotspotAlive = enabled
         syncHotspotKeepAlive(capsLockOn: currentCapsLockState, reason: "preference")
-        updateStatusMenuControls()
         settingsWindowController?.reloadText()
         log("preference keep_hotspot_alive=\(enabled ? "on" : "off")")
     }
@@ -845,7 +830,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         autoOffCustomMenuItem?.state = selectedMinutes > 0
             && !AutoOffPreset.isQuickPick(selectedMinutes) ? .on : .off
         keepDisplayAwakeStatusMenuItem?.state = Preferences.keepDisplayAwake ? .on : .off
-        keepHotspotAliveStatusMenuItem?.state = Preferences.keepHotspotAlive ? .on : .off
         checkForUpdatesMenuItem?.title = updateController?.availableVersion.map {
             String(format: strings.updateAvailableMenuFormat, $0)
         } ?? strings.checkForUpdates

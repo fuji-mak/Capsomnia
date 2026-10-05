@@ -65,6 +65,19 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let keepDisplayAwakeToggle = LEDToggle(
         isOn: Preferences.keepDisplayAwake
     )
+    private let keepHotspotAliveTitle = brandLabel(
+        size: 13,
+        weight: .medium,
+        color: Brand.text
+    )
+    private let keepHotspotAliveDesc = brandLabel(
+        size: 12,
+        color: Brand.textDim,
+        wraps: true
+    )
+    private let keepHotspotAliveToggle = LEDToggle(
+        isOn: Preferences.keepHotspotAlive
+    )
     private let externalCapsLockOffTitle = brandLabel(
         size: 13,
         weight: .medium,
@@ -165,6 +178,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let onLanguageChange: (AppLanguage) -> Void
     private let onLaunchAtLoginChange: (Bool) -> Void
     private let onKeepDisplayAwakeChange: (Bool) -> Void
+    private let onKeepHotspotAliveChange: (Bool) -> Void
     private let onIgnoreExternalCapsLockOffWhileLidClosedChange: (Bool) -> Void
     private let onHideCapsLockIndicatorChange: (Bool) -> Void
     private let capsLockIndicatorStateProvider: () -> CapsLockIndicatorDisplayState
@@ -183,6 +197,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onLanguageChange: @escaping (AppLanguage) -> Void,
         onLaunchAtLoginChange: @escaping (Bool) -> Void,
         onKeepDisplayAwakeChange: @escaping (Bool) -> Void,
+        onKeepHotspotAliveChange: @escaping (Bool) -> Void,
         onIgnoreExternalCapsLockOffWhileLidClosedChange: @escaping (Bool) -> Void,
         onHideCapsLockIndicatorChange: @escaping (Bool) -> Void,
         capsLockIndicatorStateProvider: @escaping () -> CapsLockIndicatorDisplayState,
@@ -204,6 +219,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onLanguageChange = onLanguageChange
         self.onLaunchAtLoginChange = onLaunchAtLoginChange
         self.onKeepDisplayAwakeChange = onKeepDisplayAwakeChange
+        self.onKeepHotspotAliveChange = onKeepHotspotAliveChange
         self.onIgnoreExternalCapsLockOffWhileLidClosedChange = onIgnoreExternalCapsLockOffWhileLidClosedChange
         self.onHideCapsLockIndicatorChange = onHideCapsLockIndicatorChange
         self.capsLockIndicatorStateProvider = capsLockIndicatorStateProvider
@@ -286,6 +302,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         keepDisplayAwakeTitle.stringValue = strings.keepDisplayAwake
         keepDisplayAwakeDesc.stringValue = strings.keepDisplayAwakeDesc
         keepDisplayAwakeToggle.setAccessibilityLabel(strings.keepDisplayAwake)
+        keepHotspotAliveTitle.stringValue = strings.keepHotspotAlive
+        keepHotspotAliveDesc.stringValue = strings.keepHotspotAliveDesc
+        keepHotspotAliveToggle.setAccessibilityLabel(strings.keepHotspotAlive)
         externalCapsLockOffTitle.stringValue = strings.ignoreExternalCapsLockOffWhileLidClosed
         externalCapsLockOffDesc.stringValue = strings.ignoreExternalCapsLockOffWhileLidClosedDesc
         externalCapsLockOffToggle.setAccessibilityLabel(strings.ignoreExternalCapsLockOffWhileLidClosed)
@@ -712,15 +731,20 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onKeepDisplayAwakeChange(enabled)
             self?.updateValues()
         }
-        let row = settingRow(
+        let displayRow = settingRow(
             title: keepDisplayAwakeTitle,
             desc: keepDisplayAwakeDesc,
             accessory: keepDisplayAwakeToggle
         )
-        return settingsCard(row, insets: NSEdgeInsets(top: 16, left: 18, bottom: 16, right: 18))
+        let stack = cardRows([displayRow])
+        return settingsCard(stack, insets: NSEdgeInsets(top: 16, left: 18, bottom: 16, right: 18))
     }
 
     private func buildSystemCard() -> NSView {
+        keepHotspotAliveToggle.onToggle = { [weak self] enabled in
+            self?.onKeepHotspotAliveChange(enabled)
+            self?.updateValues()
+        }
         externalCapsLockOffToggle.onToggle = { [weak self] enabled in
             self?.onIgnoreExternalCapsLockOffWhileLidClosedChange(enabled)
             self?.updateValues()
@@ -733,6 +757,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             self?.onLaunchAtLoginChange(enabled)
             self?.updateValues()
         }
+        let hotspotRow = settingRow(
+            title: keepHotspotAliveTitle,
+            desc: keepHotspotAliveDesc,
+            accessory: keepHotspotAliveToggle
+        )
         let externalCapsLockOffRow = settingRow(
             title: externalCapsLockOffTitle,
             desc: externalCapsLockOffDesc,
@@ -749,6 +778,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             accessory: openAtLoginToggle
         )
         let stack = cardRows([
+            hotspotRow, brandDivider(),
             externalCapsLockOffRow, brandDivider(),
             hideIndicatorRow, hideIndicatorRestartNote, brandDivider(),
             openAtLoginRow
@@ -850,6 +880,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         menuBarToggle.setOn(Preferences.showMenuBarIcon)
         languagePopUp.setSelected(Preferences.language.rawValue)
         keepDisplayAwakeToggle.setOn(Preferences.keepDisplayAwake)
+        keepHotspotAliveToggle.setOn(Preferences.keepHotspotAlive)
         externalCapsLockOffToggle.setOn(Preferences.ignoreExternalCapsLockOffWhileLidClosed)
         let indicatorState = capsLockIndicatorStateProvider()
         hideIndicatorToggle.setOn(indicatorState.hidden)

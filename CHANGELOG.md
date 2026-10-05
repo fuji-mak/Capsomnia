@@ -4,6 +4,17 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+## 4.2.3 - 2026-10-06
+
+- Add an opt-in "Keep hotspot connected" setting in Advanced Settings to help
+  prevent idle disconnections while Capsomnia is on. It sends a small local
+  probe once a minute to recognized hotspot gateways, including iPhone Personal
+  Hotspot, and stops when Capsomnia turns off or the connection is no longer a
+  recognized hotspot.
+- Keep hotspot probes on the local network without contacting external servers.
+  The setting is off by default and does not automatically reconnect a lost
+  hotspot connection.
+
 ## 4.2.2 - 2026-09-27
 
 - Simplify settings labels and descriptions in all four supported languages,

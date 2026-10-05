@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `4.2.2`
+Current version: `4.2.3`
 
 [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
@@ -30,7 +30,7 @@ Turn Caps Lock on when local work should keep running. Turn Caps Lock off when y
 
 It is useful for AI agents, mobile access, and other long-running or remote work.
 
-Capsomnia does not collect telemetry or require an account. Its only network use is an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), plus downloading installers from GitHub when you choose to update or install CLI & Skill. Capsomnia sends no telemetry, identifiers, or personal data.
+Capsomnia does not collect telemetry or require an account. Network use is limited to an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), downloading installers from GitHub when you choose to update or install CLI & Skill, and local gateway probes when "Keep hotspot connected" is enabled. Capsomnia sends no telemetry, identifiers, or personal data.
 
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="Caps Lock light on" width="560">
@@ -108,6 +108,8 @@ Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions,
 - Use Capsomnia at your own risk. Compatibility is not guaranteed for every Mac, macOS version, or environment.
 
 ## Settings
+
+Advanced Settings includes an optional "Keep hotspot connected" switch, off by default. While Capsomnia is on, it sends one small probe per minute to a recognized hotspot gateway, including iPhone Personal Hotspot, to help prevent idle disconnections. The probes stay on the local network and may slightly increase the phone's battery use. This does not automatically reconnect a lost hotspot connection.
 
 On first launch, Capsomnia explains how the Caps Lock switch works and lets you choose:
 

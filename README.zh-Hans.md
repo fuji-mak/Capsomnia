@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-当前版本：`4.2.2`
+当前版本：`4.2.3`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [한국어 README](README.ko.md)
 
@@ -32,7 +32,9 @@ Capsomnia是一款小巧的macOS菜单栏应用，可将Caps Lock变成MacBook�
 
 它适用于AI智能体、移动端访问，以及其他耗时较长或需要远程操作的任务。
 
-Capsomnia不会收集遥测数据，也不需要账户。其唯一的网络用途是每天一次的可选更新检查（读取 GitHub 的公开发布信息，可在高级设置中关闭），以及在您选择更新或安装 CLI & Skill 时从 GitHub 下载安装器。Capsomnia 不会发送遥测数据、标识符或个人信息。
+Capsomnia不会收集遥测数据，也不需要账户。网络用途仅限于每天一次的可选更新检查（读取 GitHub 的公开发布信息，可在高级设置中关闭）、在您选择更新或安装 CLI & Skill 时从 GitHub 下载安装器，以及启用“保持热点连接”后向本地网关发送连通性检查。Capsomnia 不会发送遥测数据、标识符或个人信息。
+
+高级设置中的“保持热点连接”默认关闭。启用后，Capsomnia 开启期间会每分钟向识别到的热点网关（包括 iPhone 个人热点）发送一次小型连通性检查，以减少空闲时自动断开连接的情况。通信仅限于本地网络，可能略微增加手机的耗电量。此功能不会自动重新连接已断开的热点。
 
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="Caps Lock 指示灯亮起" width="560">

@@ -13,6 +13,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var nextClosedLidDimmingRetryAt = Date.distantPast
     private let displayAwakeAssertion = DisplayAwakeAssertion()
     private let closedLidDimmingController = ClosedLidDisplayDimmingController()
+    private lazy var hotspotKeepAlive = MobileHotspotKeepAlive(log: { [weak self] message in
+        self?.log(message)
+    })
     private var sessionTimer = SessionAutoOffTimer()
     private var controlServer: ControlServer?
     private var isControlMutationInFlight = false
@@ -170,6 +173,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             log("terminate built_in_display_restore succeeded=\(restored ? "true" : "false")")
         }
         displayAwakeAssertion.setActive(false)
+        hotspotKeepAlive.setActive(false)
         guard shouldRestoreSleepOnTerminate else { return }
 
         Preferences.secureInputCapsLockOverrideActive = false
@@ -554,6 +558,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 onKeepDisplayAwakeChange: { [weak self] enabled in
                     self?.setKeepDisplayAwake(enabled)
                 },
+                onKeepHotspotAliveChange: { [weak self] enabled in
+                    self?.setKeepHotspotAlive(enabled)
+                },
                 onIgnoreExternalCapsLockOffWhileLidClosedChange: { [weak self] enabled in
                     self?.setIgnoreExternalCapsLockOffWhileLidClosed(enabled)
                 },
@@ -680,6 +687,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateStatusMenuControls()
         settingsWindowController?.reloadText()
         log("preference keep_display_awake=\(enabled ? "on" : "off")")
+    }
+
+    private func setKeepHotspotAlive(_ enabled: Bool) {
+        Preferences.keepHotspotAlive = enabled
+        syncHotspotKeepAlive(capsLockOn: currentCapsLockState, reason: "preference")
+        settingsWindowController?.reloadText()
+        log("preference keep_hotspot_alive=\(enabled ? "on" : "off")")
     }
 
     private func setIgnoreExternalCapsLockOffWhileLidClosed(_ enabled: Bool) {
@@ -1170,6 +1184,22 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    /// Runs the hotspot keep-alive timer exactly while the preference is on
+    /// and awake mode is active. Idempotent, so it is safe to call from every
+    /// apply pass.
+    private func syncHotspotKeepAlive(capsLockOn: Bool, reason: String) {
+        let shouldRun = MobileHotspotKeepAlivePolicy.shouldRun(
+            preferenceEnabled: Preferences.keepHotspotAlive,
+            capsLockOn: capsLockOn
+        )
+        guard shouldRun != hotspotKeepAlive.isActive else { return }
+        let succeeded = hotspotKeepAlive.setActive(shouldRun)
+        log(
+            "\(reason) hotspot_keepalive=\(shouldRun ? "on" : "off")"
+                + " succeeded=\(succeeded ? "true" : "false")"
+        )
+    }
+
     private func restoreSavedDisplayBrightnessIfNeeded(reason: String) {
         guard closedLidDimmingController.isDimmed else { return }
         let restored = closedLidDimmingController.setDimmed(false)
@@ -1254,6 +1284,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     sleepPreventionConfirmed: true,
                     reason: reason
                 )
+                syncHotspotKeepAlive(capsLockOn: capsLockOn, reason: reason)
                 evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
                 return
             }
@@ -1308,6 +1339,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             sleepPreventionConfirmed: false,
             reason: "sleep_state_failed"
         )
+        syncHotspotKeepAlive(capsLockOn: capsLockOn, reason: "sleep_state_failed")
         updateStatusError()
     }
 
@@ -1322,6 +1354,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             sleepPreventionConfirmed: true,
             reason: reason
         )
+        syncHotspotKeepAlive(capsLockOn: capsLockOn, reason: reason)
         evaluateDisplaySleepForClosedLid(capsLockOn: capsLockOn, reason: reason)
         requestSystemSleepAfterAutoOffIfReady(capsLockOn: capsLockOn, reason: reason)
     }
@@ -1669,6 +1702,7 @@ extension Capsomnia {
             "language": .string(Preferences.language.rawValue),
             "launch-at-login": .bool(Preferences.launchAtLogin),
             "keep-display-awake": .bool(Preferences.keepDisplayAwake),
+            "keep-hotspot-alive": .bool(Preferences.keepHotspotAlive),
             "ignore-external-caps-lock-off-while-lid-closed": .bool(Preferences.ignoreExternalCapsLockOffWhileLidClosed),
             "auto-off-minutes": .number(Double(Preferences.autoOffMinutes)),
             "automatic-update-checks": .bool(Preferences.automaticUpdateChecks),
@@ -1706,6 +1740,7 @@ extension Capsomnia {
         case "show-menu-bar-icon": setShowMenuBarIcon(enabled)
         case "launch-at-login": try setLaunchAtLogin(enabled)
         case "keep-display-awake": setKeepDisplayAwake(enabled)
+        case "keep-hotspot-alive": setKeepHotspotAlive(enabled)
         case "ignore-external-caps-lock-off-while-lid-closed": setIgnoreExternalCapsLockOffWhileLidClosed(enabled)
         case "automatic-update-checks": setAutomaticUpdateChecks(enabled)
         default: throw ExplicitAwakeCommand.Failure("Unknown setting. Run cpsm settings get.")

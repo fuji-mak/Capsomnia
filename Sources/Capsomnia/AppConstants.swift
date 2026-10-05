@@ -98,6 +98,8 @@ struct AppStrings {
     let openAtLoginDesc: String
     let keepDisplayAwake: String
     let keepDisplayAwakeDesc: String
+    let keepHotspotAlive: String
+    let keepHotspotAliveDesc: String
     let ignoreExternalCapsLockOffWhileLidClosed: String
     let ignoreExternalCapsLockOffWhileLidClosedDesc: String
     let hideCapsLockIndicator: String
@@ -173,6 +175,8 @@ struct AppStrings {
                 openAtLoginDesc: "Launch Capsomnia automatically after you sign in.",
                 keepDisplayAwake: "Use Computer Use and similar tools",
                 keepDisplayAwakeDesc: "Prevents screen locking while Capsomnia is on for tasks that use the screen. Power consumption and device temperature may increase.",
+                keepHotspotAlive: "Keep hotspot connected",
+                keepHotspotAliveDesc: "Prevents the hotspot connection from disconnecting automatically when idle.",
                 ignoreExternalCapsLockOffWhileLidClosed: "Prevent turn-offs from Caps Lock sync",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "While the lid is closed, sleep prevention continues even if a remote connection or similar source turns Caps Lock off.",
                 hideCapsLockIndicator: "Hide the Caps Lock indicator",
@@ -242,6 +246,8 @@ struct AppStrings {
                 openAtLoginDesc: "로그인하면 Capsomnia를 자동으로 실행합니다.",
                 keepDisplayAwake: "Computer Use 등 사용",
                 keepDisplayAwakeDesc: "화면을 사용하는 작업을 위해 Capsomnia가 켜져 있는 동안 화면 잠금을 방지합니다. 전력 소비와 기기 온도가 증가할 수 있습니다.",
+                keepHotspotAlive: "핫스팟 연결 유지",
+                keepHotspotAliveDesc: "핫스팟 연결이 유휴 상태에서 자동으로 끊어지지 않도록 합니다.",
                 ignoreExternalCapsLockOffWhileLidClosed: "Caps Lock 동기화로 인한 꺼짐 방지",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "덮개를 닫은 동안 원격 연결 등으로 Caps Lock이 꺼져도 잠자기 방지를 유지합니다.",
                 hideCapsLockIndicator: "Caps Lock 표시기 숨기기",
@@ -311,6 +317,8 @@ struct AppStrings {
                 openAtLoginDesc: "サインイン後にCapsomniaを自動で起動します。",
                 keepDisplayAwake: "Computer Use等を使う",
                 keepDisplayAwakeDesc: "画面を使う処理のために、Capsomniaがオンの時は画面ロックを防ぎます。消費電力や本体温度が上昇する可能性があります。",
+                keepHotspotAlive: "テザリング時に接続を維持",
+                keepHotspotAliveDesc: "テザリングがアイドル時に自動切断されないようにします",
                 ignoreExternalCapsLockOffWhileLidClosed: "Caps Lockの同期によるオフを防ぐ",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "蓋を閉じている間、リモート接続などでCaps Lockがオフになってもスリープ抑止を続けます。",
                 hideCapsLockIndicator: "Caps Lockインジケータを非表示",
@@ -380,6 +388,8 @@ struct AppStrings {
                 openAtLoginDesc: "登录后自动启动 Capsomnia。",
                 keepDisplayAwake: "使用 Computer Use 等工具",
                 keepDisplayAwakeDesc: "为支持需要使用屏幕的任务，Capsomnia 开启时会防止屏幕锁定。功耗和机身温度可能会上升。",
+                keepHotspotAlive: "保持热点连接",
+                keepHotspotAliveDesc: "防止热点连接在空闲时自动断开。",
                 ignoreExternalCapsLockOffWhileLidClosed: "防止 Caps Lock 同步导致关闭",
                 ignoreExternalCapsLockOffWhileLidClosedDesc: "合盖时，即使远程连接等导致 Caps Lock 关闭，也会继续防止睡眠。",
                 hideCapsLockIndicator: "隐藏大写锁定指示器",

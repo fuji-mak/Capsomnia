@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT 라이선스" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-현재 버전: `4.2.2`
+현재 버전: `4.2.3`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md)
 
@@ -30,7 +30,9 @@ Capsomnia는 Caps Lock을 MacBook 덮개를 닫은 채 작업할 때 쓰는 물�
 
 AI 에이전트를 돌리거나 모바일로 접속하는 등, 오래 걸리거나 원격으로 진행하는 작업에 유용합니다.
 
-Capsomnia는 텔레메트리를 수집하거나 계정을 요구하지 않습니다. 네트워크 사용은 GitHub의 공개 릴리스 정보를 읽는 하루 1회의 선택적 업데이트 확인(고급 설정에서 끌 수 있습니다)과, 업데이트 또는 CLI & Skill 설치를 선택했을 때 GitHub에서 설치 프로그램을 다운로드하는 것입니다. 텔레메트리, 식별자, 개인 정보는 전송하지 않습니다.
+Capsomnia는 텔레메트리를 수집하거나 계정을 요구하지 않습니다. 네트워크 사용은 GitHub의 공개 릴리스 정보를 읽는 하루 1회의 선택적 업데이트 확인(고급 설정에서 끌 수 있습니다), 업데이트 또는 CLI & Skill 설치를 선택했을 때 GitHub에서 설치 프로그램을 다운로드하는 작업, 그리고 "핫스팟 연결 유지"를 켰을 때 로컬 게이트웨이에 보내는 연결 확인으로 제한됩니다. 텔레메트리, 식별자, 개인 정보는 전송하지 않습니다.
+
+고급 설정의 "핫스팟 연결 유지"는 기본적으로 꺼져 있습니다. 이 기능을 켜면 Capsomnia가 켜져 있는 동안 iPhone 개인용 핫스팟 등 인식된 핫스팟의 게이트웨이에 1분마다 작은 연결 확인 패킷을 보내 유휴 상태의 연결 끊김을 방지합니다. 통신은 로컬 네트워크 안에서만 이루어지며 휴대전화 배터리 사용량이 조금 늘어날 수 있습니다. 끊어진 핫스팟에 자동으로 다시 연결하는 기능은 아닙니다.
 
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="켜진 Caps Lock 표시등" width="560">

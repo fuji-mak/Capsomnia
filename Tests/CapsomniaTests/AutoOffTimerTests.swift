@@ -85,6 +85,27 @@ final class SessionAutoOffTimerTests: XCTestCase {
 }
 
 final class AutoOffSleepCoordinatorTests: XCTestCase {
+    func testTimerExpiryWithOpenOrUnknownLidNeverSleepsEvenAfterLaterClosure() {
+        for lidClosed in [false, nil] as [Bool?] {
+            var timer = SessionAutoOffTimer()
+            let now = Date(timeIntervalSince1970: 1_000_000)
+            timer.set(seconds: 60, now: now)
+            var sleepRequests = 0
+            let coordinator = AutoOffSleepCoordinator {
+                sleepRequests += 1
+                return (0, "", "")
+            }
+
+            XCTAssertTrue(timer.evaluate(capsLockOn: true, defaultMinutes: 0, now: now.addingTimeInterval(60)))
+            coordinator.recordCapsLockResult(.changed(to: false))
+            XCTAssertEqual(sleepRequests, 0, "OFF must be confirmed before deciding whether to sleep")
+            XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: false, clamshellClosed: lidClosed))
+            XCTAssertFalse(coordinator.isPending)
+            XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: false, clamshellClosed: true))
+            XCTAssertEqual(sleepRequests, 0, "Opening the lid cancels sleep rather than postponing it")
+        }
+    }
+
     func testSuccessfulAutoOffSleepsOnceAfterConfirmedOff() {
         var sleepRequestCount = 0
         let coordinator = AutoOffSleepCoordinator {
@@ -96,12 +117,12 @@ final class AutoOffSleepCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(coordinator.isPending)
         XCTAssertEqual(
-            coordinator.requestSleepIfReady(capsLockOn: false)?.status,
+            coordinator.requestSleepIfReady(capsLockOn: false, clamshellClosed: true)?.status,
             0
         )
         XCTAssertFalse(coordinator.isPending)
         XCTAssertEqual(sleepRequestCount, 1)
-        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: false))
+        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: false, clamshellClosed: true))
         XCTAssertEqual(sleepRequestCount, 1)
     }
 
@@ -115,7 +136,7 @@ final class AutoOffSleepCoordinatorTests: XCTestCase {
         coordinator.recordCapsLockResult(.writeFailed(target: false))
 
         XCTAssertFalse(coordinator.isPending)
-        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: false))
+        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: false, clamshellClosed: true))
         XCTAssertEqual(sleepRequestCount, 0)
     }
 
@@ -128,9 +149,9 @@ final class AutoOffSleepCoordinatorTests: XCTestCase {
 
         coordinator.recordCapsLockResult(.changed(to: false))
 
-        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: true))
+        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: true, clamshellClosed: true))
         XCTAssertFalse(coordinator.isPending)
-        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: false))
+        XCTAssertNil(coordinator.requestSleepIfReady(capsLockOn: false, clamshellClosed: true))
         XCTAssertEqual(sleepRequestCount, 0)
     }
 }

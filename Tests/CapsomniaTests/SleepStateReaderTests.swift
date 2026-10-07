@@ -97,26 +97,3 @@ final class DedicatedCapsLockEventPolicyTests: XCTestCase {
         )
     }
 }
-
-final class DedicatedCapsLockReadinessPolicyTests: XCTestCase {
-    func testRequiresActiveFilterOnlyWhenDedicatedModeIsEnabled() {
-        XCTAssertTrue(
-            DedicatedCapsLockReadinessPolicy.shouldHonorCapsLock(
-                dedicatedModeEnabled: false,
-                filterActive: false
-            )
-        )
-        XCTAssertTrue(
-            DedicatedCapsLockReadinessPolicy.shouldHonorCapsLock(
-                dedicatedModeEnabled: true,
-                filterActive: true
-            )
-        )
-        XCTAssertFalse(
-            DedicatedCapsLockReadinessPolicy.shouldHonorCapsLock(
-                dedicatedModeEnabled: true,
-                filterActive: false
-            )
-        )
-    }
-}

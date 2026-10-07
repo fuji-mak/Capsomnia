@@ -38,7 +38,8 @@ enum AutoOffDisplayState: Equatable {
 }
 
 /// Carries an elapsed auto-off through the existing Caps Lock and helper
-/// synchronization path, then requests immediate system sleep exactly once.
+/// synchronization path, then requests immediate system sleep exactly once,
+/// only if the lid is still closed. Open or unknown lid state never sleeps.
 ///
 /// The app only calls `requestSleepIfReady` after `SleepDisabled` has been
 /// confirmed to match the current Caps Lock state. Keeping the pending bit here
@@ -62,15 +63,10 @@ final class AutoOffSleepCoordinator {
     /// Requests sleep once the confirmed state is OFF. A confirmed ON state
     /// means the user re-enabled awake mode before completion, so the pending
     /// sleep is cancelled rather than firing later against their intent.
-    func requestSleepIfReady(capsLockOn: Bool) -> CommandResult? {
+    func requestSleepIfReady(capsLockOn: Bool, clamshellClosed: Bool?) -> CommandResult? {
         guard isPending else { return nil }
-
-        if capsLockOn {
-            isPending = false
-            return nil
-        }
-
         isPending = false
+        guard !capsLockOn, clamshellClosed == true else { return nil }
         return requestSleep()
     }
 }

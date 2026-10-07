@@ -82,22 +82,18 @@ final class MobileHotspotKeepAliveTests: XCTestCase {
     // MARK: - Tick behaviour
 
     func testTickPingsGatewayWhileOnHotspot() {
-        var pings: [String] = []
+        let pinged = expectation(description: "gateway pinged")
         let keepAlive = MobileHotspotKeepAlive(
             routeProvider: { [self] in hotspotRoute() },
             pinger: { gateway in
-                pings.append(gateway)
+                XCTAssertEqual(gateway, "172.20.10.1")
+                pinged.fulfill()
                 return true
             }
         )
 
         keepAlive.tick()
-
-        let expectation = expectation(description: "probe completes")
-        DispatchQueue.main.async { expectation.fulfill() }
-        wait(for: [expectation], timeout: 2)
-
-        XCTAssertEqual(pings, ["172.20.10.1"])
+        wait(for: [pinged], timeout: 2)
     }
 
     func testTickDoesNotPingOffHotspot() {
@@ -152,19 +148,18 @@ final class MobileHotspotKeepAliveTests: XCTestCase {
     }
 
     func testFailedProbeIsCountedAndLogged() {
-        var messages: [String] = []
+        let probeFailed = expectation(description: "failed probe logged")
         let keepAlive = MobileHotspotKeepAlive(
             routeProvider: { [self] in hotspotRoute() },
             pinger: { _ in false },
-            log: { messages.append($0) }
+            log: { message in
+                guard message.hasPrefix("hotspot_keepalive probe_failed") else { return }
+                XCTAssertEqual(message, "hotspot_keepalive probe_failed count=1")
+                probeFailed.fulfill()
+            }
         )
 
         keepAlive.tick()
-
-        let expectation = expectation(description: "probe completes")
-        DispatchQueue.main.async { expectation.fulfill() }
-        wait(for: [expectation], timeout: 2)
-
-        XCTAssertTrue(messages.contains { $0.contains("probe_failed count=1") })
+        wait(for: [probeFailed], timeout: 2)
     }
 }

@@ -16,12 +16,6 @@ enum DedicatedCapsLockEventPolicy {
     }
 }
 
-enum DedicatedCapsLockReadinessPolicy {
-    static func shouldHonorCapsLock(dedicatedModeEnabled: Bool, filterActive: Bool) -> Bool {
-        !dedicatedModeEnabled || filterActive
-    }
-}
-
 enum DedicatedCapsLockFilterState: Equatable {
     case inactive
     case active

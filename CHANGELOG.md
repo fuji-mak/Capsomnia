@@ -4,6 +4,17 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- Keep capitalization-prevention failures from turning off awake mode or
+  resetting its timer. Show the input-assistance error and retry independently,
+  while normal ON/OFF controls and timer expiry remain available.
+
+- Keep timer expiry from interrupting open-lid use: release sleep prevention,
+  but request immediate sleep only after a fresh closed-lid check. Cancel the
+  sleep request if the lid is open or unreadable, including during OFF completion.
+  Clarify this behavior in all four READMEs.
+- Prevent input-source recovery from turning Caps Lock back on while timer
+  OFF is in progress, including delayed HID writes and helper confirmation.
+
 ## 4.2.3 - 2026-10-06
 
 - Add an opt-in "Keep hotspot connected" setting in Advanced Settings to help

@@ -222,6 +222,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let now = Date()
         guard now >= suppressInputSourceNotificationsUntil,
               now >= suppressInputSourceRecoveryUntil,
+              !isAutoOffInProgress,
               !secureInputCapsLockOverrideActive,
               lastAppliedState == true else { return }
 
@@ -293,7 +294,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func reassertCapsLockAfterInputSourceChange(reason: String) {
-        guard lastAppliedState == true, !secureInputCapsLockOverrideActive else { return }
+        // Recheck when queued recovery actually runs. The 500 ms notification
+        // suppression can expire before HID OFF and helper confirmation finish.
+        guard lastAppliedState == true,
+              !isAutoOffInProgress,
+              !secureInputCapsLockOverrideActive,
+              Date() >= suppressInputSourceRecoveryUntil else { return }
 
         guard let capsLockOn = capsLockStateReader.currentState() else {
             log("\(reason) capslock_state_unavailable recovery_pending")
@@ -329,6 +335,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func cancelPendingCapsLockOff() {
         pendingCapsLockOffWorkItem?.cancel()
         pendingCapsLockOffWorkItem = nil
+    }
+
+    private var isAutoOffInProgress: Bool {
+        isAutoOffToggleInFlight || autoOffSleepCoordinator.isPending
     }
 
     /// The live Caps Lock state used for the status indicator, falling back
@@ -902,18 +912,19 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
 
-        let filterReady = ensureDedicatedCapsLockFilter(
+        let hadDedicatedModeError = dedicatedModeError
+        // Input assistance is optional. Its failure must not change awake mode
+        // or reset the running timer; keep retrying while normal controls run.
+        _ = ensureDedicatedCapsLockFilter(
             promptForPermission: false,
             reason: reason
         )
-        guard DedicatedCapsLockReadinessPolicy.shouldHonorCapsLock(
-            dedicatedModeEnabled: Preferences.dedicatedCapsLockMode,
-            filterActive: filterReady
-        ) else {
-            _ = evaluateAutoOff(capsLockOn: false, reason: "\(reason)_dedicated_fail_closed")
-            apply(capsLockOn: false, reason: "\(reason)_dedicated_fail_closed")
-            updateStatusError()
-            return
+        defer {
+            if dedicatedModeError {
+                updateStatusError()
+            } else if hadDedicatedModeError {
+                syncStatusItemVisibility()
+            }
         }
 
         guard let physicalCapsLockOn = capsLockStateReader.currentState() else {
@@ -947,7 +958,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 preferenceEnabled: Preferences.ignoreExternalCapsLockOffWhileLidClosed,
                 sleepPreventionActive: true,
                 recentUserAction: Date() < externalCapsLockOffGuardBypassUntil,
-                autoOffInProgress: isAutoOffToggleInFlight || autoOffSleepCoordinator.isPending,
+                autoOffInProgress: isAutoOffInProgress,
                 clamshellClosed: ClamshellStateReader.isClosed()
             ) {
                 reassertCapsLockAfterExternalOff(reason: reason)
@@ -1361,14 +1372,17 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func requestSystemSleepAfterAutoOffIfReady(capsLockOn: Bool, reason: String) {
         let wasPending = autoOffSleepCoordinator.isPending
+        let clamshellClosed = ClamshellStateReader.isClosed()
         if wasPending, capsLockOn {
             log("\(reason) auto_off_sleep canceled=capslock_on")
+        } else if wasPending, clamshellClosed != true {
+            log("\(reason) auto_off_sleep canceled=lid_not_closed")
         } else if wasPending {
             log("\(reason) auto_off_sleep requested")
         }
 
         guard let result = autoOffSleepCoordinator.requestSleepIfReady(
-            capsLockOn: capsLockOn
+            capsLockOn: capsLockOn, clamshellClosed: clamshellClosed
         ) else {
             return
         }
@@ -1461,7 +1475,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard let button = statusItem?.button else { return }
         button.image = errorImage
         let strings = AppStrings.current()
-        button.toolTip = dedicatedModeError
+        button.toolTip = dedicatedModeError && failedSleepState == nil
             ? strings.tooltipDedicatedPermission
             : strings.tooltipError
     }
@@ -1601,9 +1615,8 @@ extension Capsomnia {
         timerSeconds: TimeInterval? = nil,
         reply: @escaping (ControlResponse) -> Void
     ) {
-        if target && !ensureDedicatedCapsLockFilter(promptForPermission: false, reason: "cli") {
-            reply(ControlResponse(ok: false, error: "Complete Accessibility setup in Capsomnia before turning it on."))
-            return
+        if target {
+            _ = ensureDedicatedCapsLockFilter(promptForPermission: false, reason: "cli")
         }
         prepareSecureInputOverrideForExplicitTarget(target)
         isControlMutationInFlight = true
@@ -1735,7 +1748,7 @@ extension Capsomnia {
         case "dedicated-caps-lock-mode":
             setDedicatedCapsLockMode(enabled)
             if dedicatedModeError {
-                throw ExplicitAwakeCommand.Failure("Setting saved, but Accessibility permission is required in the app.")
+                throw ExplicitAwakeCommand.Failure("Setting saved, but capitalization prevention is unavailable. Check Accessibility permission. Awake mode and timers remain available.")
             }
         case "show-menu-bar-icon": setShowMenuBarIcon(enabled)
         case "launch-at-login": try setLaunchAtLogin(enabled)
@@ -1758,7 +1771,7 @@ extension Capsomnia {
         if let capsLock, let sleepDisabled, capsLock != sleepDisabled {
             issues.append(.string("Caps Lock and sleep prevention are not synchronized."))
         }
-        if dedicatedModeError { issues.append(.string("Accessibility setup is required for dedicated Caps Lock mode.")) }
+        if dedicatedModeError { issues.append(.string("Capitalization prevention is unavailable. Check Accessibility permission.")) }
         return .object([
             "healthy": .bool(issues.isEmpty), "issues": .array(issues),
             "helper_available": .bool(helperExists), "status": controlStatus(),

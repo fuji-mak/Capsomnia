@@ -2,12 +2,11 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
-## Unreleased
+## 4.2.4 - 2026-10-07
 
 - Keep capitalization-prevention failures from turning off awake mode or
   resetting its timer. Show the input-assistance error and retry independently,
   while normal ON/OFF controls and timer expiry remain available.
-
 - Keep timer expiry from interrupting open-lid use: release sleep prevention,
   but request immediate sleep only after a fresh closed-lid check. Cancel the
   sleep request if the lid is open or unreadable, including during OFF completion.

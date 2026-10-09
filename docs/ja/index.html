@@ -423,12 +423,12 @@
       </section>
 
       <section
-        class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24"
+        class="mx-auto max-w-[1080px] scroll-mt-[68px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24"
         id="security"
       >
-        <div class="mb-10 max-w-[720px]">
-          <h2 class="mb-4 text-[clamp(1.6rem,3.4vw,2.3rem)] font-bold leading-[1.18]">安全性の考え方</h2>
-          <p class="text-[1.08rem] text-[var(--text-dim)]">メニューバーアプリ本体は現在のユーザーとして動き、rootでは動きません。システムのスリープ設定変更には昇格権限が必要なため、Capsomniaは固定の小さなroot所有helperを、passwordless <code>sudo</code> 経由で呼び出します。</p>
+        <div class="max-w-[720px]">
+          <h2 class="mb-4 text-[clamp(1.6rem,3.4vw,2.3rem)] font-bold leading-[1.18]">プライバシーと透明性</h2>
+          <p class="text-[1.08rem] text-[var(--text-dim)]">CapsomniaはMac上でローカルに動作します。アカウント登録は不要で、テレメトリもありません。ソースコードは公開されており、誰でも確認できます。</p>
           <ul class="mt-6 flex list-none flex-wrap gap-2.5 p-0" aria-label="プライバシー">
             <li
               class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
@@ -436,7 +436,7 @@
               <span
                 class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
               ></span>
-              <span>クラウド依存なし</span>
+              <span>アカウント不要</span>
             </li>
             <li
               class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
@@ -452,29 +452,17 @@
               <span
                 class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
               ></span>
-              <span>アカウント不要</span>
+              <span>ローカル動作</span>
+            </li>
+            <li
+              class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+            >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
+              ></span>
+              <span>オープンソース</span>
             </li>
           </ul>
-        </div>
-        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">昇格権限で呼ぶコマンド</h3>
-            <pre
-              class="mb-3 overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-4"
-            ><code class="font-mono text-sm leading-7 text-[var(--led-bright)]">sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
-sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
-sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre>
-            <p class="text-sm text-[var(--text-faint)]">パッケージ版のアプリ、helper、システムLaunchAgentはroot所有です。sudoersルールは、この3つの完全一致コマンドだけに限定されています。</p>
-          </div>
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">helperが実行するのはこれだけ</h3>
-            <pre
-              class="mb-3 overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-4"
-            ><code class="font-mono text-sm leading-7 text-[var(--led-bright)]">/usr/bin/pmset -a disablesleep 1
-/usr/bin/pmset -a disablesleep 0
-/usr/bin/pmset displaysleepnow</code></pre>
-            <p class="text-sm text-[var(--text-faint)]"><code>on</code>、<code>off</code>、<code>display-sleep</code> 以外は受け付けません。</p>
-          </div>
         </div>
       </section>
 

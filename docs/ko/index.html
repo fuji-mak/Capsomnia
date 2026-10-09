@@ -423,12 +423,12 @@
       </section>
 
       <section
-        class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24"
+        class="mx-auto max-w-[1080px] scroll-mt-[68px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24"
         id="security"
       >
-        <div class="mb-10 max-w-[720px]">
-          <h2 class="mb-4 text-[clamp(1.6rem,3.4vw,2.3rem)] font-bold leading-[1.18]">보안 모델</h2>
-          <p class="text-[1.08rem] text-[var(--text-dim)]">메뉴 막대 앱은 root가 아닌 현재 사용자 권한으로 실행됩니다. 시스템 잠자기 설정을 바꿀 때만 root가 소유한 고정 기능 helper 하나를 비밀번호 없는 <code>sudo</code>로 호출합니다.</p>
+        <div class="max-w-[720px]">
+          <h2 class="mb-4 text-[clamp(1.6rem,3.4vw,2.3rem)] font-bold leading-[1.18]">개인정보 보호와 투명성</h2>
+          <p class="text-[1.08rem] text-[var(--text-dim)]">Capsomnia는 Mac에서 로컬로 작동합니다. 계정 가입이 필요 없고 텔레메트리도 수집하지 않습니다. 소스 코드는 누구나 확인할 수 있도록 공개되어 있습니다.</p>
           <ul class="mt-6 flex list-none flex-wrap gap-2.5 p-0" aria-label="개인정보 보호">
             <li
               class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
@@ -436,7 +436,7 @@
               <span
                 class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
               ></span>
-              <span>클라우드 의존성 없음</span>
+              <span>계정 불필요</span>
             </li>
             <li
               class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
@@ -452,29 +452,17 @@
               <span
                 class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
               ></span>
-              <span>계정 불필요</span>
+              <span>로컬 실행</span>
+            </li>
+            <li
+              class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+            >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
+              ></span>
+              <span>오픈 소스</span>
             </li>
           </ul>
-        </div>
-        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">권한을 높여 호출하는 명령</h3>
-            <pre
-              class="mb-3 overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-4"
-            ><code class="font-mono text-sm leading-7 text-[var(--led-bright)]">sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
-sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
-sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre>
-            <p class="text-sm text-[var(--text-faint)]">패키지로 설치한 앱, helper, 시스템 LaunchAgent의 소유자는 root입니다. sudoers 규칙은 정확히 이 세 명령만 허용합니다.</p>
-          </div>
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">helper가 실행하는 명령</h3>
-            <pre
-              class="mb-3 overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-4"
-            ><code class="font-mono text-sm leading-7 text-[var(--led-bright)]">/usr/bin/pmset -a disablesleep 1
-/usr/bin/pmset -a disablesleep 0
-/usr/bin/pmset displaysleepnow</code></pre>
-            <p class="text-sm text-[var(--text-faint)]"><code>on</code>, <code>off</code>, <code>display-sleep</code> 외에는 받아들이지 않습니다.</p>
-          </div>
         </div>
       </section>
 

@@ -423,12 +423,12 @@
       </section>
 
       <section
-        class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24"
+        class="mx-auto max-w-[1080px] scroll-mt-[68px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24"
         id="security"
       >
-        <div class="mb-10 max-w-[720px]">
-          <h2 class="mb-4 text-[clamp(1.6rem,3.4vw,2.3rem)] font-bold leading-[1.18]">安全模型</h2>
-          <p class="text-[1.08rem] text-[var(--text-dim)]">菜单栏应用以当前用户身份运行，绝不会以 root 身份运行。更改系统睡眠设置需要提升权限，因此 Capsomnia 通过免密码 <code>sudo</code> 调用一个功能固定、由 root 所有的小型辅助程序。</p>
+        <div class="max-w-[720px]">
+          <h2 class="mb-4 text-[clamp(1.6rem,3.4vw,2.3rem)] font-bold leading-[1.18]">隐私与透明</h2>
+          <p class="text-[1.08rem] text-[var(--text-dim)]">Capsomnia 在 Mac 上本地运行，无需注册账户，也不收集遥测数据。源代码公开，任何人都可以查看。</p>
           <ul class="mt-6 flex list-none flex-wrap gap-2.5 p-0" aria-label="隐私">
             <li
               class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
@@ -436,7 +436,7 @@
               <span
                 class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
               ></span>
-              <span>不依赖云服务</span>
+              <span>无需账户</span>
             </li>
             <li
               class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
@@ -452,29 +452,17 @@
               <span
                 class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
               ></span>
-              <span>无需账户</span>
+              <span>本地运行</span>
+            </li>
+            <li
+              class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+            >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
+              ></span>
+              <span>开源</span>
             </li>
           </ul>
-        </div>
-        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">提升权限调用的命令</h3>
-            <pre
-              class="mb-3 overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-4"
-            ><code class="font-mono text-sm leading-7 text-[var(--led-bright)]">sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
-sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
-sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep</code></pre>
-            <p class="text-sm text-[var(--text-faint)]">软件包中的应用、辅助程序和系统 LaunchAgent 均由 root 所有。sudoers 规则仅允许执行以下三个完全匹配的命令。</p>
-          </div>
-          <div class="min-w-0 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 class="mb-3.5 text-base font-semibold text-[var(--text-dim)]">辅助程序只会运行</h3>
-            <pre
-              class="mb-3 overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-4"
-            ><code class="font-mono text-sm leading-7 text-[var(--led-bright)]">/usr/bin/pmset -a disablesleep 1
-/usr/bin/pmset -a disablesleep 0
-/usr/bin/pmset displaysleepnow</code></pre>
-            <p class="text-sm text-[var(--text-faint)]">仅接受 <code>on</code>、<code>off</code> 和 <code>display-sleep</code>，不会接受其他参数。</p>
-          </div>
         </div>
       </section>
 

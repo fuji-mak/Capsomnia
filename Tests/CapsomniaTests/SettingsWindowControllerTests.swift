@@ -552,6 +552,87 @@ final class SettingsWindowControllerTests: XCTestCase {
         }
     }
 
+    func testHotspotWindowFitsScreenAndUsesScrollableLocalizedControls() throws {
+        let previousLanguage = Preferences.language
+        let previousSSID = Preferences.hotspotSSID
+        defer { Preferences.language = previousLanguage; Preferences.hotspotSSID = previousSSID }
+        _ = NSApplication.shared
+        for language in AppLanguage.allCases {
+            Preferences.language = language
+            Preferences.hotspotSSID = "Fixture"
+            let controller = makeController()
+            controller.show(page: .advancedSettings)
+            let mainWindow = try XCTUnwrap(controller.window)
+            let originalFrame = mainWindow.frame
+            controller.showHotspotSettings()
+            let panel = try XCTUnwrap(NSApplication.shared.windows.first {
+                $0.isVisible && $0 !== mainWindow && $0.title == HotspotStrings.current().title
+            })
+            defer { panel.close(); controller.close() }
+            let content = try XCTUnwrap(panel.contentView)
+            content.layoutSubtreeIfNeeded()
+            let scroll: NSScrollView = try XCTUnwrap(descendants(of: content).first)
+            let document = try XCTUnwrap(scroll.documentView)
+            document.layoutSubtreeIfNeeded()
+            XCTAssertTrue(scroll.hasVerticalScroller)
+            XCTAssertEqual(mainWindow.frame, originalFrame)
+            XCTAssertLessThanOrEqual(panel.frame.height, (panel.screen?.visibleFrame.height ?? 720) - 40)
+            let fields: [NSTextField] = descendants(of: document)
+            let ssid = try XCTUnwrap(fields.first { $0.placeholderString == HotspotStrings.current().ssid })
+            XCTAssertEqual(ssid.stringValue, "Fixture")
+            XCTAssertTrue(fields.contains { $0 is NSSecureTextField })
+            let native = try XCTUnwrap(fields.first { $0.stringValue == HotspotStrings.current().instantHotspot })
+            XCTAssertGreaterThan(native.frame.height, 30)
+            for field in fields where !field.isHidden {
+                let frame = field.convert(field.bounds, to: document)
+                XCTAssertGreaterThanOrEqual(frame.minX, 0)
+                XCTAssertLessThanOrEqual(frame.maxX, document.bounds.width + 1)
+            }
+            panel.makeFirstResponder(nil)
+            Preferences.hotspotSSID = "Changed outside editor"
+            controller.reloadText()
+            XCTAssertEqual(ssid.stringValue, "Changed outside editor")
+        }
+    }
+
+    func testHotspotPasswordIsTransientAndSaveFailureVisible() throws {
+        let previousLanguage = Preferences.language
+        let previousSSID = Preferences.hotspotSSID
+        Preferences.language = .english
+        Preferences.hotspotSSID = "Fixture"
+        defer { Preferences.language = previousLanguage; Preferences.hotspotSSID = previousSSID }
+        _ = NSApplication.shared
+        var savedPassword: String?
+        var finish: ((Bool) -> Void)?
+        let controller = makeController(onHotspotPasswordSave: { password, ssid, completion in
+            XCTAssertEqual(ssid, "Fixture")
+            savedPassword = password
+            finish = completion
+        })
+        controller.show(page: .advancedSettings)
+        controller.showHotspotSettings()
+        let panel = try XCTUnwrap(NSApplication.shared.windows.first {
+            $0.isVisible && $0.title == HotspotStrings.current().title
+        })
+        defer { panel.close(); controller.close() }
+        let content = try XCTUnwrap(panel.contentView)
+        let secure: NSSecureTextField = try XCTUnwrap(descendants(of: content).first)
+        let buttons: [NSButton] = descendants(of: content)
+        let save = try XCTUnwrap(buttons.first { $0.title == HotspotStrings.current().save })
+        secure.stringValue = "fixture"
+        save.performClick(nil)
+        XCTAssertEqual(savedPassword, "fixture")
+        XCTAssertEqual(secure.stringValue, "")
+        XCTAssertFalse(save.isEnabled)
+        finish?(false)
+        XCTAssertTrue(save.isEnabled)
+        let fields: [NSTextField] = visibleDescendants(of: content)
+        XCTAssertTrue(fields.contains { $0.stringValue == HotspotStrings.current().editFailed })
+        secure.stringValue = "unsaved"
+        panel.close()
+        XCTAssertEqual(secure.stringValue, "")
+    }
+
     private func makeController(
         onKeyboardShortcutRecordingChange: @escaping (Bool) -> Void = { _ in },
         onAutoOffMinutesChange: @escaping (Int) -> Void = { _ in },
@@ -561,7 +642,8 @@ final class SettingsWindowControllerTests: XCTestCase {
             CapsLockIndicatorDisplayState(hidden: false, restartPending: false)
         },
         onAutomaticUpdateChecksChange: @escaping (Bool) -> Void = { _ in },
-        onToolsDownload: @escaping () -> Void = {}
+        onToolsDownload: @escaping () -> Void = {},
+        onHotspotPasswordSave: @escaping (String, String, @escaping (Bool) -> Void) -> Void = { _, _, done in done(false) }
     ) -> SettingsWindowController {
         SettingsWindowController(
             onDedicatedCapsLockModeChange: { _ in },
@@ -581,7 +663,8 @@ final class SettingsWindowControllerTests: XCTestCase {
             onAutomaticUpdateChecksChange: onAutomaticUpdateChecksChange,
             onFinishInitialSetup: {},
             currentVersion: "4.0.0",
-            onToolsDownload: onToolsDownload
+            onToolsDownload: onToolsDownload,
+            onHotspotPasswordSave: onHotspotPasswordSave
         )
     }
 

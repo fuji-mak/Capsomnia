@@ -30,7 +30,7 @@ Turn Caps Lock on when local work should keep running. Turn Caps Lock off when y
 
 It is useful for AI agents, mobile access, and other long-running or remote work.
 
-Capsomnia does not collect telemetry or require an account. Network use is limited to an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), downloading installers from GitHub when you choose to update or install CLI & Skill, and local gateway probes when "Keep hotspot connected" is enabled. Capsomnia sends no telemetry, identifiers, or personal data.
+Capsomnia does not collect telemetry or require an account. Network use is limited to an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), downloading installers from GitHub when you choose to update or install CLI & Skill, local gateway probes when "Keep hotspot connected" is enabled, and SSID-filtered Wi-Fi scans and association when "Auto-connect to hotspot" is enabled. Capsomnia sends no telemetry, identifiers, or personal data.
 
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="Caps Lock light on" width="560">
@@ -111,6 +111,16 @@ Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions,
 
 Advanced Settings includes an optional "Keep hotspot connected" switch, off by default. While Capsomnia is on, it sends one small probe per minute to a recognized hotspot gateway, including iPhone Personal Hotspot, to help prevent idle disconnections. The probes stay on the local network and may slightly increase the phone's battery use. This does not automatically reconnect a lost hotspot connection.
 
+Open **Advanced Settings > Auto-connect to hotspot** to configure a broadcasting hotspot's Wi-Fi name and save its password in your login Keychain. Auto-connect is off by default. Enable it and grant Location access to let CoreWLAN find that network. While Capsomnia is on, a Wi-Fi outage lasting five seconds triggers a targeted scan and association. Failed attempts retry after 5, 10, 20, then 30 seconds, capped at 30. Recovery, Caps Lock off, opt-out, and configuration or credential edits cancel pending work. A healthy Wi-Fi path prevents joining. CoreWLAN association already in progress cannot be interrupted, so a stop or recovery at that exact boundary can still let that association finish.
+
+Passwords are saved and forgotten only through explicit Settings actions. Automatic Keychain reads run without prompts. A locked Keychain or another build's access restrictions produce a visible failure; Capsomnia does not delete unreadable credentials. The secure password field clears after Save and when the window closes. Passwords never go through the CLI, process arguments, UserDefaults, logs, or status. The CLI can change `auto-connect-hotspot` and `hotspot-ssid` through its existing `settings set` commands.
+
+To wake a nearby iPhone's Personal Hotspot, use the supported native setting on **macOS 26 or later**. Open **Wi-Fi Settings > Ask to join hotspots > Automatic**. Use the same Apple Account or Family Sharing, and keep Wi-Fi and Bluetooth enabled. This system setting works even when Capsomnia is off and requires no hotspot password. Capsomnia's Wi-Fi Settings link helps set it up. CoreWLAN reconnect only joins already broadcasting hotspots; it cannot start an iPhone hotspot. Full phone wake and connection behavior has not been verified end to end in this implementation.
+
+For OBS and other remote UI sessions, **Keep display awake** retains the upstream brightness restore, retry, and crash recovery behavior and refreshes a user-activity assertion every 30 seconds while active. Caps Lock polling runs every 40 milliseconds only while Capsomnia is on, Keep display awake is enabled, and the lid is known closed. Other use retains 250-millisecond polling. An explicit legacy `DisplaySleepOnLidClose=true` migrates to `KeepDisplayAwake=true` only if the new key has no explicit value. This preserves that selection without changing other preferences or removing the privileged helper.
+
+The reconnect behavior and login Keychain prompt handling adapt Insomnia's MIT-licensed source. Its full copyright and permission notice is included in the app as `Insomnia-MIT-LICENSE`.
+
 On first launch, Capsomnia explains how the Caps Lock switch works and lets you choose:
 
 - whether to show the menu bar dot
@@ -173,7 +183,7 @@ Capsomnia's menu bar app does not run as root. System sleep settings require ele
 
 Package-installed app files, the helper, and the system LaunchAgent are owned by `root:wheel`. The packaged helper is also signed with the same Developer ID as the app. Capsomnia verifies the actual `SleepDisabled` state after every change and every ten seconds afterward. If the helper cannot apply a change, the state cannot be verified, or the setting drifts, the menu bar dot turns red and Capsomnia retries after five seconds instead of showing the requested state as active. The red error dot appears temporarily even if the menu bar icon is normally hidden.
 
-When "Prevent all-caps typing" is disabled, Capsomnia does not request Input Monitoring or inspect keyboard events. When it is enabled, a local active Core Graphics event filter uses Accessibility permission only to remove `.maskAlphaShift` and suppress the Caps Lock modifier-change event. It does not log event contents, persist them, or send them over the network. Capsomnia still reads the physical Caps Lock state every 250 milliseconds to control sleep.
+When "Prevent all-caps typing" is disabled, Capsomnia does not request Input Monitoring or inspect keyboard events. When it is enabled, a local active Core Graphics event filter uses Accessibility permission only to remove `.maskAlphaShift` and suppress the Caps Lock modifier-change event. It does not log event contents, persist them, or send them over the network. Capsomnia reads the physical Caps Lock state every 250 milliseconds to control sleep, or every 40 milliseconds during a closed-lid Keep display awake session.
 
 macOS may show "Taketo Fujimaki" instead of "Capsomnia" for an existing cached background-item registration. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
 

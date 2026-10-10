@@ -1,12 +1,16 @@
 import AppKit
 
+private final class HotspotSettingsDocumentView: NSView {
+    override var isFlipped: Bool { true }
+}
+
 enum SettingsPage {
     case initialPreferences
     case settings
     case advancedSettings
 }
 
-final class SettingsWindowController: NSWindowController, NSWindowDelegate {
+final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegate {
     private static let settingsContentWidth: CGFloat = 400
     private static let advancedContentWidth: CGFloat = 920
     private static let advancedColumnSpacing: CGFloat = 20
@@ -78,6 +82,29 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let keepHotspotAliveToggle = LEDToggle(
         isOn: Preferences.keepHotspotAlive
     )
+    private let hotspotTitle = brandLabel(size: 13, weight: .medium, color: Brand.text)
+    private let hotspotDescription = brandLabel(size: 11, color: Brand.textDim, wraps: true)
+    private let hotspotToggle = LEDToggle(isOn: Preferences.autoConnectHotspot)
+    private let hotspotSSIDField = NSTextField()
+    private let hotspotPasswordField = NSSecureTextField()
+    private let hotspotSaveButton = NSButton()
+    private let hotspotForgetButton = NSButton()
+    private let hotspotLocationButton = NSButton()
+    private let hotspotLocationSettingsButton = NSButton()
+    private let hotspotWiFiSettingsButton = NSButton()
+    private let hotspotStatusLabel = brandLabel(size: 11, color: Brand.textDim, wraps: true)
+    private let hotspotEditLabel = brandLabel(size: 11, color: Brand.textDim, wraps: true)
+    private let instantHotspotDescription = brandLabel(size: 11, color: Brand.textDim, wraps: true)
+    private var hotspotCard = NSView()
+    private let hotspotEntryButton = DisclosureButton()
+    private var hotspotWindow: NSWindow?
+    private var hotspotEditInFlight = false
+    private let onHotspotConfigurationChange: (Bool, String) -> Void
+    private let onHotspotPasswordSave: (String, String, @escaping (Bool) -> Void) -> Void
+    private let onHotspotPasswordForget: (String, @escaping (Bool) -> Void) -> Void
+    private let onHotspotLocationRequest: () -> Void
+    private let hotspotStatusProvider: () -> HotspotReconnectStatus
+
     private let externalCapsLockOffTitle = brandLabel(
         size: 13,
         weight: .medium,
@@ -212,8 +239,18 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onUpdate: @escaping (String) -> Void = { _ in },
         onReleaseNotes: @escaping (String) -> Void = { _ in },
         onToolsDownload: @escaping () -> Void = {},
-        autoOffDescriptionProvider: @escaping () -> String? = { nil }
+        autoOffDescriptionProvider: @escaping () -> String? = { nil },
+        onHotspotConfigurationChange: @escaping (Bool, String) -> Void = { _, _ in },
+        onHotspotPasswordSave: @escaping (String, String, @escaping (Bool) -> Void) -> Void = { _, _, done in done(false) },
+        onHotspotPasswordForget: @escaping (String, @escaping (Bool) -> Void) -> Void = { _, done in done(false) },
+        onHotspotLocationRequest: @escaping () -> Void = {},
+        hotspotStatusProvider: @escaping () -> HotspotReconnectStatus = { .disabled }
     ) {
+        self.onHotspotConfigurationChange = onHotspotConfigurationChange
+        self.onHotspotPasswordSave = onHotspotPasswordSave
+        self.onHotspotPasswordForget = onHotspotPasswordForget
+        self.onHotspotLocationRequest = onHotspotLocationRequest
+        self.hotspotStatusProvider = hotspotStatusProvider
         self.onDedicatedCapsLockModeChange = onDedicatedCapsLockModeChange
         self.onShowMenuBarIconChange = onShowMenuBarIconChange
         self.onLanguageChange = onLanguageChange
@@ -264,6 +301,23 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     func reloadText() {
         let strings = AppStrings.current()
+        let hotspot = HotspotStrings.current()
+        hotspotEntryButton.setTitle(hotspot.title)
+        hotspotWindow?.title = hotspot.title
+        hotspotTitle.stringValue = hotspot.title
+        hotspotDescription.stringValue = hotspot.description
+        hotspotToggle.setAccessibilityLabel(hotspot.title)
+        hotspotSSIDField.placeholderString = hotspot.ssid
+        hotspotSSIDField.setAccessibilityLabel(hotspot.ssid)
+        hotspotPasswordField.placeholderString = hotspot.password
+        hotspotPasswordField.setAccessibilityLabel(hotspot.password)
+        hotspotSaveButton.title = hotspot.save
+        hotspotForgetButton.title = hotspot.forget
+        hotspotLocationButton.title = hotspot.requestLocation
+        hotspotLocationSettingsButton.title = hotspot.locationSettings
+        hotspotWiFiSettingsButton.title = hotspot.wifiSettings
+        instantHotspotDescription.stringValue = hotspot.instantHotspot
+        updateHotspotReconnectStatus(hotspotStatusProvider())
 
         let isInitialSetup = page == .initialPreferences
         let isAdvancedSettings = page == .advancedSettings
@@ -396,6 +450,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         // The controller and window are reused after closing, so transient
         // recording state must not survive into the next presentation.
+        hotspotPasswordField.stringValue = ""
+        if notification.object as? NSWindow === hotspotWindow { return }
+        hotspotWindow?.close()
         shortcutRecorder.cancelRecording()
         autoOffControl.dismissCustomEditor()
         autoOffControl.stopDisplayUpdates()
@@ -463,6 +520,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         preferencesCard = buildPreferencesCard()
         keepDisplayAwakeCard = buildKeepDisplayAwakeCard()
         systemCard = buildSystemCard()
+        hotspotCard = buildHotspotCard()
+        hotspotEntryButton.onClick = { [weak self] in self?.showHotspotSettings() }
         shortcutCard = buildShortcutCard()
         updateCard = buildUpdateCard()
         autoOffCard = buildAutoOffCard()
@@ -517,6 +576,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             advancedColumns.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             preferencesCard.widthAnchor.constraint(equalTo: advancedLeftColumn.widthAnchor),
             systemCard.widthAnchor.constraint(equalTo: advancedLeftColumn.widthAnchor),
+            hotspotEntryButton.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
             shortcutCard.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
             toolsDownloadButton.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
             advancedRightColumn.bottomAnchor.constraint(equalTo: advancedColumns.bottomAnchor),
@@ -578,6 +638,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             advancedLeftColumn.setCustomSpacing(22, after: preferencesCard)
             advancedLeftColumn.setCustomSpacing(8, after: systemBehaviorHeading)
 
+            advancedRightColumn.addArrangedSubview(hotspotEntryButton)
             advancedRightColumn.addArrangedSubview(shortcutHeading)
             advancedRightColumn.addArrangedSubview(shortcutCard)
             advancedRightColumn.addArrangedSubview(updateHeading)
@@ -740,6 +801,128 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         return settingsCard(stack, insets: NSEdgeInsets(top: 16, left: 18, bottom: 16, right: 18))
     }
 
+    func updateHotspotReconnectStatus(_ status: HotspotReconnectStatus) {
+        hotspotStatusLabel.stringValue = HotspotStrings.current().status(status)
+    }
+
+    func showHotspotSettings() {
+        if hotspotWindow == nil {
+            let available = window?.screen?.visibleFrame.height ?? NSScreen.main?.visibleFrame.height ?? 720
+            let panel = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: min(600, available - 80)),
+                                 styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            panel.isReleasedWhenClosed = false
+            panel.delegate = self
+            panel.backgroundColor = Brand.bg
+            panel.appearance = NSAppearance(named: .darkAqua)
+            let scroll = NSScrollView()
+            scroll.hasVerticalScroller = true
+            scroll.drawsBackground = false
+            scroll.translatesAutoresizingMaskIntoConstraints = false
+            let document = HotspotSettingsDocumentView()
+            document.translatesAutoresizingMaskIntoConstraints = false
+            document.addSubview(hotspotCard)
+            scroll.documentView = document
+            let content = NSView()
+            content.addSubview(scroll)
+            panel.contentView = content
+            NSLayoutConstraint.activate([
+                scroll.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+                scroll.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+                scroll.topAnchor.constraint(equalTo: content.topAnchor),
+                scroll.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+                document.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor),
+                hotspotCard.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: 16),
+                hotspotCard.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -16),
+                hotspotCard.topAnchor.constraint(equalTo: document.topAnchor, constant: 16),
+                hotspotCard.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -16)
+            ])
+            hotspotWindow = panel
+        }
+        reloadText()
+        hotspotWindow?.center()
+        hotspotWindow?.makeKeyAndOrderFront(nil)
+    }
+
+    private func buildHotspotCard() -> NSView {
+        hotspotSSIDField.stringValue = Preferences.hotspotSSID
+        hotspotSSIDField.delegate = self
+        hotspotToggle.onToggle = { [weak self] enabled in
+            guard let self else { return }
+            self.onHotspotConfigurationChange(enabled, self.hotspotSSIDField.stringValue)
+            self.updateValues()
+        }
+        for button in [hotspotSaveButton, hotspotForgetButton, hotspotLocationButton,
+                       hotspotLocationSettingsButton, hotspotWiFiSettingsButton] {
+            button.bezelStyle = .rounded
+            button.target = self
+            button.font = .systemFont(ofSize: 11)
+        }
+        hotspotSaveButton.action = #selector(saveHotspotPassword)
+        hotspotForgetButton.action = #selector(forgetHotspotPassword)
+        hotspotLocationButton.action = #selector(requestHotspotLocation)
+        hotspotLocationSettingsButton.action = #selector(openHotspotLocationSettings)
+        hotspotWiFiSettingsButton.action = #selector(openHotspotWiFiSettings)
+        let actions = NSStackView(views: [hotspotSaveButton, hotspotForgetButton])
+        actions.spacing = 8
+        let locationActions = NSStackView(views: [hotspotLocationButton, hotspotLocationSettingsButton])
+        locationActions.spacing = 8
+        hotspotEditLabel.isHidden = true
+        let stack = cardRows([
+            settingRow(title: hotspotTitle, desc: hotspotDescription, accessory: hotspotToggle),
+            hotspotSSIDField, hotspotPasswordField, actions, hotspotEditLabel,
+            hotspotStatusLabel, locationActions, brandDivider(),
+            instantHotspotDescription, hotspotWiFiSettingsButton
+        ])
+        return settingsCard(stack, insets: NSEdgeInsets(top: 14, left: 18, bottom: 14, right: 18))
+    }
+
+    func controlTextDidChange(_ notification: Notification) {
+        guard notification.object as? NSTextField === hotspotSSIDField else { return }
+        hotspotEditLabel.isHidden = true
+        onHotspotConfigurationChange(hotspotToggle.isOn, hotspotSSIDField.stringValue)
+        updateHotspotCredentialButtons()
+    }
+
+    private func updateHotspotCredentialButtons() {
+        let hasSSID = !hotspotSSIDField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        hotspotSaveButton.isEnabled = hasSSID && !hotspotEditInFlight
+        hotspotForgetButton.isEnabled = hasSSID && !hotspotEditInFlight
+    }
+
+    private func finishHotspotEdit(_ succeeded: Bool, forgot: Bool, ssid: String) {
+        hotspotEditInFlight = false
+        updateHotspotCredentialButtons()
+        guard ssid == Preferences.hotspotSSID else { return }
+        let strings = HotspotStrings.current()
+        hotspotEditLabel.stringValue = succeeded ? (forgot ? strings.forgotten : strings.saved) : strings.editFailed
+        hotspotEditLabel.isHidden = false
+    }
+
+    @objc private func saveHotspotPassword() {
+        let ssid = hotspotSSIDField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let password = hotspotPasswordField.stringValue
+        hotspotPasswordField.stringValue = ""
+        hotspotEditInFlight = true
+        updateHotspotCredentialButtons()
+        onHotspotPasswordSave(password, ssid) { [weak self] succeeded in
+            self?.finishHotspotEdit(succeeded, forgot: false, ssid: ssid)
+        }
+    }
+
+    @objc private func forgetHotspotPassword() {
+        hotspotPasswordField.stringValue = ""
+        let ssid = hotspotSSIDField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        hotspotEditInFlight = true
+        updateHotspotCredentialButtons()
+        onHotspotPasswordForget(ssid) { [weak self] succeeded in
+            self?.finishHotspotEdit(succeeded, forgot: true, ssid: ssid)
+        }
+    }
+
+    @objc private func requestHotspotLocation() { onHotspotLocationRequest() }
+    @objc private func openHotspotLocationSettings() { HotspotReconnectController.openLocationSettings() }
+    @objc private func openHotspotWiFiSettings() { HotspotReconnectController.openWiFiSettings() }
+
     private func buildSystemCard() -> NSView {
         keepHotspotAliveToggle.onToggle = { [weak self] enabled in
             self?.onKeepHotspotAliveChange(enabled)
@@ -881,6 +1064,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         languagePopUp.setSelected(Preferences.language.rawValue)
         keepDisplayAwakeToggle.setOn(Preferences.keepDisplayAwake)
         keepHotspotAliveToggle.setOn(Preferences.keepHotspotAlive)
+        hotspotToggle.setOn(Preferences.autoConnectHotspot)
+        let editingSSID = hotspotSSIDField.currentEditor().map { hotspotWindow?.firstResponder === $0 } ?? false
+        if !editingSSID {
+            hotspotSSIDField.stringValue = Preferences.hotspotSSID
+        }
+        updateHotspotCredentialButtons()
         externalCapsLockOffToggle.setOn(Preferences.ignoreExternalCapsLockOffWhileLidClosed)
         let indicatorState = capsLockIndicatorStateProvider()
         hideIndicatorToggle.setOn(indicatorState.hidden)

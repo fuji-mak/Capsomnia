@@ -5,6 +5,10 @@ Capsomnia releases publish two package assets:
 - `Capsomnia-<version>.pkg` for versioned downloads
 - `Capsomnia.pkg` for stable `releases/latest/download/Capsomnia.pkg` links
 
+The optional `Capsomnia-Tools.pkg` bundle is built and published in the
+[cpsm repository](https://github.com/fuji-mak/cpsm). Publish that bundle before
+the Capsomnia release that links to it. See [distribution preparation](docs/distribution.md).
+
 ## Version Updates
 
 Before building a release, update:
@@ -13,6 +17,12 @@ Before building a release, update:
 - `resources/Info.plist`: `CFBundleVersion`
 - `README.md`: current version
 - `README.ja.md`: current version
+- `README.zh-Hans.md`: current version
+- `README.ko.md`: current version
+- `docs/index.html`: JSON-LD `softwareVersion`
+- `docs/ja/index.html`: JSON-LD `softwareVersion`
+- `docs/zh-hans/index.html`: JSON-LD `softwareVersion`
+- `docs/ko/index.html`: JSON-LD `softwareVersion`
 - `CHANGELOG.md`: release entry
 
 Never replace a published tag or release asset. If a published build needs any change, increment the version and create a new release. Enable GitHub Immutable Releases before publishing the first stable release.
@@ -27,11 +37,13 @@ Download links should point to `Capsomnia.pkg`, not a versioned asset name.
 
 This writes a signed versioned package to `dist/Capsomnia-<version>.pkg`. Both `Capsomnia.app` and the native privileged helper are signed with the Developer ID Application identity before the installer package is signed.
 
-CI builds the same package payload without signing and verifies that every BOM entry is owned by `root:wheel` and that no AppleDouble entries remain:
+CI builds the same package payload without signing and verifies that every BOM entry is owned by `root:wheel`:
 
 ```sh
 SKIP_SIGNING=true ./scripts/build-pkg.sh /tmp/capsomnia-pkg
 ```
+
+Signed builds place the app and helper in their final payload locations before signing. The build then expands both the unsigned and installer-signed packages with normal Installer-style metadata handling and verifies both nested Developer ID signatures.
 
 ## Notarize
 

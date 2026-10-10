@@ -1,0 +1,244 @@
+# Capsomnia
+
+<p align="center">
+  <img src="resources/CapsomniaIcon.svg" alt="Capsomnia 图标" width="128" height="128">
+</p>
+
+<p align="center">
+  <a href="https://www.producthunt.com/products/capsomnia?embed=true&amp;utm_source=badge-top-post-badge&amp;utm_medium=badge&amp;utm_campaign=badge-capsomnia" target="_blank" rel="noopener noreferrer"><img alt="Capsomnia — 即使合盖也能让 Mac 保持唤醒 | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=1200286&amp;theme=light&amp;period=daily&amp;t=1785049257617"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"><img alt="下载Capsomnia.pkg" src="https://img.shields.io/badge/Download-Capsomnia.pkg-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://capsomnia.com/zh-hans/"><img alt="网站" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/fuji-mak/Capsomnia/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/fuji-mak/Capsomnia/ci.yml?branch=main&style=flat-square&label=CI&labelColor=111111&color=b7ff3c"></a>
+  <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-b7ff3c?style=flat-square&labelColor=111111">
+  <img alt="Swift 5.9+" src="https://img.shields.io/badge/Swift-5.9%2B-b7ff3c?style=flat-square&labelColor=111111">
+  <a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
+</p>
+
+当前版本：`4.2.4`
+
+[English README](README.md) · [日本語 README](README.ja.md) · [한국어 README](README.ko.md)
+
+本文是英文README的简体中文翻译。如有差异，请以[英文README](README.md)为准。
+
+Capsomnia是一款小巧的macOS菜单栏应用，可将Caps Lock变成MacBook合盖工作时的实体防休眠开关。
+
+需要让本地任务继续运行时，请开启Caps Lock。需要恢复正常睡眠行为时，请关闭Caps Lock。
+
+它适用于AI智能体、移动端访问，以及其他耗时较长或需要远程操作的任务。
+
+Capsomnia不会收集遥测数据，也不需要账户。网络用途仅限于每天一次的可选更新检查（读取 GitHub 的公开发布信息，可在高级设置中关闭）、在您选择更新或安装 CLI & Skill 时从 GitHub 下载安装器，以及启用“保持热点连接”后向本地网关发送连通性检查。Capsomnia 不会发送遥测数据、标识符或个人信息。
+
+高级设置中的“保持热点连接”默认关闭。启用后，Capsomnia 开启期间会每分钟向识别到的热点网关（包括 iPhone 个人热点）发送一次小型连通性检查，以减少空闲时自动断开连接的情况。通信仅限于本地网络，可能略微增加手机的耗电量。此功能不会自动重新连接已断开的热点。
+
+<p align="center">
+  <img src="resources/caps-lock-on.jpg" alt="Caps Lock 指示灯亮起" width="560">
+</p>
+
+<p align="center">
+  <em>当这盏小灯亮起时，你的Mac将保持唤醒。</em>
+</p>
+
+## 快速开始
+
+要求：
+
+- 上游签名软件包：运行macOS 14或更高版本的Apple芯片Mac
+- 源代码安装：运行macOS 14或更高版本的Apple芯片Mac，或运行macOS 13.5或更高版本的Intel Mac
+- 安装时拥有管理员权限
+
+安装已签名的软件包：
+
+1. 从[GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest)下载`Capsomnia.pkg`。
+2. 打开软件包并按照安装器提示操作。
+
+发布的软件包使用Developer ID签名，并已通过Apple公证。软件包会将`Capsomnia.app`安装到`/Applications`，安装已签名的原生特权休眠控制辅助程序，添加权限范围严格受限的sudoers规则，并启动LaunchAgent。安装完成后Capsomnia会自动打开，之后会在登录时自动启动。
+
+软件包的构建与公证脚本公开在[`scripts/build-pkg.sh`](scripts/build-pkg.sh)和[`scripts/notarize-pkg.sh`](scripts/notarize-pkg.sh)中。
+
+## 从源代码构建
+
+开发者源代码安装支持运行macOS 14或更高版本的Apple芯片Mac，以及运行macOS 13.5或更高版本的Intel Mac。需要Xcode 15或更高版本附带的Swift 5.9或更高版本工具链：
+
+```sh
+git clone https://github.com/fuji-mak/Capsomnia.git
+cd Capsomnia
+./scripts/install.sh
+```
+
+源代码安装程序会在本地构建`Capsomnia.app`，将其放入`~/Applications/`，安装权限受限的辅助程序和sudoers规则，并启动用户LaunchAgent。已签名并经过公证的发布软件包仍仅支持Apple芯片，并要求macOS 14或更高版本。
+
+## 功能
+
+- 防止输入锁定为大写（可选）：Capsomnia开启时，防止输入被锁定为大写。仍可按住Shift输入大写字母。
+- Caps Lock开启：MacBook合盖后，AI智能体和其他任务仍可继续运行。也可以继续通过Codex Mobile等工具远程操作。Caps Lock指示灯会直观显示当前状态。
+- 自定义切换快捷键：即使已将Caps Lock分配给其他按键，也可以使用自定义快捷键开启或关闭Capsomnia。绿色Caps Lock指示灯仍会显示当前状态。
+- 自动关闭定时器（可选）：可选择15分钟到8小时的预设，或设置1分钟到24小时的自定义时长。到时后，Capsomnia会关闭并解除防睡眠。仅在合盖时立即让Mac进入睡眠；盖子打开或状态未知时，会取消立即睡眠请求。
+- Caps Lock关闭：恢复正常睡眠行为。
+- 显示行为：默认情况下，Capsomnia开启时合盖会让显示屏进入睡眠，但后台任务继续运行。启用“保持显示屏常亮”后，即使达到macOS的空闲时间或合上盖子，也会保持显示会话可用，以便继续使用Computer Use等远程操作。在此模式下合盖时，Capsomnia只会暂时将内置显示屏降至最低亮度，以减少耗电和发热；开盖后会准确恢复之前的亮度。外接显示器不会被更改。
+- 退出应用：恢复正常睡眠行为。
+
+Capsomnia适合长时间运行的本地任务、AI编程智能体、SSH会话、构建、下载和无人值守脚本。
+
+## 使用注意事项
+
+- 请确保通风良好，并使用稳定的电源。
+- 在防止睡眠的状态下合盖使用，可能会增加发热和电池消耗。
+- 请勿将Capsomnia作为关键任务的唯一保障或备份替代方案。
+- 自动关闭定时器在合盖状态下到时后会明确让Mac进入睡眠。请先保存工作，并设置足够长的时间以确保任务完成。
+- 使用完毕后，请关闭Caps Lock并确认系统已恢复正常睡眠行为。
+- 请自行承担使用风险。不保证适用于所有Mac、macOS版本或运行环境。
+
+## 设置
+
+首次启动时，Capsomnia会说明Caps Lock开关的工作方式，并允许你选择：
+
+- 是否显示菜单栏状态圆点
+- Capsomnia开启时，是否防止输入锁定为大写
+- 使用英语、日语、简体中文或韩语
+
+“登录时启动”默认开启，不会显示在初始设置中。之后再次打开Capsomnia时，可以直接操作日常更常用的“保持显示屏常亮”和自动关闭定时器。“保持显示屏常亮”默认关闭，因此通常合盖后显示屏会进入睡眠。定时器也默认关闭。每次开启Capsomnia时都会从所选时长重新开始，也可以使用重启按钮重置当前倒计时。高级设置集中放置较少修改的菜单栏显示、防止大写锁定、语言、登录时启动、合盖期间的Caps Lock保护和全局快捷键，以及“隐藏大写锁定指示器”开关。此功能使用未公开的macOS系统级feature flag，可能影响其他文本光标指示器，并在重新启动后生效。Capsomnia会保存更改前的目标值，并在关闭开关或卸载时恢复。启用“防止输入锁定为大写”时，“显示菜单栏图标”仍可独立开关。即使隐藏菜单栏图标，发生错误时也会暂时显示红色圆点。
+
+菜单栏菜单也提供常用操作：选择关闭或定时器预设、查看运行中的剩余时间、打开自定义定时器设置，以及无需打开设置窗口即可切换“保持显示屏常亮”。菜单栏显示和语言选项仍保留在设置中。
+
+仅在启用“防止输入锁定为大写”时，才需要macOS辅助功能权限。Capsomnia使用本地Core Graphics事件过滤器，仅从键盘事件中移除Caps Lock修饰键；不会存储键盘输入，也不会向外部发送。如果权限缺失或过滤器停止运行，菜单栏圆点会变为红色，并重试恢复大写防止功能。Capsomnia的开关和正在运行的定时器独立工作，正常切换和定时器到期仍然有效。恢复前，Caps Lock可能会影响文字输入。禁用此设置时，不需要辅助功能权限，只会每250毫秒检查一次本机Caps Lock状态。
+
+通过软件包安装后，可以从`/Applications/Capsomnia.app`打开Capsomnia；从源代码安装后，可以从`~/Applications/Capsomnia.app`打开；菜单栏项目可见时，也可以从菜单栏打开。
+
+## 为什么不使用`caffeinate`？
+
+`caffeinate`适合在Mac保持打开时防止空闲睡眠。MacBook合盖则是另一种情况：普通的`caffeinate`断言无法可靠保证本地任务在合盖后继续运行。
+
+Capsomnia可以让任务在合盖后像开盖时一样继续运行。黄绿色的Caps Lock指示灯会直观显示该状态。
+
+## 更新
+
+如果通过软件包安装，请从[GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest)下载并运行最新软件包。
+
+如果从源代码安装，可以在现有克隆中更新：
+
+```sh
+cd Capsomnia
+git pull
+./scripts/install.sh
+```
+
+安装脚本会用当前版本覆盖应用程序包、辅助程序、sudoers规则和LaunchAgent。
+
+## 卸载
+
+通过软件包安装时：
+
+```sh
+/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
+```
+
+从源代码安装时：
+
+```sh
+~/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
+```
+
+也可以在源代码克隆目录中执行等效命令：
+
+```sh
+./scripts/uninstall.sh
+```
+
+卸载程序会卸载LaunchAgent、停止Capsomnia、删除`/Applications`或`~/Applications`中的`Capsomnia.app`、删除辅助程序和sudoers规则，并恢复正常睡眠行为。如果Capsomnia更改过指示器设置，还会恢复之前保存的值。过程中可能需要管理员认证。
+
+## 安全模型
+
+Capsomnia的菜单栏应用不会以root身份运行。修改系统睡眠设置需要提升权限，因此Capsomnia通过免密码`sudo`调用一个功能固定的小型原生辅助程序。该辅助程序是已编译的可执行文件，不会调用shell，也不会加载shell启动文件。
+
+通过软件包安装的应用文件、辅助程序和系统LaunchAgent均归`root:wheel`所有。软件包中的辅助程序也使用与应用相同的Developer ID签名。Capsomnia会在每次切换后以及之后每10秒检查一次实际的`SleepDisabled`状态。如果辅助程序无法应用更改、状态无法验证，或设置发生漂移，菜单栏圆点会变为红色，Capsomnia会在5秒后重试，而不会将请求的状态错误地显示为已启用。即使平时隐藏菜单栏图标，发生错误时也会暂时显示红色圆点。
+
+禁用“防止输入锁定为大写”时，Capsomnia不会请求“输入监控”权限，也不会检查键盘事件。启用时，Capsomnia使用辅助功能权限运行本地的主动Core Graphics事件过滤器。该过滤器只会移除`.maskAlphaShift`并抑制Caps Lock修饰键变化事件；不会记录、持久化或通过网络发送事件内容。睡眠控制仍通过每250毫秒检查一次物理Caps Lock状态来实现。
+
+对于现有的缓存注册，安装后macOS仍可能将后台项目显示为“Taketo Fujimaki”而不是“Capsomnia”。这是用于在登录时启动Capsomnia并在崩溃后重新启动应用的LaunchAgent。禁用它可能会导致自动启动和崩溃恢复失效。
+
+如果在崩溃恢复被禁用或不可用时强制结束Capsomnia，最后一次系统睡眠设置可能会保持生效。请使用下面的手动恢复命令恢复正常睡眠行为。
+
+应用和卸载程序以提升权限调用的命令仅限以下六个：
+
+```sh
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
+```
+
+sudoers规则仅允许以上六个完全匹配的命令。辅助程序只接受`on`、`off`、`display-sleep`、`indicator-hide`、`indicator-show`和`indicator-restore`，前三个模式内部只调用：
+
+```sh
+/usr/bin/pmset -a disablesleep 1
+/usr/bin/pmset -a disablesleep 0
+/usr/bin/pmset displaysleepnow
+```
+
+指示器模式只编辑固定设置文件`/Library/Preferences/FeatureFlags/Domain/UIKit.plist`。隐藏前会把`redesigned_text_cursor.Enabled`原先是否存在及其值保存到root所有、权限为`0600`的备份中，显示时再恢复。卸载专用的`indicator-restore`在没有备份时不会做任何更改。无关flag会被保留；如果plist或备份无法正常读取，操作会失败且不会覆盖或删除文件。此未公开设置可能影响其他文本光标指示器。
+
+自动关闭定时器会在成功关闭Caps Lock并确认`SleepDisabled=0`后，再次确认盖子已合上，然后以当前用户身份直接运行`/usr/bin/pmset sleepnow`。该立即睡眠请求不使用`sudo`，也不会扩大辅助程序或sudoers权限。
+
+## 日志与故障排除
+
+日志保存在：
+
+```text
+~/Library/Logs/Capsomnia/
+```
+
+检查是否已禁用睡眠：
+
+```sh
+pmset -g | grep SleepDisabled
+```
+
+手动恢复正常睡眠：
+
+```sh
+sudo pmset -a disablesleep 0
+```
+
+重新启动LaunchAgent：
+
+```sh
+launchctl bootout "gui/$(id -u)" /Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist
+launchctl bootstrap "gui/$(id -u)" /Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist
+```
+
+从源代码安装时，请改用`$HOME/Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist`。
+
+Capsomnia的LaunchAgent只会在应用崩溃或其他非正常退出后重新启动应用。启动时，Capsomnia会读取当前Caps Lock状态，并重新应用对应的睡眠设置。通过“退出”正常关闭应用后，不会重新启动。
+
+检查辅助程序权限：
+
+```sh
+sudo -n -l /Library/PrivilegedHelperTools/capsomnia-pmset on \
+  /Library/PrivilegedHelperTools/capsomnia-pmset off \
+  /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
+```
+
+如果辅助程序权限检查失败，请再次运行`./scripts/install.sh`。Capsomnia每250毫秒检查一次Caps Lock状态，因此从物理指示灯变化到菜单栏圆点更新，最多可能延迟约0.25秒。
+
+## 项目状态
+
+Capsomnia 1.0.0是首个正式稳定版本。发布历史请参阅[CHANGELOG.md](CHANGELOG.md)，漏洞报告方式请参阅[SECURITY.md](SECURITY.md)。
+
+## 许可证
+
+MIT
+
+## CLI & Skill
+
+可在高级设置的 CLI & Skill 中一起安装 cpsm、MacReady 和通用 Skill。cpsm需要Capsomnia应用，MacReady可独立运行。Skill安装到通用位置，并自动创建Claude Code所需的链接。应用从GitHub下载已签名并通过公证的Tools软件包，安装后显示完成对话框。[发布准备](docs/distribution.md)。

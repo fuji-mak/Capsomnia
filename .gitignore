@@ -1,6 +1,7 @@
 .build/
 .swiftpm/
 node_modules/
+.wrangler/
 dist/
 *.app/
 .DS_Store

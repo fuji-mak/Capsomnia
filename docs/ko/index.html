@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Capsomnia — Caps Lock을 macOS 잠자기 방지 스위치로</title>
+    <meta
+      name="description"
+      content="Capsomnia는 Caps Lock을 MacBook 덮개를 닫은 채 작업할 때 쓰는 물리적인 잠자기 방지 스위치로 바꿔 주는 macOS 앱입니다. Codex, Claude Code, SSH 세션, 빌드, 다운로드, 무인 스크립트에 유용합니다."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="canonical" href="https://capsomnia.com/ko/" />
+    <link rel="alternate" hreflang="en" href="https://capsomnia.com/" />
+    <link rel="alternate" hreflang="ja" href="https://capsomnia.com/ja/" />
+    <link rel="alternate" hreflang="zh-Hans" href="https://capsomnia.com/zh-hans/" />
+    <link rel="alternate" hreflang="ko" href="https://capsomnia.com/ko/" />
+    <link rel="alternate" hreflang="x-default" href="https://capsomnia.com/" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:title" content="Capsomnia — Caps Lock을 macOS 잠자기 방지 스위치로" />
+    <meta
+      property="og:description"
+      content="Capsomnia는 Caps Lock을 MacBook 덮개를 닫은 채 작업할 때 쓰는 물리적인 잠자기 방지 스위치로 바꿔 주는 macOS 앱입니다. Codex, Claude Code, SSH 세션, 빌드, 다운로드, 무인 스크립트에 유용합니다."
+    />
+    <meta property="og:url" content="https://capsomnia.com/ko/" />
+    <meta property="og:site_name" content="Capsomnia" />
+    <meta property="og:image" content="https://capsomnia.com/og-image.png" />
+    <meta property="og:image:secure_url" content="https://capsomnia.com/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Capsomnia 설정 화면" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Capsomnia — Caps Lock을 macOS 잠자기 방지 스위치로" />
+    <meta name="twitter:description" content="Capsomnia는 Caps Lock을 MacBook 덮개를 닫은 채 작업할 때 쓰는 물리적인 잠자기 방지 스위치로 바꿔 주는 macOS 앱입니다. Codex, Claude Code, SSH 세션, 빌드, 다운로드, 무인 스크립트에 유용합니다." />
+    <meta name="twitter:image" content="https://capsomnia.com/og-image.png" />
+    <meta name="twitter:image:alt" content="Capsomnia 설정 화면" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://capsomnia.com/#website",
+            "url": "https://capsomnia.com/ko/",
+            "name": "Capsomnia",
+            "description": "Capsomnia는 Caps Lock을 MacBook 덮개를 닫은 채 작업할 때 쓰는 물리적인 잠자기 방지 스위치로 바꿔 주는 macOS 앱입니다. Codex, Claude Code, SSH 세션, 빌드, 다운로드, 무인 스크립트에 유용합니다.",
+            "inLanguage": "ko"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://capsomnia.com/#software",
+            "name": "Capsomnia",
+            "url": "https://capsomnia.com/ko/",
+            "downloadUrl": "https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg",
+            "codeRepository": "https://github.com/fuji-mak/Capsomnia",
+            "description": "Capsomnia는 Caps Lock을 MacBook 덮개를 닫은 채 작업할 때 쓰는 물리적인 잠자기 방지 스위치로 바꿔 주는 macOS 앱입니다. Codex, Claude Code, SSH 세션, 빌드, 다운로드, 무인 스크립트에 유용합니다.",
+            "applicationCategory": "UtilitiesApplication",
+            "applicationSubCategory": "DeveloperTool",
+            "operatingSystem": "macOS 14 or later on Apple silicon",
+            "softwareVersion": "4.2.4",
+            "license": "https://github.com/fuji-mak/Capsomnia/blob/main/LICENSE",
+            "isAccessibleForFree": true,
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "author": {
+              "@type": "Person",
+              "@id": "https://fuji-maki.me/#person",
+              "name": "Taketo Fujimaki",
+              "alternateName": "藤巻雄飛",
+              "url": "https://fuji-maki.me/",
+              "sameAs": [
+                "https://github.com/fuji-mak",
+                "https://zenn.dev/fujimac",
+                "https://note.com/legal_shark926",
+                "https://x.com/tf_makimaki"
+              ]
+            },
+            "isPartOf": {
+              "@id": "https://capsomnia.com/#website"
+            },
+            "inLanguage": "ko"
+          }
+        ]
+      }
+    </script>
+
+    <link rel="stylesheet" href="/styles.css?v=20260801-github-header" />
+  </head>
+  <body class="bg-[var(--bg)] text-[var(--text)] antialiased [text-rendering:optimizeLegibility]">
+    <a
+      class="sr-only focus:not-sr-only focus:fixed focus:left-0 focus:top-0 focus:z-[100] focus:rounded-br-lg focus:bg-[var(--led)] focus:px-4 focus:py-2 focus:font-semibold focus:text-black"
+      href="#main"
+      >본문으로 바로 가기</a
+    >
+
+    <header
+      class="sticky top-0 z-50 flex items-center gap-2 border-b border-[var(--border)] bg-[var(--header-bg)] px-3 py-3 backdrop-blur-xl backdrop-saturate-150 sm:gap-4 sm:px-10"
+    >
+      <a
+        class="inline-flex shrink-0 items-center gap-1.5 text-sm font-bold text-[var(--text)] no-underline sm:gap-2.5 sm:text-lg"
+        href="#top"
+        aria-label="Capsomnia"
+      >
+        <img class="brand-led block h-6 w-6 rounded-md sm:h-7 sm:w-7" src="/icon.svg" alt="" width="28" height="28" />
+        <span>Capsomnia</span>
+      </a>
+
+      <nav
+        class="site-nav mr-auto hidden items-center gap-2.5 md:flex lg:gap-6"
+        aria-label="주요 메뉴"
+      >
+        <a
+          class="text-sm font-medium text-[var(--text-dim)] no-underline hover:text-[var(--text)]"
+          href="#uses"
+          >활용 예</a
+        >
+        <a
+          class="text-sm font-medium text-[var(--text-dim)] no-underline hover:text-[var(--text)]"
+          href="#features"
+          >기능</a
+        >
+        <a
+          class="text-sm font-medium text-[var(--text-dim)] no-underline hover:text-[var(--text)]"
+          href="#security"
+          >보안</a
+        >
+      </nav>
+
+      <div class="ml-auto flex shrink-0 items-center justify-end gap-1.5 sm:gap-2 lg:gap-3">
+        <details class="language-menu relative shrink-0">
+          <summary
+            class="inline-flex min-h-[44px] min-w-[68px] cursor-pointer list-none items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[var(--text)] transition-colors hover:text-[var(--led)]"
+            aria-label="언어 선택"
+          >
+            <span>KO</span>
+            <svg
+              class="language-chevron h-3.5 w-3.5 text-[var(--text-dim)]"
+              viewBox="0 0 20 20"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </summary>
+          <nav
+            class="language-popover absolute right-0 top-[calc(100%+8px)] z-[60] min-w-[160px] rounded-[14px] border border-[var(--border-strong)] bg-[var(--surface)] p-1.5"
+            aria-label="언어"
+          >
+            <a
+              class="language-option flex min-h-[44px] items-center rounded-[10px] px-3 py-2 text-sm font-medium text-[var(--text-dim)] no-underline transition-colors hover:bg-[var(--border)] hover:text-[var(--text)]"
+              href="/?lang=en"
+              hreflang="en"
+              lang="en"
+              >English</a
+            >
+            <a
+              class="language-option flex min-h-[44px] items-center rounded-[10px] px-3 py-2 text-sm font-medium text-[var(--text-dim)] no-underline transition-colors hover:bg-[var(--border)] hover:text-[var(--text)]"
+              href="/ja/?lang=ja"
+              hreflang="ja"
+              lang="ja"
+              >日本語</a
+            >
+            <a
+              class="language-option flex min-h-[44px] items-center rounded-[10px] px-3 py-2 text-sm font-medium text-[var(--text-dim)] no-underline transition-colors hover:bg-[var(--border)] hover:text-[var(--text)]"
+              href="/zh-hans/?lang=zh-hans"
+              hreflang="zh-Hans"
+              lang="zh-Hans"
+              >简体中文</a
+            >
+            <a
+              class="language-option flex min-h-[44px] items-center rounded-[10px] px-3 py-2 text-sm font-medium text-[var(--text-dim)] no-underline transition-colors hover:bg-[var(--border)] hover:text-[var(--text)]"
+              href="/ko/?lang=ko"
+              hreflang="ko"
+              lang="ko"
+              aria-current="page"
+              >한국어</a
+            >
+          </nav>
+        </details>
+        <a
+          class="hidden min-h-[44px] min-w-[76px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-2 text-xs font-semibold text-[var(--text)] no-underline hover:border-[var(--led)] hover:text-[var(--led)] md:inline-flex sm:px-4 sm:text-sm"
+          href="https://github.com/fuji-mak/Capsomnia"
+          target="_blank"
+          rel="noopener noreferrer"
+          ><span aria-hidden="true">⭐️</span> Star on GitHub</a
+        >
+        <a
+          class="inline-flex min-h-[44px] min-w-[80px] items-center justify-center rounded-full bg-[var(--led)] px-3 py-2 text-xs font-semibold text-black no-underline hover:bg-[var(--led-bright)] sm:px-4 sm:text-sm"
+          href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"
+          target="_blank"
+          rel="noopener noreferrer"
+          >다운로드</a
+        >
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="mx-auto max-w-[880px] px-4 pb-10 pt-12 text-center sm:px-10 sm:pb-16 sm:pt-24" id="top">
+        <div class="mb-7 flex justify-center">
+          <img
+            class="led-pulse h-auto w-[140px] rounded-[28px] drop-shadow-[0_0_60px_var(--led-glow)] sm:w-[220px] sm:rounded-[48px]"
+            src="/icon.svg"
+            alt="Capsomnia LED 아이콘"
+            width="220"
+            height="220"
+          />
+        </div>
+        <h1
+          class="mb-6 text-[clamp(2rem,6.4vw,3.6rem)] font-extrabold leading-[1.18] tracking-normal mt-4"
+        >Caps Lock에<br><span class="catch-accent">제대로 된 일을 맡기세요</span></h1>
+        <p class="mx-auto mb-8 max-w-[600px] text-lg text-[var(--text-dim)]"><strong>Caps Lock이 물리적인 잠자기 방지 스위치가 됩니다.</strong> 켜고 덮개를 닫으면 백그라운드 작업은 그대로 이어집니다.</p>
+        <div class="mb-5 flex flex-col justify-center gap-2.5 sm:flex-row sm:gap-3.5">
+          <a
+            class="mx-auto inline-flex w-full max-w-[340px] items-center justify-center rounded-full border border-transparent bg-[var(--led)] px-6 py-3 text-base font-semibold text-black no-underline hover:-translate-y-px hover:bg-[var(--led-bright)] hover:shadow-[0_8px_30px_-8px_var(--led-glow)] sm:mx-0 sm:w-auto sm:max-w-none sm:px-7 sm:py-3.5"
+            href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"
+            target="_blank"
+            rel="noopener noreferrer"
+            >다운로드</a
+          >
+          <a
+            class="mx-auto inline-flex w-full max-w-[340px] items-center justify-center rounded-full border border-[var(--border-strong)] px-6 py-3 text-base font-semibold text-[var(--text)] no-underline hover:-translate-y-px hover:border-[var(--led)] hover:text-[var(--led)] sm:mx-0 sm:w-auto sm:max-w-none sm:px-7 sm:py-3.5"
+            href="https://buymeacoffee.com/taketo"
+            target="_blank"
+            rel="noopener noreferrer"
+            >프로젝트 후원</a
+          >
+        </div>
+        <div class="mb-4 flex justify-center">
+          <a
+            class="inline-flex rounded"
+            href="https://www.producthunt.com/products/capsomnia?embed=true&amp;utm_source=badge-top-post-badge&amp;utm_medium=badge&amp;utm_campaign=badge-capsomnia"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Product Hunt에서 Capsomnia 보기"
+          >
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=1200286&amp;theme=light&amp;period=daily&amp;t=1785049257617"
+              alt="Capsomnia — 덮개를 닫아도 Mac을 깨워 두기 | Product Hunt"
+              width="250"
+              height="54"
+              decoding="async"
+            />
+          </a>
+        </div>
+        <p class="font-mono text-sm text-[var(--text-faint)] sm:whitespace-nowrap">
+          macOS 14+ · Open source<span class="hidden sm:inline"> · </span><span class="block sm:inline">2.5M+ views on X · 13,000+ downloads</span>
+        </p>
+      </section>
+
+      <section
+        class="mx-auto grid max-w-[1080px] grid-cols-1 gap-4 px-4 pb-8 sm:px-10 md:grid-cols-2"
+        aria-label="작동 방식"
+      >
+        <div
+          class="flex items-start gap-3.5 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-5 py-5"
+        >
+          <span
+            class="mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_14px_2px_var(--led-glow)]"
+          ></span>
+          <div>
+            <p class="mb-1 font-semibold">Caps Lock 켜기</p>
+            <p class="text-[0.95rem] text-[var(--text-dim)]"><code>pmset -a disablesleep 1</code>을 실행해 잠자기를 막습니다.</p>
+          </div>
+        </div>
+        <div
+          class="flex items-start gap-3.5 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-5 py-5"
+        >
+          <span
+            class="mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full border border-[var(--off-dot-border)] bg-[var(--off-dot)]"
+          ></span>
+          <div>
+            <p class="mb-1 font-semibold">Caps Lock 끄기</p>
+            <p class="text-[0.95rem] text-[var(--text-dim)]"><code>pmset -a disablesleep 0</code>을 실행해 평소 잠자기 동작으로 돌아갑니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24" id="uses">
+        <div class="mb-10 max-w-[720px]">
+          <h2 class="mb-4 text-[clamp(1.6rem,3.4vw,2.3rem)] font-bold leading-[1.18]">AI 에이전트를 위한 물리 스위치</h2>
+          <p class="mb-2 text-[1.08rem] text-[var(--text-dim)]">오래 걸리는 로컬 작업이 있다면 Caps Lock을 켜고 덮개를 닫으세요. 다시 끌 때까지 Capsomnia가 MacBook을 깨워 둡니다. 잠자기 방지 상태는 Caps Lock 표시등으로 바로 확인할 수 있습니다.</p>
+        </div>
+        <ul class="grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-4">
+          <li
+            class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5 transition hover:-translate-y-0.5 hover:border-[var(--border-strong)]"
+          >
+            <h3 class="mb-2 text-[1.05rem] font-bold">AI 에이전트</h3>
+            <p class="text-[0.95rem] text-[var(--text-dim)]">덮개를 닫아도 Codex나 Claude Code의 긴 작업을 계속 돌립니다.</p>
+          </li>
+          <li
+            class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5 transition hover:-translate-y-0.5 hover:border-[var(--border-strong)]"
+          >
+            <h3 class="mb-2 text-[1.05rem] font-bold">SSH 세션</h3>
+            <p class="text-[0.95rem] text-[var(--text-dim)]">원격으로 Mac을 쓰는 도중 잠자기에 들어가 연결이 끊기는 일을 막습니다.</p>
+          </li>
+          <li
+            class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5 transition hover:-translate-y-0.5 hover:border-[var(--border-strong)]"
+          >
+            <h3 class="mb-2 text-[1.05rem] font-bold">빌드와 다운로드</h3>
+            <p class="text-[0.95rem] text-[var(--text-dim)]">오래 걸리는 컴파일과 큰 파일 다운로드가 끝까지 이어집니다.</p>
+          </li>
+          <li
+            class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5 transition hover:-translate-y-0.5 hover:border-[var(--border-strong)]"
+          >
+            <h3 class="mb-2 text-[1.05rem] font-bold">모바일 연결</h3>
+            <p class="text-[0.95rem] text-[var(--text-dim)]">Codex Mobile 같은 모바일 연결을 유지해 작업이 멈추지 않게 합니다.</p>
+          </li>
+        </ul>
+      </section>
+
+      <section
+        class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24"
+        id="features"
+      >
+        <div class="mb-10 max-w-[900px]">
+          <p class="mb-3 font-mono text-sm font-semibold uppercase tracking-normal text-[var(--led)]">기능</p>
+          <h2 class="mb-5 text-[clamp(1.6rem,3.4vw,2.3rem)] font-bold leading-[1.18]">덮개를 닫아도 Mac은 계속 일합니다</h2>
+          <p class="text-[1.08rem] text-[var(--text-dim)]">Capsomnia는 덮개를 닫아도 작업이 끊기지 않게 하고 Caps Lock 표시등으로 상태를 알려 주는 작은 Mac 앱입니다. 소스 코드도 모두 공개합니다.</p>
+        </div>
+        <div class="grid grid-cols-1 items-center gap-8 lg:grid-cols-[1fr_0.88fr]">
+          <div class="order-2 lg:order-1">
+            <div class="grid grid-cols-1 gap-4">
+              <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
+                <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">덮개 닫기</p>
+                <h3 class="mb-2 text-[1.05rem] font-bold">덮개를 닫아도 작업은 계속됩니다</h3>
+                <p class="text-[0.95rem] text-[var(--text-dim)]">Caps Lock을 켜고 MacBook 덮개를 닫아도 로컬 작업은 계속 실행됩니다. 원격 로그인과 네트워크가 켜져 있으면 SSH 접속도 유지됩니다.</p>
+              </article>
+              <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
+                <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">물리 표시</p>
+                <h3 class="mb-2 text-[1.05rem] font-bold">Caps Lock 표시등으로 상태 확인</h3>
+                <p class="text-[0.95rem] text-[var(--text-dim)]">불이 켜져 있으면 잠자기 방지 기능도 켜진 상태입니다. 키보드만 보고 확인할 수 있어 메뉴 막대에 아이콘을 띄우지 않아도 됩니다.</p>
+              </article>
+              <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
+                <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">자동 종료</p>
+                <h3 class="mb-2 text-[1.05rem] font-bold">타이머가 끝나면 자동으로 잠자기</h3>
+                <p class="text-[0.95rem] text-[var(--text-dim)]">15분~8시간 프리셋 또는 1분~24시간 사용자 지정 시간을 선택할 수 있습니다. Capsomnia를 끄고 잠자기 방지가 해제되었는지 확인한 뒤 Mac을 잠자기 상태로 전환합니다.</p>
+              </article>
+              <article class="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5">
+                <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-normal text-[var(--led)]">오픈 소스</p>
+                <h3 class="mb-2 text-[1.05rem] font-bold">무료 오픈 소스</h3>
+                <p class="text-[0.95rem] text-[var(--text-dim)]">MIT 라이선스로 공개합니다. 설치 전에 소스 코드, 패키지 설치 스크립트, helper 명령, 보안 모델을 직접 살펴볼 수 있습니다.</p>
+              </article>
+            </div>
+          </div>
+          <div class="order-1 lg:order-2" aria-label="Capsomnia 앱 미리 보기">
+            <div class="preview-glow mx-auto w-full max-w-[320px] sm:max-w-[380px] lg:max-w-[370px]">
+              <img
+                class="preview-shot block w-full"
+                src="/app-preview-ko.png"
+                alt="Capsomnia 설정 화면"
+                width="800"
+                height="1258"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24"
+        aria-labelledby="custom-shortcut-title"
+      >
+        <div class="relative overflow-hidden rounded-[24px] border border-[var(--border-strong)] bg-[var(--surface)] px-5 py-8 sm:px-8 sm:py-10 lg:px-12">
+          <div class="relative grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12">
+            <div class="max-w-[620px]">
+              <p class="mb-3 font-mono text-sm font-semibold uppercase tracking-normal text-[var(--led)]">사용자 지정 단축키</p>
+              <h2 id="custom-shortcut-title" class="mb-5 text-[clamp(1.8rem,4vw,2.7rem)] font-bold leading-[1.12]">원하는 키로 자유롭게</h2>
+              <p class="text-[1.08rem] leading-relaxed text-[var(--text-dim)]">Caps Lock에 이미 다른 기능을 할당했어도 원하는 단축키로 Capsomnia를 켜거나 끌 수 있습니다. Capsomnia가 켜져 있는 동안에는 키보드의 초록색 Caps Lock 표시등이 켜집니다.</p>
+            </div>
+            <div class="mx-auto w-full max-w-[540px]">
+              <div class="overflow-hidden rounded-[18px] border border-[var(--border-strong)] bg-black shadow-[0_18px_50px_-28px_rgba(0,0,0,0.9)]">
+                <div class="flex h-9 items-center gap-2 border-b border-[var(--border)] bg-[#0d0d0d] px-4" aria-hidden="true">
+                  <span class="h-3 w-3 rounded-full bg-[#ff5f57]"></span>
+                  <span class="h-3 w-3 rounded-full bg-[#febc2e]"></span>
+                  <span class="h-3 w-3 rounded-full bg-[#28c840]"></span>
+                </div>
+                <img
+                  class="block h-auto w-full"
+                  src="/app-preview-shortcut-en.png"
+                  alt="Capsomnia 고급 설정의 전환 단축키 화면"
+                  width="1080"
+                  height="400"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-12 sm:px-10 sm:py-20"
+        aria-label="Capsomnia 다운로드"
+      >
+        <div class="flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <a
+            class="inline-flex h-14 w-full max-w-[300px] items-center justify-center rounded-full border border-transparent bg-[var(--led)] px-8 text-base font-bold text-black no-underline shadow-[0_0_14px_2px_var(--led-glow)] hover:-translate-y-px hover:bg-[var(--led-bright)] hover:shadow-[0_8px_30px_-8px_var(--led-glow)] sm:h-16 sm:w-auto sm:min-w-[240px]"
+            href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"
+            target="_blank"
+            rel="noopener noreferrer"
+            >다운로드</a
+          >
+          <a
+            class="inline-flex h-14 w-full max-w-[300px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-8 text-base font-bold text-[var(--text)] no-underline hover:-translate-y-px hover:border-[var(--led)] hover:text-[var(--led)] sm:h-16 sm:w-auto sm:min-w-[240px]"
+            href="https://github.com/fuji-mak/Capsomnia"
+            target="_blank"
+            rel="noopener noreferrer"
+            ><span aria-hidden="true">⭐️</span> Star on GitHub</a
+          >
+        </div>
+      </section>
+
+      <section
+        class="mx-auto max-w-[1080px] scroll-mt-[68px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24"
+        id="security"
+      >
+        <div class="max-w-[720px]">
+          <h2 class="mb-4 text-[clamp(1.6rem,3.4vw,2.3rem)] font-bold leading-[1.18]">개인정보 보호와 투명성</h2>
+          <p class="text-[1.08rem] text-[var(--text-dim)]">Capsomnia는 Mac에서 로컬로 작동합니다. 계정 가입이 필요 없고 텔레메트리도 수집하지 않습니다. 소스 코드는 누구나 확인할 수 있도록 공개되어 있습니다.</p>
+          <ul class="mt-6 flex list-none flex-wrap gap-2.5 p-0" aria-label="개인정보 보호">
+            <li
+              class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+            >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
+              ></span>
+              <span>계정 불필요</span>
+            </li>
+            <li
+              class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+            >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
+              ></span>
+              <span>텔레메트리 없음</span>
+            </li>
+            <li
+              class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+            >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
+              ></span>
+              <span>로컬 실행</span>
+            </li>
+            <li
+              class="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)]"
+            >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full bg-[var(--led)] shadow-[0_0_8px_1px_var(--led-glow)]"
+              ></span>
+              <span>오픈 소스</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 py-14 sm:px-10 sm:py-24">
+        <h2 class="mb-7 text-[clamp(1.4rem,3vw,1.9rem)] font-bold leading-[1.18]">링크</h2>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <a
+            class="flex flex-col gap-1 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-5 py-5 no-underline transition hover:-translate-y-0.5 hover:border-[var(--led-deep)]"
+            href="https://github.com/fuji-mak/Capsomnia"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="font-semibold text-[var(--text)]">GitHub 저장소</span>
+            <span class="text-sm text-[var(--text-faint)]">소스 코드, 이슈, 릴리스</span>
+          </a>
+          <a
+            class="flex flex-col gap-1 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-5 py-5 no-underline transition hover:-translate-y-0.5 hover:border-[var(--led-deep)]"
+            href="https://github.com/fuji-mak/Capsomnia/blob/main/README.ko.md"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="font-semibold text-[var(--text)]">README</span>
+            <span class="text-sm text-[var(--text-faint)]">한국어 문서</span>
+          </a>
+          <a
+            class="flex flex-col gap-1 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-5 py-5 no-underline transition hover:-translate-y-0.5 hover:border-[var(--led-deep)]"
+            href="https://github.com/fuji-mak/Capsomnia/blob/main/SECURITY.md"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="font-semibold text-[var(--text)]">보안 정책</span>
+            <span class="text-sm text-[var(--text-faint)]">신고 방법과 보안 모델</span>
+          </a>
+          <a
+            class="flex flex-col gap-1 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-5 py-5 no-underline transition hover:-translate-y-0.5 hover:border-[var(--led-deep)]"
+            href="https://fuji-maki.me/"
+            target="_blank"
+            rel="me noopener noreferrer"
+          >
+            <span class="font-semibold text-[var(--text)]">제작자 링크</span>
+            <span class="text-sm text-[var(--text-faint)]">Taketo Fujimaki</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer
+      class="mx-auto max-w-[1080px] border-t border-[var(--border)] px-4 pb-16 pt-10 text-center text-[var(--text-faint)] sm:px-10"
+    >
+      <p class="mb-2">
+        <span
+          class="mr-1.5 inline-block h-2.5 w-2.5 rounded-full bg-[var(--led)] align-middle shadow-[0_0_10px_1px_var(--led-glow)]"
+        ></span>
+        Capsomnia 2026
+      </p>
+      <p class="text-sm">Caps Lock에 제대로 된 일을 맡기세요</p>
+    </footer>
+
+  </body>
+</html>

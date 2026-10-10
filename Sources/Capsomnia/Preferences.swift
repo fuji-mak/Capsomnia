@@ -1,0 +1,239 @@
+import Foundation
+
+private enum PreferenceKey {
+    static let dedicatedCapsLockMode = "DedicatedCapsLockMode"
+    static let secureInputCapsLockOverrideActive = "SecureInputCapsLockOverrideActive"
+    static let showMenuBarIcon = "ShowMenuBarIcon"
+    static let language = "Language"
+    static let launchAtLogin = "LaunchAtLogin"
+    static let keepDisplayAwake = "KeepDisplayAwake"
+    static let keepHotspotAlive = "KeepHotspotAlive"
+    static let ignoreExternalCapsLockOffWhileLidClosed = "IgnoreExternalCapsLockOffWhileLidClosed"
+    static let autoOffMinutes = "AutoOffMinutes"
+    static let shortcutKeyCode = "ShortcutKeyCode"
+    static let shortcutModifiers = "ShortcutModifiers"
+    static let shortcutKey = "ShortcutKey"
+    static let didCompleteInitialSetup = "DidCompleteInitialSetup"
+    static let forceWelcomeOnNextLaunch = "ForceWelcomeOnNextLaunch"
+    static let capsLockIndicatorBootTime = "CapsLockIndicatorBootTime"
+    static let capsLockIndicatorHiddenAtBoot = "CapsLockIndicatorHiddenAtBoot"
+    static let automaticUpdateChecks = "AutomaticUpdateChecks"
+    static let lastUpdateCheckAt = "LastUpdateCheckAt"
+    static let lastKnownReleaseVersion = "LastKnownReleaseVersion"
+    static let pendingInstallerPath = "PendingInstallerPath"
+    static let pendingInstallerVersion = "PendingInstallerVersion"
+}
+
+enum Preferences {
+    private static let defaults = UserDefaults.standard
+
+    static func registerDefaults() {
+        defaults.register(defaults: [
+            PreferenceKey.dedicatedCapsLockMode: false,
+            PreferenceKey.secureInputCapsLockOverrideActive: false,
+            PreferenceKey.showMenuBarIcon: true,
+            PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
+            PreferenceKey.launchAtLogin: true,
+            PreferenceKey.keepDisplayAwake: false,
+            PreferenceKey.keepHotspotAlive: false,
+            PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed: false,
+            PreferenceKey.autoOffMinutes: 0,
+            PreferenceKey.didCompleteInitialSetup: false,
+            PreferenceKey.forceWelcomeOnNextLaunch: false,
+            PreferenceKey.automaticUpdateChecks: true
+        ])
+    }
+
+    static var dedicatedCapsLockMode: Bool {
+        get { defaults.bool(forKey: PreferenceKey.dedicatedCapsLockMode) }
+        set { defaults.set(newValue, forKey: PreferenceKey.dedicatedCapsLockMode) }
+    }
+
+    /// Tracks ownership of a physical Caps Lock turn-off so an unexpected app
+    /// exit can restore the logical on-state at the next launch.
+    static var secureInputCapsLockOverrideActive: Bool {
+        get { defaults.bool(forKey: PreferenceKey.secureInputCapsLockOverrideActive) }
+        set { defaults.set(newValue, forKey: PreferenceKey.secureInputCapsLockOverrideActive) }
+    }
+
+    static var showMenuBarIcon: Bool {
+        get { defaults.bool(forKey: PreferenceKey.showMenuBarIcon) }
+        set { defaults.set(newValue, forKey: PreferenceKey.showMenuBarIcon) }
+    }
+
+    static var language: AppLanguage {
+        get {
+            AppLanguage(rawValue: defaults.string(forKey: PreferenceKey.language) ?? "")
+                ?? AppLanguage.defaultLanguage
+        }
+        set { defaults.set(newValue.rawValue, forKey: PreferenceKey.language) }
+    }
+
+    static var launchAtLogin: Bool {
+        get { defaults.bool(forKey: PreferenceKey.launchAtLogin) }
+        set { defaults.set(newValue, forKey: PreferenceKey.launchAtLogin) }
+    }
+
+    /// Keeps the display session awake while Capsomnia is on, including across
+    /// the macOS idle timeout and lid closure.
+    static var keepDisplayAwake: Bool {
+        get { defaults.bool(forKey: PreferenceKey.keepDisplayAwake) }
+        set { defaults.set(newValue, forKey: PreferenceKey.keepDisplayAwake) }
+    }
+
+    /// While Capsomnia is on and the default route is a phone hotspot,
+    /// periodically pings the hotspot gateway so the phone does not drop the
+    /// connection for being idle.
+    static var keepHotspotAlive: Bool {
+        get { defaults.bool(forKey: PreferenceKey.keepHotspotAlive) }
+        set { defaults.set(newValue, forKey: PreferenceKey.keepHotspotAlive) }
+    }
+
+    /// While the lid is closed the built-in keyboard cannot be pressed, so a
+    /// Caps Lock turn-off observed in that window comes from an external
+    /// source (e.g. a remote desktop client syncing its keyboard state to the
+    /// host). When enabled, such turn-offs are ignored and Caps Lock is
+    /// re-asserted instead of releasing sleep prevention. Turn-offs from the
+    /// menu bar, the registered shortcut, and the auto-off timer stay
+    /// effective.
+    static var ignoreExternalCapsLockOffWhileLidClosed: Bool {
+        get { defaults.bool(forKey: PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed) }
+        set { defaults.set(newValue, forKey: PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed) }
+    }
+
+    /// Minutes after which awake mode turns itself off automatically.
+    /// `0` means "no timer" — awake mode stays on until Caps Lock is turned off.
+    /// Stored values are clamped to `0...AutoOffPreset.maxCustomMinutes`.
+    static var autoOffMinutes: Int {
+        get {
+            let stored = defaults.integer(forKey: PreferenceKey.autoOffMinutes)
+            return min(max(stored, 0), AutoOffPreset.maxCustomMinutes)
+        }
+        set {
+            let clamped = min(max(newValue, 0), AutoOffPreset.maxCustomMinutes)
+            defaults.set(clamped, forKey: PreferenceKey.autoOffMinutes)
+        }
+    }
+
+    static var keyboardShortcut: KeyboardShortcut? {
+        get {
+            guard let keyCode = defaults.object(forKey: PreferenceKey.shortcutKeyCode) as? NSNumber,
+                  let modifiers = defaults.object(forKey: PreferenceKey.shortcutModifiers) as? NSNumber,
+                  let key = defaults.string(forKey: PreferenceKey.shortcutKey),
+                  !key.isEmpty else {
+                return nil
+            }
+            return KeyboardShortcut(
+                keyCode: keyCode.uint32Value,
+                modifiers: ShortcutModifiers(rawValue: modifiers.uint32Value),
+                key: key
+            )
+        }
+        set {
+            guard let newValue else {
+                defaults.removeObject(forKey: PreferenceKey.shortcutKeyCode)
+                defaults.removeObject(forKey: PreferenceKey.shortcutModifiers)
+                defaults.removeObject(forKey: PreferenceKey.shortcutKey)
+                return
+            }
+            defaults.set(newValue.keyCode, forKey: PreferenceKey.shortcutKeyCode)
+            defaults.set(newValue.modifiers.rawValue, forKey: PreferenceKey.shortcutModifiers)
+            defaults.set(newValue.key, forKey: PreferenceKey.shortcutKey)
+        }
+    }
+
+    /// The indicator flag state observed when the current boot was first
+    /// seen, used to decide whether a restart-required note is still shown.
+    static var capsLockIndicatorBootSnapshot: CapsLockIndicatorBootSnapshot? {
+        get {
+            guard let bootTime = defaults.object(
+                forKey: PreferenceKey.capsLockIndicatorBootTime
+            ) as? NSNumber else {
+                return nil
+            }
+            return CapsLockIndicatorBootSnapshot(
+                bootTime: bootTime.doubleValue,
+                hiddenAtBoot: defaults.bool(
+                    forKey: PreferenceKey.capsLockIndicatorHiddenAtBoot
+                )
+            )
+        }
+        set {
+            guard let newValue else {
+                defaults.removeObject(forKey: PreferenceKey.capsLockIndicatorBootTime)
+                defaults.removeObject(forKey: PreferenceKey.capsLockIndicatorHiddenAtBoot)
+                return
+            }
+            defaults.set(newValue.bootTime, forKey: PreferenceKey.capsLockIndicatorBootTime)
+            defaults.set(
+                newValue.hiddenAtBoot,
+                forKey: PreferenceKey.capsLockIndicatorHiddenAtBoot
+            )
+        }
+    }
+
+    static var didCompleteInitialSetup: Bool {
+        get { defaults.bool(forKey: PreferenceKey.didCompleteInitialSetup) }
+        set { defaults.set(newValue, forKey: PreferenceKey.didCompleteInitialSetup) }
+    }
+
+    /// Daily background checks against the GitHub releases API. Manual
+    /// "Check for Updates…" works regardless of this setting.
+    static var automaticUpdateChecks: Bool {
+        get { defaults.bool(forKey: PreferenceKey.automaticUpdateChecks) }
+        set { defaults.set(newValue, forKey: PreferenceKey.automaticUpdateChecks) }
+    }
+
+    static var lastUpdateCheckAt: Date? {
+        get { defaults.object(forKey: PreferenceKey.lastUpdateCheckAt) as? Date }
+        set {
+            guard let newValue else {
+                defaults.removeObject(forKey: PreferenceKey.lastUpdateCheckAt)
+                return
+            }
+            defaults.set(newValue, forKey: PreferenceKey.lastUpdateCheckAt)
+        }
+    }
+
+    /// The release version most recently seen on GitHub, persisted so the
+    /// "Update available" menu state survives a relaunch between checks.
+    static var lastKnownReleaseVersion: String? {
+        get { defaults.string(forKey: PreferenceKey.lastKnownReleaseVersion) }
+        set {
+            guard let newValue else {
+                defaults.removeObject(forKey: PreferenceKey.lastKnownReleaseVersion)
+                return
+            }
+            defaults.set(newValue, forKey: PreferenceKey.lastKnownReleaseVersion)
+        }
+    }
+
+    /// Records a downloaded update installer so the app can offer to remove it
+    /// after the update is installed. Both values are set and cleared together.
+    static var pendingInstallerPath: String? {
+        defaults.string(forKey: PreferenceKey.pendingInstallerPath)
+    }
+
+    static var pendingInstallerVersion: String? {
+        defaults.string(forKey: PreferenceKey.pendingInstallerVersion)
+    }
+
+    static func setPendingInstaller(path: String?, version: String?) {
+        guard let path, let version else {
+            defaults.removeObject(forKey: PreferenceKey.pendingInstallerPath)
+            defaults.removeObject(forKey: PreferenceKey.pendingInstallerVersion)
+            return
+        }
+        defaults.set(path, forKey: PreferenceKey.pendingInstallerPath)
+        defaults.set(version, forKey: PreferenceKey.pendingInstallerVersion)
+    }
+
+    static func consumeForceWelcomeOnNextLaunch() -> Bool {
+        let shouldShowWelcome = defaults.bool(forKey: PreferenceKey.forceWelcomeOnNextLaunch)
+        if shouldShowWelcome {
+            defaults.set(false, forKey: PreferenceKey.forceWelcomeOnNextLaunch)
+        }
+        return shouldShowWelcome
+    }
+
+}

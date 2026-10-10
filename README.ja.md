@@ -1,7 +1,253 @@
-# Capsomnia OBS Edition
+# Capsomnia
 
-このフォークの最新かつ正式な説明、インストール手順、OBS向けの変更点、およびセキュリティモデルについては、[英語版 README](README.md) を参照してください。
+<p align="center">
+  <img src="resources/CapsomniaIcon.svg" alt="Capsomnia icon" width="128" height="128">
+</p>
 
-オリジナルの日本語ドキュメントは [fuji-mak/Capsomnia](https://github.com/fuji-mak/Capsomnia/blob/main/README.ja.md) で確認できます。
+<p align="center">
+  <a href="https://www.producthunt.com/products/capsomnia?embed=true&amp;utm_source=badge-top-post-badge&amp;utm_medium=badge&amp;utm_campaign=badge-capsomnia" target="_blank" rel="noopener noreferrer"><img alt="Capsomnia — 蓋を閉じてもMacを起こしておく | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=1200286&amp;theme=light&amp;period=daily&amp;t=1785049257617"></a>
+</p>
 
-この版では、蓋を閉じたときに `displaysleepnow` を呼び出さず、画面セッションを維持したまま内蔵ディスプレイの明るさを 0% にします。蓋を開くと、閉じる直前に保存した明るさへ戻します。
+<p align="center">
+  <a href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"><img alt="Capsomnia.pkgをダウンロード" src="https://img.shields.io/badge/Download-Capsomnia.pkg-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://capsomnia.com/ja/"><img alt="Website" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/fuji-mak/Capsomnia/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/fuji-mak/Capsomnia/ci.yml?branch=main&style=flat-square&label=CI&labelColor=111111&color=b7ff3c"></a>
+  <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-b7ff3c?style=flat-square&labelColor=111111">
+  <img alt="Swift 5.9+" src="https://img.shields.io/badge/Swift-5.9%2B-b7ff3c?style=flat-square&labelColor=111111">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
+</p>
+
+現在のバージョン: `4.2.4`
+
+[English README](README.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
+
+**Capsomnia** は、Caps Lock を「閉じた MacBook でも作業を止めないための物理スイッチ」にする小さな macOS アプリです。
+
+作業を走らせ続けたいときは Caps Lock をオン。通常のスリープ動作に戻したいときは Caps Lock をオフにします。
+
+AIエージェントの実行、モバイル接続、その他長時間の実行や遠隔での作業に有効です。
+
+Capsomnia はテレメトリを収集せず、アカウントも必要としません。ネットワーク通信は、GitHubの公開リリース情報を読み取る1日1回のアップデート確認（詳細設定でオフにできます）、アップデートやCLI & Skill導入を選択した際のGitHubからのインストーラのダウンロード、および「テザリング時に接続を維持」を有効にした際のローカルゲートウェイへの疎通確認に限られます。テレメトリや識別子、個人情報を送信することはありません。
+
+詳細設定の「テザリング時に接続を維持」は初期状態ではオフです。有効にすると、Capsomniaがオンの間、iPhoneのインターネット共有など認識できるテザリングの接続先へ1分に1回、小さな疎通確認を送り、アイドル時の切断を防ぎます。通信はローカルネットワーク内に限られ、スマートフォンの電池消費がわずかに増える場合があります。切れた接続を自動で再接続する機能ではありません。
+
+<p align="center">
+  <img src="resources/caps-lock-on.jpg" alt="Caps Lock ランプ点灯" width="560">
+</p>
+
+<p align="center">
+  <em>この小さいランプが点いている間、Mac は寝ません。</em>
+</p>
+
+## クイックスタート
+
+必要なもの:
+
+- 署名済み upstream パッケージ: macOS 14 以降の Apple silicon Mac
+- ソースインストール: macOS 14 以降の Apple silicon Mac、またはmacOS 13.5 以降の Intel Mac
+- インストール時の管理者権限
+
+署名済みパッケージでインストール:
+
+1. [GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest) から `Capsomnia.pkg` をダウンロード
+2. パッケージを開き、インストーラに従う
+
+リリース用パッケージは Developer ID で署名し、Apple の公証を通しています。パッケージは `Capsomnia.app` を `/Applications` に配置し、署名済みネイティブ privileged helper、限定的な sudoers rule、LaunchAgent を設定します。インストール後、Capsomnia が開き、以降はログイン時に自動起動します。
+
+パッケージのビルドとインストール処理は [`scripts/build-pkg.sh`](scripts/build-pkg.sh) と [`scripts/notarize-pkg.sh`](scripts/notarize-pkg.sh) で公開しています。
+
+## CLI & Skill
+
+**詳細設定 → Capsomnia CLI & Skillをダウンロード** の確認ダイアログで「インストール」を押すと、両ツールをまとめて取得し、
+macOSの認証後にアプリ内で導入を完了します。導入先の選択はなく、完了後は「完了しました」と表示します。
+アプリpkgはアプリ・helper用のままです。
+
+- **[cpsm](https://github.com/fuji-mak/cpsm)**：CapsomniaのCLIと共通Skill。
+  アプリ必須で、今回限りのタイマーや、OFFからスリープまでを操作できます。
+- **[MacReady](https://github.com/fuji-mak/MacReady)**：Macの状態をJSONで読み取る
+  独立CLIとSkill。アプリなしでも利用できます。
+
+署名・公証済みの `Capsomnia-Tools.pkg` をcpsmのGitHubリリースから取得します。Skillは `~/.agents/skills/` に共通配置し、
+Claude Code用のリンクを自動で作成します。
+[配布構成と確認手順](docs/distribution.md)を参照してください。
+
+## ソースからビルド
+
+開発者向けのソースインストールは、macOS 14 以降の Apple silicon MacとmacOS 13.5 以降の Intel Macに対応します。Xcode 15以降に含まれるSwift 5.9以降のtoolchainが必要です。
+
+```sh
+git clone https://github.com/fuji-mak/Capsomnia.git
+cd Capsomnia
+./scripts/install.sh
+```
+
+ソースインストーラはローカルで`Capsomnia.app`をビルドして`~/Applications/`へ配置し、限定的なhelperとsudoers ruleをインストールして、ユーザーLaunchAgentを起動します。署名・公証済みのリリースパッケージは引き続きApple silicon専用で、macOS 14以降が必要です。
+
+## できること
+
+- 大文字固定を防ぐ（任意）: Capsomniaがオンのときに、入力が大文字になるのを無効化します。Shiftでの大文字入力は維持します。
+- Caps Lock オン: MacBookの蓋を閉じてもAIエージェントなどの処理が途切れないようにします。Codex Mobile等による遠隔操作も可能です。Caps Lockのライトが状態を物理的に示します。
+- 切り替えショートカット: Caps Lockを別のキーに割り当てている場合でも、お好みのショートカットでCapsomniaをオン／オフできます。Caps Lockの緑のライトは引き続き現在の状態を示します。
+- 自動オフタイマー（任意）: 15分〜8時間のプリセット、または1分〜24時間のカスタム時間を設定できます。満了するとCapsomniaをオフにし、スリープ抑止を解除します。Macを即スリープさせるのは蓋を閉じている時だけです。蓋が開いている時や状態を取得できない時は、即スリープの要求を取り消します。
+- Caps Lock オフ: 通常のスリープ動作に戻ります。
+- 画面動作: 既定では、Capsomniaオン中に蓋を閉じると、作業を走らせたまま画面だけスリープします。「画面をスリープさせない」を有効にすると、待機時間が経過したときや蓋を閉じたときも画面セッションを維持し、Computer Useなどの遠隔操作を継続できます。このモードで蓋を閉じている間は、消費電力と発熱を抑えるため内蔵画面だけを一時的に最低輝度へ下げ、蓋を開くと元の輝度へ正確に戻します。外部ディスプレイは変更しません。
+- アプリ終了時: 通常のスリープ動作へ戻します。
+
+長時間動くローカルジョブ、AI コーディングエージェント、SSH、ビルド、ダウンロード、放置スクリプトなどを止めたくないときに使う想定です。
+
+## ご利用上の注意
+
+- 十分な通気を確保し、安定した電源で使用してください。
+- スリープ抑止中の蓋閉じ運用では、発熱やバッテリー消費が増えることがあります。
+- 重要な処理をCapsomniaだけに頼ったり、バックアップの代わりにしたりしないでください。
+- 自動オフタイマーは、蓋を閉じた状態で満了するとMacを明示的にスリープさせます。作業を保存し、処理が完了するまで十分な時間を設定してください。
+- 使用後はCaps Lockをオフにし、通常のスリープ動作に戻っていることを確認してください。
+- 本ソフトウェアは利用者自身の責任で使用してください。すべてのMac、macOSバージョン、環境での動作を保証するものではありません。
+
+## 設定
+
+初回起動時は、Caps Lockスイッチの動作を説明し、次の項目を選べます。
+
+- メニューバーに丸を表示するか
+- Capsomniaがオンの時の大文字固定を防ぐか
+- 日本語・英語・簡体字中国語・韓国語から使用言語を選択
+
+「ログイン時に起動」は既定でオンになり、初回設定には表示されません。あとからCapsomniaをもう一度開くと、普段変更する「画面をスリープさせない」と自動オフタイマーをすぐ操作できます。「画面をスリープさせない」は既定でオフのため、通常は蓋を閉じると画面がスリープします。タイマーも既定でオフです。Capsomniaをオンにするたび選択時間の最初から開始し、再スタートボタンで現在のカウントダウンを最初から数え直せます。詳細設定には、変更頻度の低いメニューバー表示、大文字固定防止、言語、ログイン時起動、蓋閉じ中のCaps Lock保護、グローバルショートカットに加え、「Caps Lockインジケータを非表示」トグルをまとめています。この機能はmacOSの非公開なシステム全体feature flagを使うため、ほかのテキストカーソル表示にも影響する場合があり、Macの再起動後に反映されます。変更前の対象値を保存し、トグルをオフにしたときやアンインストール時に元へ戻します。「大文字固定を防ぐ」を有効にしていても、「メニューバーに表示」は独立して変更できます。メニューバーを非表示にしている場合も、エラー中は赤い丸を一時表示します。
+
+メニューバーメニューからも、日常的な操作をすぐ行えます。タイマーのオフまたはプリセットを選び、動作中の残り時間を確認し、カスタムタイマー設定を開き、「画面をスリープさせない」を設定画面を開かずに切り替えられます。メニューバー表示と言語の設定は設定画面に残しています。
+
+「大文字固定を防ぐ」を有効にする場合のみ、macOSのアクセシビリティ権限が必要です。CapsomniaはローカルのCore Graphicsイベントフィルターで、キーボードイベントからCaps Lock modifierだけを除外します。入力内容の保存や外部送信は行いません。権限がない、またはフィルターが停止した場合は、メニューバーの丸を赤色にして大文字化防止の復旧を再試行します。CapsomniaのON/OFFと実行中のタイマーは独立して動作し、通常の切り替えやタイマー満了も有効です。復旧するまではCaps Lockが文字入力に影響する場合があります。この設定を無効にしている場合はアクセシビリティ権限を必要とせず、Caps Lock状態だけを250ミリ秒ごとに確認します。
+
+パッケージインストール後は `/Applications/Capsomnia.app`、ソースインストール後は `~/Applications/Capsomnia.app` から開けます。メニューバー項目を表示している場合は、そこからも開けます。
+
+## なぜ `caffeinate` ではなく Capsomnia か
+
+`caffeinate` は、Mac を開いたまま放置するときの idle sleep 抑止には便利です。一方で MacBook の蓋を閉じる場合は別で、通常の `caffeinate` assertion だけではローカルジョブの継続を安定して期待できません。
+
+Capsomnia は蓋を閉じた状態であっても蓋を開いている状態と同じように処理が続行します。Caps Lockの黄緑色のライトがその状態を視覚的に表します。
+
+## アップデート
+
+パッケージインストールの場合は、[GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest) から最新版のパッケージをダウンロードして実行してください。
+
+ソースインストールの場合は、既存 clone から更新できます。
+
+```sh
+cd Capsomnia
+git pull
+./scripts/install.sh
+```
+
+インストールスクリプトは、app bundle、helper、sudoers rule、LaunchAgent を現在のバージョンで上書きします。
+
+## アンインストール
+
+パッケージインストールの場合:
+
+```sh
+/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
+```
+
+ソースインストールの場合:
+
+```sh
+~/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
+```
+
+ソース clone から実行する場合は、これと同じです。
+
+```sh
+./scripts/uninstall.sh
+```
+
+アンインストーラは LaunchAgent を unload し、Capsomnia を停止し、`/Applications` または `~/Applications` の `Capsomnia.app`、helper、sudoers rule を削除し、通常のスリープ動作へ戻します。Capsomniaがインジケータ設定を変更していた場合は、変更前に保存した値へ戻します。管理者認証が必要になることがあります。
+
+## セキュリティモデル
+
+メニューバーアプリ本体は root では動きません。ただしシステムのスリープ設定変更には権限が必要なため、固定ネイティブhelperをpasswordless `sudo`経由で呼び出します。helperはコンパイル済み実行ファイルで、shellの起動やshell初期化ファイルの読み込みは行いません。
+
+パッケージで配置するアプリ、helper、システムLaunchAgentは`root:wheel`所有です。パッケージ版helperもアプリと同じDeveloper IDで署名します。Capsomniaは切替直後と以後10秒ごとに実際の`SleepDisabled`状態を確認します。helperが変更できない、状態を確認できない、設定が外部要因でずれた場合は、要求した状態を有効として表示せず、メニューバーの丸を赤色にして5秒後に再同期します。通常メニューバー表示を隠している場合も、エラー中は赤い丸を一時表示します。
+
+「大文字固定を防ぐ」を無効にしている場合、入力監視を要求せず、キーボードイベントも確認しません。有効にしている場合は、アクセシビリティ権限を使うローカルのactive Core Graphicsイベントフィルターが、`.maskAlphaShift`の除外とCaps Lock modifier-change eventの抑止だけを行います。イベント内容の記録・永続化・ネットワーク送信は行いません。スリープ制御には物理Caps Lock状態を250ミリ秒ごとに確認します。
+
+既存のキャッシュ済み登録では、インストール後もmacOSが「Capsomnia」ではなく「Taketo Fujimaki」のバックグラウンド項目を表示することがあります。これはログイン時にCapsomniaを起動し、クラッシュ後に復帰するためのLaunchAgentです。無効にすると、自動起動とクラッシュ復帰が効かなくなることがあります。
+
+クラッシュ復帰が無効または利用できない状態でCapsomniaを強制終了すると、最後のシステムスリープ設定が残る場合があります。その場合は下記の手動復旧コマンドで通常状態へ戻してください。
+
+アプリとアンインストーラが昇格権限で呼び出すのは次の6コマンドだけです。
+
+```sh
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
+```
+
+sudoers rule はこの 6 コマンドに限定されています。helper も `on`、`off`、`display-sleep`、`indicator-hide`、`indicator-show`、`indicator-restore` だけを受け付け、最初の 3 モードは内部で次の `pmset` だけを実行します。
+
+```sh
+/usr/bin/pmset -a disablesleep 1
+/usr/bin/pmset -a disablesleep 0
+/usr/bin/pmset displaysleepnow
+```
+
+インジケータ用モードが編集する設定ファイルは `/Library/Preferences/FeatureFlags/Domain/UIKit.plist` に固定されています。非表示にする前に `redesigned_text_cursor.Enabled` の有無と元の値をroot所有・`0600`のバックアップへ保存し、表示時に復元します。アンインストール専用の `indicator-restore` はバックアップがない場合は何も変更しません。同じファイル内の無関係なflagは保持し、plistやバックアップを正常に読めない場合は上書きも削除もせず失敗します。この非公開設定はほかのテキストカーソル表示にも影響する場合があります。
+
+自動オフタイマーは、Caps Lockを正常にオフにして`SleepDisabled=0`を確認した後、蓋が閉じていることを再確認してから、現在のユーザー権限で`/usr/bin/pmset sleepnow`を直接実行します。この明示的なスリープ要求は`sudo`を使わず、helperやsudoersの権限を追加しません。
+
+## ログとトラブルシュート
+
+ログはここに出力されます。
+
+```text
+~/Library/Logs/Capsomnia/
+```
+
+スリープ抑止状態を確認する:
+
+```sh
+pmset -g | grep SleepDisabled
+```
+
+通常のスリープ動作へ手動で戻す:
+
+```sh
+sudo pmset -a disablesleep 0
+```
+
+LaunchAgent を再起動する:
+
+```sh
+launchctl bootout "gui/$(id -u)" /Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist
+launchctl bootstrap "gui/$(id -u)" /Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist
+```
+
+ソースインストールの場合は、代わりに `$HOME/Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist` を使ってください。
+
+Capsomnia の LaunchAgent は、アプリがクラッシュした場合など正常終了でないときだけアプリを再起動します。起動時に現在の Caps Lock 状態を読み直し、対応するスリープ設定を再適用します。通常の「終了」は正常終了なので、アプリは再起動しません。
+
+helper 権限を確認する:
+
+```sh
+sudo -n -l /Library/PrivilegedHelperTools/capsomnia-pmset on \
+  /Library/PrivilegedHelperTools/capsomnia-pmset off \
+  /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
+```
+
+helper 権限の確認に失敗する場合は、`./scripts/install.sh` をもう一度実行してください。CapsomniaはCaps Lock状態を250ミリ秒ごとに確認するため、物理LEDの切り替えからメニューバーの丸の更新まで最大でおよそ0.25秒かかる場合があります。
+
+## プロジェクトの状態
+
+Capsomnia 1.0.0は最初の正式安定版です。リリース履歴は [CHANGELOG.md](CHANGELOG.md)、脆弱性報告の方針は [SECURITY.md](SECURITY.md) を参照してください。
+
+## ライセンス
+
+MIT

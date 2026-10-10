@@ -1,0 +1,3 @@
+import MacStateCore
+
+typealias ExternalDisplayReader = MacStateCore.ExternalDisplayReader

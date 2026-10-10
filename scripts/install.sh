@@ -45,8 +45,8 @@ sudo /bin/rm -f "$LEGACY_HELPER_PATH"
 
 sudoers_tmp="$(mktemp)"
 cat > "$sudoers_tmp" <<EOF
-# Allow Capsomnia to toggle only its fixed pmset helper.
-$CURRENT_USER ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off
+# Allow Capsomnia to run only its fixed privileged helper.
+$CURRENT_USER ALL=(root) NOPASSWD: $HELPER_PATH on, $HELPER_PATH off, $HELPER_PATH display-sleep, $HELPER_PATH indicator-hide, $HELPER_PATH indicator-show, $HELPER_PATH indicator-restore
 EOF
 
 /usr/sbin/visudo -cf "$sudoers_tmp"
@@ -60,6 +60,11 @@ cat > "$LAUNCH_AGENT" <<EOF
 <dict>
   <key>Label</key>
   <string>$LABEL</string>
+
+  <key>AssociatedBundleIdentifiers</key>
+  <array>
+    <string>$LABEL</string>
+  </array>
 
   <key>ProgramArguments</key>
   <array>
@@ -89,6 +94,11 @@ EOF
 
 /usr/bin/defaults write "$LABEL" ForceWelcomeOnNextLaunch -bool true
 launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT"
-launchctl enable "gui/$(id -u)/$LABEL"
+launch_at_login="$(/usr/bin/defaults read "$LABEL" LaunchAtLogin 2>/dev/null || true)"
+if [[ "$launch_at_login" == "0" ]]; then
+  launchctl disable "gui/$(id -u)/$LABEL"
+else
+  launchctl enable "gui/$(id -u)/$LABEL"
+fi
 
 echo "Installed $APP_NAME."

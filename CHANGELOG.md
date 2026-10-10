@@ -2,17 +2,177 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
-## Unreleased
+## 4.2.4 - 2026-10-07
 
-## 1.1.0 - 2026-07-14
+- Keep capitalization-prevention failures from turning off awake mode or
+  resetting its timer. Show the input-assistance error and retry independently,
+  while normal ON/OFF controls and timer expiry remain available.
+- Keep timer expiry from interrupting open-lid use: release sleep prevention,
+  but request immediate sleep only after a fresh closed-lid check. Cancel the
+  sleep request if the lid is open or unreadable, including during OFF completion.
+  Clarify this behavior in all four READMEs.
+- Prevent input-source recovery from turning Caps Lock back on while timer
+  OFF is in progress, including delayed HID writes and helper confirmation.
 
-- Keep the graphical session active with display-sleep and user-activity power assertions while Caps Lock is on.
-- Replace the closed-lid `displaysleepnow` request with built-in panel brightness control for OBS and screen-capture continuity.
-- Capture brightness immediately before dimming to 0% and restore that exact value when the lid opens.
-- Use adaptive 40 ms clamshell polling only while the lid is closed; retain 250 ms polling during normal operation.
-- Preserve macOS automatic-brightness behavior after restoration.
-- Remove the obsolete privileged `display-sleep` helper command and narrow the sudoers rule to `on` and `off`.
-- Ad-hoc sign locally assembled source builds so their resource seals verify on current macOS versions.
+## 4.2.3 - 2026-10-06
+
+- Add an opt-in "Keep hotspot connected" setting in Advanced Settings to help
+  prevent idle disconnections while Capsomnia is on. It sends a small local
+  probe once a minute to recognized hotspot gateways, including iPhone Personal
+  Hotspot, and stops when Capsomnia turns off or the connection is no longer a
+  recognized hotspot.
+- Keep hotspot probes on the local network without contacting external servers.
+  The setting is off by default and does not automatically reconnect a lost
+  hotspot connection.
+
+## 4.2.2 - 2026-09-27
+
+- Simplify settings labels and descriptions in all four supported languages,
+  and remove the redundant note from initial setup.
+- Remove temporary CLI and Skill installer packages after installation succeeds,
+  fails, or is cancelled, while preserving the original source package.
+- Remove unused code and consolidate auto-off scheduling, settings layout, and
+  GUI/CLI preference updates. Consolidate redundant tests and CI checks.
+
+## 4.2.1 - 2026-09-24
+
+- When "Prevent uppercase typing" is enabled, temporarily turn off physical
+  Caps Lock while a secure password field is focused and Secure Input is active,
+  keeping awake mode and its timer running.
+- Restore Caps Lock after leaving secure input, while respecting explicit
+  off actions and recovering the temporary override after an unexpected exit.
+
+## 4.2.0 - 2026-09-20
+
+- While "Keep display awake" is active, temporarily lower only the built-in
+  display to minimum brightness when the lid is closed. The display session
+  stays available for remote UI operation such as Computer Use, and external
+  displays are left unchanged.
+- Restore the exact previous brightness before display-awake or system-sleep
+  prevention is released. Persist the saved value so restoration can be
+  retried after an unexpected app termination.
+
+## 4.1.0 - 2026-09-19
+
+- Add an optional "Hide the Caps Lock indicator" setting to Advanced Settings
+  that suppresses the macOS indicator shown in text fields while Caps Lock is
+  on. The change requires a Mac restart, and Capsomnia shows a reminder until
+  the current boot reflects the selected state.
+- Preserve the user's pre-existing feature-flag value and unrelated flags,
+  fail safely when existing data cannot be parsed, and restore the original
+  state when the setting is turned off or Capsomnia is uninstalled.
+
+## 4.0.0 - 2026-09-08
+
+- Add the local control service for the independently distributed cpsm CLI and
+  capsomnia Skill: awake mode, one-shot timers, settings and JSON diagnostics.
+- Explicit CLI off requests immediate sleep after verifying sleep prevention has
+  been released. Keyboard shortcut editing stays in the GUI.
+- Add an Advanced Settings download card for cpsm, MacReady and their common
+  Skills, using a signed and notarized Tools installer with automatic shared Skill placement and Claude Code compatibility links. The app package remains app-only.
+- Consume versioned library snapshots from the independent cpsm and MacReady
+  repositories, keeping the app build self-contained.
+
+- Migrate existing updater cache permissions so the CLI service also starts after upgrading from 3.5.0.
+
+## 3.5.0 - 2026-09-06
+
+- Add a built-in, dependency-free update check. "Check for Updates…" in the menu bar menu queries the GitHub releases API, and an opt-out daily automatic check (Advanced Settings) surfaces new versions as "Update available" in the menu. Choosing to update downloads the installer package to Capsomnia's own caches folder — avoiding the macOS Downloads-folder privacy prompt — verifies it is signed by Capsomnia's Developer ID team before opening it, and removes the download automatically on the first launch after the update. The check reads GitHub's public release information and sends no telemetry, identifiers, or personal data.
+
+- Group the automatic-check setting, available version, and download action in an Updates card in Advanced Settings. A compact Info link beside the version opens its GitHub release notes. The card updates when a newer release is detected, and all four languages use concise explanatory text.
+
+## 3.4.0 - 2026-08-24
+
+- Refocus the menu bar menu on day-to-day controls: choose an auto-off timer preset, see the live remaining time while it runs, open the custom timer editor, and toggle "Keep display awake" without opening Settings.
+- Keep the less frequently changed menu bar visibility and language controls in Settings, while preserving the compact 24-point LED status item.
+
+## 3.3.0 - 2026-08-23
+
+- Simplify display behavior to a single opt-in "Keep display awake" setting. By default, closing the lid puts the display to sleep while work continues. When enabled, Capsomnia prevents idle display sleep and skips its forced lid-close display sleep so the display session remains available for remote UI operation such as Computer Use.
+- Reorganize Settings around frequency of use. The regular window now puts "Keep display awake" and the auto-off timer up front, while initial setup keeps its onboarding choices and Advanced Settings holds the less frequently changed environment, login, lid-closed Caps Lock guard, and shortcut options.
+- Preserve the Developer ID signatures of the app and privileged helper through package installation by signing both executables in their final package payload locations and verifying the nested signatures after packaging.
+
+## 3.2.0 - 2026-08-23
+
+- Add an opt-in "Keep display awake" setting (default off) to Advanced Settings. While Capsomnia is on, the display no longer turns off after the idle time configured in macOS. The assertion is held in-process without new privileges, is released when Capsomnia turns off or the app quits, and is independent of "Turn display off when lid closes", which still turns the display off after the lid closes. (#88)
+
+## 3.1.2 - 2026-08-22
+
+- Preserve an explicitly disabled "Open at login" preference during package and source upgrades, while retaining the enabled-by-default behavior for new installations. (#86)
+
+## 3.1.1 - 2026-08-16
+
+- Prevent reselecting the current auto-off preset or opening and closing the unchanged Custom editor from restarting an active countdown. Use the existing Restart action for intentional resets. (#84)
+
+## 3.1.0 - 2026-08-13
+
+- Add Intel Mac source-install support for macOS 13.5 or later with Swift 5.9, while keeping the signed and notarized package Apple silicon-only on macOS 14 or later.
+- Add an opt-in "Ignore Caps Lock turn-offs while the lid is closed" setting (default off) to Advanced Settings. While the lid is closed, Caps Lock turn-offs from external sources — such as a remote desktop client syncing its keyboard state to the host — are ignored and Caps Lock is re-asserted, so sleep prevention survives remote sessions. Turn-offs from the menu bar, the registered shortcut, and the auto-off timer stay effective, and opening the lid with Caps Lock off returns to normal sleep behavior. (#75)
+
+## 3.0.0 - 2026-08-10
+
+- Add an optional auto-off timer with 15-minute through 8-hour presets, a one-minute to 24-hour custom picker, a live countdown, and an explicit restart action in Advanced Settings.
+- When the timer expires, turn Caps Lock off, confirm that `SleepDisabled` has returned to normal, and then request immediate system sleep exactly once. Do not sleep if Caps Lock cannot be turned off or the sleep-prevention state cannot be confirmed.
+- Keep the menu bar compact by leaving the countdown in Settings, and start a fresh full-duration timer whenever Capsomnia is enabled again.
+- Move custom time controls into a fixed popover, support one-minute adjustments, and coalesce rapid setting changes for immediate UI feedback without shifting the two-column layout.
+
+## 2.0.4 - 2026-08-05
+
+- Prevent command execution deadlocks by draining standard output and standard error concurrently.
+- Prevent main run-loop re-entry from launching nested `pmset` processes during sleep-state polling.
+
+## 2.0.3 - 2026-07-27
+
+- Preserve sleep prevention when macOS clears Caps Lock while switching from an IME to a keyboard layout such as ABC or U.S.
+- Re-assert Caps Lock after selected input source changes while honoring intentional physical-key, menu, and registered-shortcut toggles.
+- Coalesce input-source notifications and tolerate transient HID readback delays during Caps Lock recovery.
+
+## 2.0.2 - 2026-07-24
+
+- Replace the nonfunctional clickable Clear control with concise Del and Esc keyboard hints while editing an assigned shortcut.
+- Keep both the Mac Delete key and Forward Delete available for clearing the shortcut, while Esc cancels without changing it.
+
+## 2.0.1 - 2026-07-24
+
+- Cancel shortcut recording when Settings closes so reopening Capsomnia cannot preserve a stale “Press keys…” state or leave the saved global shortcut suspended.
+- Add an explicit localized Clear button while editing an assigned shortcut, with language-independent padding that matches the adjacent Esc action.
+- Keep Delete and Forward Delete as keyboard alternatives for clearing an assigned shortcut.
+
+## 2.0.0 - 2026-07-21
+
+- Add reliable Caps Lock toggling from the menu bar by using the real IOHID modifier-lock state as the single source of truth for the physical LED, menu bar status, and sleep prevention.
+- Add a persistent global toggle shortcut with conflict handling, support for Command, Option, or Control combinations, and Shift with F1–F20.
+- Redesign Settings with a focused main page and a larger Advanced Settings page that keeps every preference in one window.
+- Clarify Capsomnia-on behavior across all four app languages and add a high-resolution shortcut-settings preview to every localized landing page.
+- Remove redundant security explanation cards from the landing page while retaining the helper restrictions and heat and battery guidance.
+
+## 1.1.0 - 2026-07-19
+
+- Add the optional "Prevent all-caps typing" setting. When enabled, the Caps Lock indicator continues to control Capsomnia while normal typing is no longer locked to uppercase. Shift and other modifiers continue to work normally.
+- Add the setting and its Accessibility explanation in English, Japanese, Simplified Chinese, and Korean.
+- Simplify initial setup to the menu bar icon, the optional typing setting, and language while keeping display sleep on lid close and launch at login enabled by default and editable later.
+- Keep menu bar visibility independent from the typing setting while continuing to show a temporary red indicator for errors.
+- Clarify the optional Accessibility behavior on all four localized landing pages.
+- Polish Korean display-sleep and README wording.
+
+## 1.0.3 - 2026-07-18
+
+- Add Simplified Chinese and Korean localizations to the macOS app, README, and website.
+- Replace the app's segmented language control with a compact pop-up menu for English, Japanese, Simplified Chinese, and Korean.
+- Move the official website to `capsomnia.com`, add localized routes, and route first visits by browser language through Cloudflare Workers while preserving redirects from the previous GitHub Pages URL.
+- Refine the README and landing-page download buttons, language navigation, localized metadata, and support links.
+
+## 1.0.2 - 2026-07-16
+
+- Keep external displays active in clamshell mode by skipping forced display sleep whenever an online external display is connected. If the display state cannot be determined, Capsomnia now fails safely without requesting display sleep.
+- Add a GitHub Sponsors funding link for users who want to support ongoing development.
+
+## 1.0.1 - 2026-07-15
+
+- Associate the installed LaunchAgent with the Capsomnia app bundle so new background-item registrations can show the app name and icon instead of falling back to the Developer ID name. Existing macOS registrations may retain their cached label.
+- Add concise usage and safety guidance covering heat, battery drain, normal sleep restoration, critical jobs, backups, and the software warranty boundary.
+- Keep the canonical landing page Japanese for search indexing and move the no-network, no-telemetry, no-account privacy promise closer to the product introduction.
+- Remove unused app and site code and consolidate duplicated internal implementations without intentionally changing behavior.
 
 ## 1.0.0 - 2026-07-12
 

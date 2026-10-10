@@ -1,3 +1,4 @@
+import CoreGraphics
 import XCTest
 @testable import Capsomnia
 
@@ -23,5 +24,76 @@ final class SleepStateReaderTests: XCTestCase {
     func testRejectsMissingOrUnexpectedState() {
         XCTAssertNil(SleepStateReader.parse("System-wide power settings:"))
         XCTAssertNil(SleepStateReader.parse("SleepDisabled 2"))
+    }
+}
+
+final class DisplaySleepPolicyTests: XCTestCase {
+    func testAllowsDisplaySleepWithoutExternalDisplay() {
+        XCTAssertTrue(
+            DisplaySleepPolicy.shouldRequestDisplaySleep(
+                keepDisplayAwake: false,
+                externalDisplayConnected: false
+            )
+        )
+    }
+
+    func testSuppressesDisplaySleepWithExternalDisplay() {
+        XCTAssertFalse(
+            DisplaySleepPolicy.shouldRequestDisplaySleep(
+                keepDisplayAwake: false,
+                externalDisplayConnected: true
+            )
+        )
+    }
+
+    func testSuppressesDisplaySleepWhenDisplayStateIsUnavailable() {
+        XCTAssertFalse(
+            DisplaySleepPolicy.shouldRequestDisplaySleep(
+                keepDisplayAwake: false,
+                externalDisplayConnected: nil
+            )
+        )
+    }
+
+    func testSuppressesLidCloseDisplaySleepWhileKeepingDisplayAwake() {
+        XCTAssertFalse(
+            DisplaySleepPolicy.shouldRequestDisplaySleep(
+                keepDisplayAwake: true,
+                externalDisplayConnected: false
+            )
+        )
+    }
+}
+
+final class DedicatedCapsLockEventPolicyTests: XCTestCase {
+    func testRemovesCapsLockFlagAndPreservesOtherModifiers() {
+        let flags: CGEventFlags = [.maskAlphaShift, .maskShift, .maskCommand]
+
+        let sanitized = DedicatedCapsLockEventPolicy.sanitizedFlags(flags)
+
+        XCTAssertFalse(sanitized.contains(.maskAlphaShift))
+        XCTAssertTrue(sanitized.contains(.maskShift))
+        XCTAssertTrue(sanitized.contains(.maskCommand))
+    }
+
+    func testSuppressesOnlyCapsLockFlagsChangedEvent() {
+        XCTAssertTrue(
+            DedicatedCapsLockEventPolicy.shouldSuppress(
+                eventType: .flagsChanged,
+                keyCode: DedicatedCapsLockEventPolicy.capsLockKeyCode
+            )
+        )
+        XCTAssertFalse(
+            DedicatedCapsLockEventPolicy.shouldSuppress(
+                eventType: .keyDown,
+                keyCode: DedicatedCapsLockEventPolicy.capsLockKeyCode
+            )
+        )
+        XCTAssertFalse(
+            DedicatedCapsLockEventPolicy.shouldSuppress(
+                eventType: .flagsChanged,
+                keyCode: 56
+            )
+        )
     }
 }

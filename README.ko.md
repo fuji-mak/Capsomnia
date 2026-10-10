@@ -1,0 +1,242 @@
+# Capsomnia
+
+<p align="center">
+  <img src="resources/CapsomniaIcon.svg" alt="Capsomnia 아이콘" width="128" height="128">
+</p>
+
+<p align="center">
+  <a href="https://www.producthunt.com/products/capsomnia?embed=true&amp;utm_source=badge-top-post-badge&amp;utm_medium=badge&amp;utm_campaign=badge-capsomnia" target="_blank" rel="noopener noreferrer"><img alt="Capsomnia — 덮개를 닫아도 Mac을 깨워 두기 | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=1200286&amp;theme=light&amp;period=daily&amp;t=1785049257617"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"><img alt="Capsomnia.pkg 다운로드" src="https://img.shields.io/badge/Download-Capsomnia.pkg-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://capsomnia.com/ko/"><img alt="웹사이트" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/fuji-mak/Capsomnia/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/fuji-mak/Capsomnia/ci.yml?branch=main&style=flat-square&label=CI&labelColor=111111&color=b7ff3c"></a>
+  <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-b7ff3c?style=flat-square&labelColor=111111">
+  <img alt="Swift 5.9+" src="https://img.shields.io/badge/Swift-5.9%2B-b7ff3c?style=flat-square&labelColor=111111">
+  <a href="LICENSE"><img alt="MIT 라이선스" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
+</p>
+
+현재 버전: `4.2.4`
+
+[English README](README.md) · [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md)
+
+Capsomnia는 Caps Lock을 MacBook 덮개를 닫은 채 작업할 때 쓰는 물리 잠자기 방지 스위치로 바꿔 주는 작은 macOS 메뉴 막대 앱입니다.
+
+로컬 작업을 계속 돌리고 싶을 때 Caps Lock을 켜세요. 평소 잠자기 동작으로 돌아가려면 Caps Lock을 끄면 됩니다.
+
+AI 에이전트를 돌리거나 모바일로 접속하는 등, 오래 걸리거나 원격으로 진행하는 작업에 유용합니다.
+
+Capsomnia는 텔레메트리를 수집하거나 계정을 요구하지 않습니다. 네트워크 사용은 GitHub의 공개 릴리스 정보를 읽는 하루 1회의 선택적 업데이트 확인(고급 설정에서 끌 수 있습니다), 업데이트 또는 CLI & Skill 설치를 선택했을 때 GitHub에서 설치 프로그램을 다운로드하는 작업, 그리고 "핫스팟 연결 유지"를 켰을 때 로컬 게이트웨이에 보내는 연결 확인으로 제한됩니다. 텔레메트리, 식별자, 개인 정보는 전송하지 않습니다.
+
+고급 설정의 "핫스팟 연결 유지"는 기본적으로 꺼져 있습니다. 이 기능을 켜면 Capsomnia가 켜져 있는 동안 iPhone 개인용 핫스팟 등 인식된 핫스팟의 게이트웨이에 1분마다 작은 연결 확인 패킷을 보내 유휴 상태의 연결 끊김을 방지합니다. 통신은 로컬 네트워크 안에서만 이루어지며 휴대전화 배터리 사용량이 조금 늘어날 수 있습니다. 끊어진 핫스팟에 자동으로 다시 연결하는 기능은 아닙니다.
+
+<p align="center">
+  <img src="resources/caps-lock-on.jpg" alt="켜진 Caps Lock 표시등" width="560">
+</p>
+
+<p align="center">
+  <em>이 작은 불이 켜져 있는 동안 Mac은 잠들지 않습니다.</em>
+</p>
+
+## 빠르게 시작하기
+
+필요한 환경:
+
+- 업스트림 서명 패키지: macOS 14 이상을 실행하는 Apple silicon Mac
+- 소스 설치: macOS 14 이상을 실행하는 Apple silicon Mac 또는 macOS 13.5 이상을 실행하는 Intel Mac
+- 설치할 때 사용할 관리자 권한
+
+서명된 패키지 설치 방법:
+
+1. [GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest)에서 `Capsomnia.pkg`를 다운로드합니다.
+2. 패키지를 열고 설치 프로그램의 안내를 따릅니다.
+
+릴리스 패키지는 Developer ID로 서명하고 Apple 공증을 받았습니다. 패키지는 `/Applications`에 `Capsomnia.app`을 설치하고 서명된 네이티브 잠자기 제어 helper와 허용 범위를 좁힌 sudoers 규칙을 추가합니다. 이어서 LaunchAgent를 시작합니다. 설치가 끝나면 Capsomnia가 열리고, 이후에는 로그인할 때 자동으로 시작됩니다.
+
+패키지 빌드와 설치에 쓰는 스크립트도 [`scripts/build-pkg.sh`](scripts/build-pkg.sh)와 [`scripts/notarize-pkg.sh`](scripts/notarize-pkg.sh)에 공개되어 있습니다.
+
+## 소스에서 빌드하기
+
+개발자용 소스 설치는 macOS 14 이상의 Apple silicon Mac과 macOS 13.5 이상의 Intel Mac을 지원합니다. Xcode 15 이상에 포함된 Swift 5.9 이상의 툴체인이 필요합니다.
+
+```sh
+git clone https://github.com/fuji-mak/Capsomnia.git
+cd Capsomnia
+./scripts/install.sh
+```
+
+소스 설치 프로그램은 로컬에서 `Capsomnia.app`을 빌드해 `~/Applications/`에 배치하고, 제한된 helper와 sudoers 규칙을 설치한 뒤 사용자 LaunchAgent를 시작합니다. 서명 및 공증된 릴리스 패키지는 계속 Apple silicon 전용이며 macOS 14 이상이 필요합니다.
+
+## 작동 방식
+
+- 대문자 고정 방지(선택 사항): Capsomnia가 켜져 있을 때 입력이 대문자로 고정되지 않도록 합니다. Shift를 누른 대문자 입력은 그대로 사용할 수 있습니다.
+- Caps Lock 켜기: MacBook 덮개를 닫아도 AI 에이전트와 다른 작업이 중단되지 않게 합니다. Codex Mobile 같은 도구로 원격 조작도 계속할 수 있습니다. 현재 상태는 Caps Lock 표시등으로 바로 확인할 수 있습니다.
+- 사용자 지정 전환 단축키: Caps Lock을 다른 키에 할당한 경우에도 원하는 단축키로 Capsomnia를 켜거나 끌 수 있습니다. 초록색 Caps Lock 표시등은 계속 현재 상태를 보여 줍니다.
+- 자동 종료 타이머(선택 사항): 15분~8시간 프리셋 또는 1분~24시간 사용자 지정 시간을 설정할 수 있습니다. 시간이 끝나면 Capsomnia를 끄고 잠자기 방지를 해제합니다. 덮개가 닫혀 있을 때만 Mac을 즉시 잠자기 상태로 전환합니다. 덮개가 열려 있거나 상태를 알 수 없으면 즉시 잠자기 요청을 취소합니다.
+- Caps Lock 끄기: 평소 잠자기 동작으로 돌아갑니다.
+- 화면 동작: 기본적으로 Capsomnia가 켜진 상태에서 덮개를 닫으면 작업은 계속 실행되고 화면만 잠자기 상태로 전환됩니다. ‘화면 켜진 상태로 유지’를 활성화하면 macOS 대기 시간이 지나거나 덮개를 닫아도 화면 세션을 유지해 Computer Use 같은 원격 조작을 계속할 수 있습니다. 이 모드에서 덮개를 닫아 둔 동안에는 전력 소비와 발열을 줄이기 위해 내장 화면만 일시적으로 최저 밝기로 낮추고, 덮개를 열면 이전 밝기로 정확히 복원합니다. 외부 디스플레이는 변경하지 않습니다.
+- 앱 종료: 평소 잠자기 동작으로 돌아갑니다.
+
+오래 걸리는 로컬 작업, AI 코딩 에이전트, SSH 세션, 빌드, 다운로드, 무인 스크립트를 실행할 때 유용합니다.
+
+## 사용 시 주의 사항
+
+- 통풍이 잘되는 곳에서 안정적인 전원을 연결해 사용하세요.
+- 잠자기 방지 기능을 켠 채 덮개를 닫으면 발열과 배터리 소모가 늘어날 수 있습니다.
+- 중요한 작업을 Capsomnia에만 맡기거나 백업 대신 사용하지 마세요.
+- 자동 종료 타이머는 덮개가 닫힌 상태에서 시간이 끝나면 Mac을 명시적으로 잠자기 상태로 전환합니다. 작업을 저장하고 작업이 끝날 만큼 충분한 시간을 설정하세요.
+- 사용이 끝나면 Caps Lock을 끄고 평소 잠자기 동작으로 돌아왔는지 확인하세요.
+- Capsomnia 사용에 따른 책임은 사용자에게 있습니다. 모든 Mac과 macOS 버전, 모든 환경에서 호환된다고 보장하지 않습니다.
+
+## 설정
+
+Capsomnia를 처음 실행하면 Caps Lock 스위치의 작동 방식을 안내하고 다음 항목을 선택할 수 있습니다.
+
+- 메뉴 막대에 점을 표시할지 여부
+- Capsomnia가 켜져 있을 때 대문자 고정을 방지할지 여부
+- 영어, 일본어, 중국어(간체) 또는 한국어
+
+‘로그인할 때 열기’는 기본적으로 켜져 있으며 초기 설정 화면에는 표시되지 않습니다. 나중에 Capsomnia를 다시 열면 평소 자주 바꾸는 ‘화면 켜진 상태로 유지’와 자동 종료 타이머를 바로 조작할 수 있습니다. ‘화면 켜진 상태로 유지’는 기본적으로 꺼져 있으므로 일반적으로 덮개를 닫으면 화면이 잠자기 상태로 전환됩니다. 타이머도 기본적으로 꺼져 있습니다. Capsomnia를 켤 때마다 선택한 시간 전체로 다시 시작하며, 재시작 버튼으로 현재 카운트다운을 처음부터 다시 셀 수 있습니다. 고급 설정에는 변경 빈도가 낮은 메뉴 막대 표시, 대문자 고정 방지, 언어, 로그인 시 실행, 덮개를 닫았을 때의 Caps Lock 보호, 전역 단축키와 함께 ‘Caps Lock 표시기 숨기기’ 토글을 모았습니다. 이 기능은 문서화되지 않은 macOS 시스템 전체 feature flag를 사용하므로 다른 텍스트 커서 표시에도 영향을 줄 수 있으며 재시동 후 적용됩니다. Capsomnia는 변경 전 값을 저장하고 토글을 끄거나 앱을 제거할 때 복원합니다. ‘대문자 고정 방지’를 활성화해도 ‘메뉴 막대에 표시’는 별도로 켜거나 끌 수 있습니다. 메뉴 막대 아이콘을 숨겨 두었더라도 오류가 발생하면 빨간 점이 잠시 나타납니다.
+
+메뉴 막대 메뉴에서도 자주 사용하는 기능을 바로 조작할 수 있습니다. 타이머 끄기 또는 프리셋을 선택하고, 실행 중인 남은 시간을 확인하고, 사용자 지정 타이머 설정을 열고, 설정 창을 열지 않고도 ‘화면 켜진 상태로 유지’를 전환할 수 있습니다. 메뉴 막대 표시와 언어 설정은 설정 창에 그대로 남아 있습니다.
+
+‘대문자 고정 방지’를 활성화하는 경우에만 macOS의 손쉬운 사용 권한이 필요합니다. Capsomnia는 로컬 Core Graphics 이벤트 필터를 사용해 키보드 이벤트에서 Caps Lock modifier만 제외합니다. 입력 내용을 저장하거나 외부로 전송하지 않습니다. 권한이 없거나 필터가 중지되면 메뉴 막대의 점을 빨간색으로 표시하고 대문자 고정 방지 복구를 다시 시도합니다. Capsomnia의 켜기/끄기와 실행 중인 타이머는 독립적으로 작동하며, 일반 전환과 타이머 만료도 계속 적용됩니다. 복구될 때까지 Caps Lock이 문자 입력에 영향을 줄 수 있습니다. 이 설정을 비활성화한 경우에는 손쉬운 사용 권한이 필요하지 않으며 Caps Lock 상태만 250밀리초마다 확인합니다.
+
+패키지로 설치했다면 `/Applications/Capsomnia.app`, 소스에서 설치했다면 `~/Applications/Capsomnia.app`에서 Capsomnia를 열 수 있습니다. 메뉴 막대 항목을 표시해 두었다면 그곳에서도 열 수 있습니다.
+
+## `caffeinate`와 무엇이 다른가요?
+
+`caffeinate`는 MacBook 덮개가 열린 상태에서 유휴 잠자기를 막을 때 유용합니다. 하지만 덮개를 닫는 것은 다른 문제입니다. 일반적인 `caffeinate` assertion만으로는 덮개를 닫은 상태에서 로컬 작업이 계속 실행된다고 장담하기 어렵습니다.
+
+Capsomnia는 덮개를 닫아도 열어 둔 상태와 마찬가지로 작업을 이어 갑니다. Caps Lock의 연두색 표시등이 현재 상태를 눈에 보이게 알려 줍니다.
+
+## 업데이트
+
+패키지로 설치했다면 [GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest)에서 최신 패키지를 다운로드해 실행하세요.
+
+소스에서 설치했다면 기존 clone을 다음과 같이 업데이트합니다.
+
+```sh
+cd Capsomnia
+git pull
+./scripts/install.sh
+```
+
+설치 스크립트는 앱 번들, helper, sudoers 규칙, LaunchAgent를 현재 버전으로 덮어씁니다.
+
+## 제거
+
+패키지로 설치한 경우:
+
+```sh
+/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
+```
+
+소스에서 설치한 경우:
+
+```sh
+~/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
+```
+
+소스 clone에서는 다음 명령을 실행해도 같습니다.
+
+```sh
+./scripts/uninstall.sh
+```
+
+제거 프로그램은 LaunchAgent를 내리고 Capsomnia를 멈춘 다음, `/Applications` 또는 `~/Applications`의 `Capsomnia.app`, helper, sudoers 규칙을 삭제하고 평소 잠자기 동작으로 되돌립니다. Capsomnia가 표시기 설정을 변경했다면 저장된 이전 값도 복원합니다. 관리자 인증이 필요할 수 있습니다.
+
+## 보안 모델
+
+Capsomnia의 메뉴 막대 앱은 root로 실행되지 않습니다. 시스템 잠자기 설정을 바꾸려면 관리자 권한이 필요하므로, Capsomnia는 작고 기능이 고정된 네이티브 helper를 비밀번호 없는 `sudo`로 호출합니다. 이 helper는 컴파일된 실행 파일이며 셸을 실행하거나 셸 시작 파일을 불러오지 않습니다.
+
+패키지로 설치한 앱 파일, helper, 시스템 LaunchAgent의 소유자는 `root:wheel`입니다. 패키지의 helper도 앱과 같은 Developer ID로 서명합니다. Capsomnia는 설정을 바꿀 때마다 실제 `SleepDisabled` 상태를 확인하고 이후에도 10초마다 점검합니다. helper가 변경을 적용하지 못하거나, 상태를 확인할 수 없거나, 설정이 어긋나면 요청한 상태가 활성화된 것처럼 표시하지 않습니다. 대신 메뉴 막대의 점을 빨간색으로 바꾸고 5초 뒤 다시 시도합니다. 평소 메뉴 막대 아이콘을 숨겨 두었더라도 오류가 발생하면 빨간 점이 잠시 나타납니다.
+
+‘대문자 고정 방지’를 비활성화한 경우 입력 모니터링 권한을 요청하지 않고 키보드 이벤트도 확인하지 않습니다. 활성화한 경우에는 손쉬운 사용 권한을 사용하는 로컬 active Core Graphics 이벤트 필터가 `.maskAlphaShift` 제거와 Caps Lock modifier-change 이벤트 억제만 수행합니다. 이벤트 내용을 기록·저장하거나 네트워크로 전송하지 않습니다. 잠자기 제어를 위해 물리 Caps Lock 상태는 250밀리초마다 확인합니다.
+
+설치 후 macOS에 "Taketo Fujimaki" 백그라운드 항목이 표시될 수 있습니다. 이 항목은 로그인할 때 Capsomnia를 시작하고 충돌 후 다시 실행하는 LaunchAgent입니다. 끄면 자동 시작과 충돌 복구가 중단될 수 있습니다.
+
+충돌 복구가 꺼져 있거나 작동하지 않는 상태에서 Capsomnia를 강제로 종료하면 마지막 시스템 잠자기 설정이 남을 수 있습니다. 이때는 아래 수동 복구 명령으로 평소 잠자기 동작을 되돌리세요.
+
+앱과 제거 프로그램이 권한을 높여 호출하는 명령은 다음 여섯 개뿐입니다.
+
+```sh
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
+```
+
+sudoers 규칙은 정확히 이 여섯 명령으로 제한됩니다. helper는 `on`, `off`, `display-sleep`, `indicator-hide`, `indicator-show`, `indicator-restore`만 받아들이며 앞의 세 모드는 다음 명령만 호출합니다.
+
+```sh
+/usr/bin/pmset -a disablesleep 1
+/usr/bin/pmset -a disablesleep 0
+/usr/bin/pmset displaysleepnow
+```
+
+표시기 모드는 고정된 `/Library/Preferences/FeatureFlags/Domain/UIKit.plist`만 설정 파일로 편집합니다. 숨기기 전에 `redesigned_text_cursor.Enabled`의 기존 존재 여부와 값을 root 소유 `0600` 백업에 저장하고, 표시하기에서 복원합니다. 제거 전용 `indicator-restore`는 백업이 없으면 아무것도 바꾸지 않습니다. 무관한 flag는 보존되며 plist나 백업을 정상적으로 읽을 수 없으면 덮어쓰거나 삭제하지 않고 실패합니다. 이 비공개 설정은 다른 텍스트 커서 표시에도 영향을 줄 수 있습니다.
+
+자동 종료 타이머는 Caps Lock을 정상적으로 끄고 `SleepDisabled=0`을 확인한 뒤 덮개가 닫혀 있는지 다시 확인하고 현재 사용자 권한으로 `/usr/bin/pmset sleepnow`를 직접 실행합니다. 이 즉시 잠자기 요청은 `sudo`를 사용하지 않으며 helper나 sudoers 권한을 늘리지 않습니다.
+
+## 로그와 문제 해결
+
+로그는 다음 경로에 기록됩니다.
+
+```text
+~/Library/Logs/Capsomnia/
+```
+
+잠자기 방지 상태 확인:
+
+```sh
+pmset -g | grep SleepDisabled
+```
+
+평소 잠자기 동작으로 수동 복구:
+
+```sh
+sudo pmset -a disablesleep 0
+```
+
+LaunchAgent 다시 시작:
+
+```sh
+launchctl bootout "gui/$(id -u)" /Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist
+launchctl bootstrap "gui/$(id -u)" /Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist
+```
+
+소스에서 설치했다면 `$HOME/Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist`를 대신 사용하세요.
+
+Capsomnia의 LaunchAgent는 앱이 충돌하는 등 정상적으로 종료되지 않았을 때만 앱을 다시 시작합니다. Capsomnia는 시작할 때 현재 Caps Lock 상태를 읽고 그에 맞는 잠자기 설정을 다시 적용합니다. 메뉴에서 정상적으로 종료하면 앱이 다시 시작되지 않습니다.
+
+helper 권한 확인:
+
+```sh
+sudo -n -l /Library/PrivilegedHelperTools/capsomnia-pmset on \
+  /Library/PrivilegedHelperTools/capsomnia-pmset off \
+  /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
+```
+
+helper 권한 확인에 실패하면 `./scripts/install.sh`를 다시 실행하세요. Capsomnia는 Caps Lock 상태를 250밀리초마다 확인하므로 실제 표시등을 바꾼 뒤 메뉴 막대의 점이 갱신되기까지 약 0.25초가 걸릴 수 있습니다.
+
+## 프로젝트 상태
+
+Capsomnia 1.0.0은 첫 번째 안정 공개 버전입니다. 릴리스 기록은 [CHANGELOG.md](CHANGELOG.md), 보안 취약점 신고 방법은 [SECURITY.md](SECURITY.md)에서 확인하세요.
+
+## 라이선스
+
+MIT
+
+## CLI & Skill
+
+고급 설정의 CLI & Skill에서 cpsm, MacReady 및 공통 Skill을 함께 설치할 수 있습니다. cpsm은 Capsomnia 앱이 필요하며, MacReady는 독립적으로 작동합니다. Skill은 공통 위치에 설치되며 Claude Code용 링크도 자동으로 생성됩니다. 서명 및 공증된 Tools 패키지를 GitHub에서 다운로드하고 설치 완료 대화상자를 표시합니다. [배포 준비](docs/distribution.md).

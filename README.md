@@ -1,79 +1,141 @@
-# Capsomnia OBS Edition
+# Capsomnia
 
-Capsomnia OBS Edition turns the MacBook Caps Lock key into a physical keep-awake switch designed for closed-lid recordings, screen capture, remote access, AI agents, builds, downloads, and other long-running local work.
+<p align="center">
+  <img src="resources/CapsomniaIcon.svg" alt="Capsomnia icon" width="128" height="128">
+</p>
 
-This repository is an independently maintained derivative of [fuji-mak/Capsomnia](https://github.com/fuji-mak/Capsomnia). The original project established the Caps Lock interaction, privileged sleep-control helper, login agent, menu bar interface, and safety model. This edition preserves that foundation while changing closed-lid display behavior for workflows such as OBS.
+<p align="center">
+  <a href="https://www.producthunt.com/products/capsomnia?embed=true&amp;utm_source=badge-top-post-badge&amp;utm_medium=badge&amp;utm_campaign=badge-capsomnia" target="_blank" rel="noopener noreferrer"><img alt="Capsomnia - Caps Lock keeps your Mac awake, even with the lid closed | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=1200286&amp;theme=light&amp;period=daily&amp;t=1785049257617"></a>
+</p>
 
-Current fork version: `1.1.0`
+<p align="center">
+  <a href="https://github.com/fuji-mak/Capsomnia/releases/latest/download/Capsomnia.pkg"><img alt="Download Capsomnia.pkg" src="https://img.shields.io/badge/Download-Capsomnia.pkg-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+  <a href="https://capsomnia.com/"><img alt="Website" src="https://img.shields.io/badge/Website-Open-b7ff3c?style=for-the-badge&labelColor=111111"></a>
+</p>
 
-## Why this edition exists
+<p align="center">
+  <a href="https://github.com/fuji-mak/Capsomnia/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/fuji-mak/Capsomnia/ci.yml?branch=main&style=flat-square&label=CI&labelColor=111111&color=b7ff3c"></a>
+  <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-b7ff3c?style=flat-square&labelColor=111111">
+  <img alt="Swift 5.9+" src="https://img.shields.io/badge/Swift-5.9%2B-b7ff3c?style=flat-square&labelColor=111111">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
+</p>
 
-Upstream Capsomnia calls `pmset displaysleepnow` after the lid closes. That is appropriate when the goal is simply to keep background work running, but explicitly sleeping the display can interrupt screen capture or cause OBS sources and screen sharing to stop updating.
+Current version: `4.2.4`
 
-This edition treats the display session differently:
+[日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
-- Caps Lock on prevents system sleep.
-- A `NoDisplaySleepAssertion` keeps the graphical display session active.
-- A renewable `UserIsActive` assertion prevents idle screen locking while the session is active.
-- Closing the lid does **not** request display sleep.
-- The built-in panel brightness is set to 0% instead.
-- Brightness is read immediately before dimming and restored to that exact value when the lid opens.
-- macOS automatic brightness remains enabled and can continue adapting afterward.
-- A 40 ms clamshell watcher runs only while the lid is closed for responsive restoration; normal Caps Lock polling remains at 250 ms.
+Capsomnia is a small macOS menu bar app that turns Caps Lock into a physical keep-awake switch for closed-lid MacBook work.
 
-This is intended to feel like an indefinite Amphetamine session controlled by the physical Caps Lock indicator, while avoiding unnecessary panel brightness behind the closed lid.
+Turn Caps Lock on when local work should keep running. Turn Caps Lock off when you want normal sleep behavior back.
 
-## Behavior
+It is useful for AI agents, mobile access, and other long-running or remote work.
 
-### Caps Lock on
+Capsomnia does not collect telemetry or require an account. Network use is limited to an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), downloading installers from GitHub when you choose to update or install CLI & Skill, and local gateway probes when "Keep hotspot connected" is enabled. Capsomnia sends no telemetry, identifiers, or personal data.
 
-- System sleep is disabled, whether the lid is open or closed.
-- Display idle sleep and automatic idle locking are suppressed.
-- Long-running processes continue.
-- When the lid closes, the app captures the current built-in display brightness and sets brightness to 0% without calling `displaysleepnow`.
-- When the lid opens, the captured brightness is restored immediately.
+<p align="center">
+  <img src="resources/caps-lock-on.jpg" alt="Caps Lock light on" width="560">
+</p>
 
-### Caps Lock off
+<p align="center">
+  <em>When this tiny light is on, your Mac stays awake.</em>
+</p>
 
-- Normal macOS sleep behavior returns.
-- Power assertions are released.
-- Any brightness value held by Capsomnia is restored.
+## Quick Start
 
-### Quitting or terminating
+Requirements:
 
-Capsomnia releases its assertions, restores brightness, and runs the privileged helper in `off` mode to restore normal sleep behavior.
-
-## Requirements
-
-- Apple silicon MacBook
-- macOS 14 or later
-- Xcode Command Line Tools or Xcode with Swift 6
+- Signed upstream package: Apple silicon Mac with macOS 14 or later
+- Source install: Apple silicon Mac with macOS 14 or later, or Intel Mac with macOS 13.5 or later
 - Administrator access during installation
 
-The brightness feature dynamically uses macOS's private `DisplayServices` framework because Apple does not expose equivalent built-in-panel brightness control through a supported public API. This may require maintenance after major macOS updates.
+Install the signed package:
 
-## Install from source
+1. Download `Capsomnia.pkg` from [GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest).
+2. Open the package and follow the installer.
 
-There is currently no signed release package for this fork. Build and install the reviewed source locally:
+Release packages are signed with Developer ID and notarized by Apple. The package installs `Capsomnia.app` in `/Applications`, installs the signed native privileged sleep-control helper, adds a narrow sudoers rule, and starts the LaunchAgent. Capsomnia opens after installation and starts automatically at login afterward.
+
+The package build and install scripts are public in [`scripts/build-pkg.sh`](scripts/build-pkg.sh) and [`scripts/notarize-pkg.sh`](scripts/notarize-pkg.sh).
+
+## CLI & Skill
+
+In **Advanced Settings → Download Capsomnia CLI & Skill**, confirm **Install** in the dialog to add both tools.
+Capsomnia downloads the package and installs it after macOS authentication,
+then shows a completion dialog. There are no agent or folder choices. The app's own package
+contains only the app and its helper; `Capsomnia-Tools.pkg`, published in the cpsm
+repository, adds the optional tools.
+
+- **[cpsm](https://github.com/fuji-mak/cpsm)**: Capsomnia CLI and common `capsomnia`
+  Skill. Requires this app; one-shot timers and explicit off include sleep.
+- **[MacReady](https://github.com/fuji-mak/MacReady)**: independent read-only Mac
+  state CLI and `macready` Skill. Does not require the app.
+
+The app downloads the signed and notarized Tools package from the cpsm GitHub release.
+Skills are shared in `~/.agents/skills/`, with automatic Claude Code links.
+Normal CLI usage stays local. [Distribution and compatibility](docs/distribution.md).
+
+## Build From Source
+
+Developer source installation supports Apple silicon Macs on macOS 14 or later and Intel Macs on macOS 13.5 or later. It requires Swift 5.9 or later, included with Xcode 15 or later:
 
 ```sh
-git clone https://github.com/tarushvkodes/Capsomnia.git
+git clone https://github.com/fuji-mak/Capsomnia.git
 cd Capsomnia
 ./scripts/install.sh
 ```
 
-The installer:
+The source installer builds `Capsomnia.app` locally, places it in `~/Applications/`, installs the restricted helper and sudoers rule, and starts a user LaunchAgent. The signed and notarized release package remains Apple silicon-only and requires macOS 14 or later.
 
-1. Builds the Swift app and native helper locally.
-2. Ad-hoc signs the assembled app so its resource seal verifies.
-3. Installs `Capsomnia.app` in `~/Applications`.
-4. Installs the native helper at `/Library/PrivilegedHelperTools/capsomnia-pmset`.
-5. Adds a narrow sudoers rule permitting only the helper's `on` and `off` modes.
-6. Creates a user LaunchAgent and starts Capsomnia at login.
+## What It Does
 
-The administrator password is used only for the helper and sudoers installation steps.
+- Prevent all-caps typing (optional): when Capsomnia is on, Caps Lock no longer forces uppercase input. Shift still types uppercase letters.
+- Caps Lock on: keeps AI agents and other work from being interrupted when the MacBook lid is closed. Remote operation through tools such as Codex Mobile remains possible. The Caps Lock light physically shows the current state.
+- Custom toggle shortcut: turn Capsomnia on or off with another key combination even if Caps Lock is assigned elsewhere. The green Caps Lock light continues to show the current state.
+- Auto-off timer (optional): choose a preset from 15 minutes to 8 hours or a custom duration from 1 minute to 24 hours. When time expires, Capsomnia turns off and releases sleep prevention. It immediately sleeps the Mac only if the lid is closed; an open or unknown lid state cancels the immediate sleep request.
+- Caps Lock off: restores normal sleep behavior.
+- Display behavior: by default, closing the lid puts the display to sleep while work keeps running. Enable "Keep display awake" to keep the display session available after the macOS idle time or closing the lid, so remote UI operation such as Computer Use can continue. While the lid is closed in this mode, Capsomnia temporarily lowers only the built-in display to minimum brightness to reduce power use and heat, then restores the exact previous brightness when the lid opens. External displays are not changed.
+- Quitting the app restores normal sleep behavior.
+
+Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions, builds, downloads, and unattended scripts.
+
+## Usage Notes
+
+- Ensure sufficient airflow and use a stable power source.
+- Closed-lid use while sleep prevention is active may increase heat and battery consumption.
+- Do not rely on Capsomnia for critical jobs or as a substitute for backups.
+- The auto-off timer explicitly puts the Mac to sleep when it expires with the lid closed. Save work and choose a duration long enough for the task to finish.
+- Turn Caps Lock off after use and confirm that normal sleep behavior has returned.
+- Use Capsomnia at your own risk. Compatibility is not guaranteed for every Mac, macOS version, or environment.
+
+## Settings
+
+Advanced Settings includes an optional "Keep hotspot connected" switch, off by default. While Capsomnia is on, it sends one small probe per minute to a recognized hotspot gateway, including iPhone Personal Hotspot, to help prevent idle disconnections. The probes stay on the local network and may slightly increase the phone's battery use. This does not automatically reconnect a lost hotspot connection.
+
+On first launch, Capsomnia explains how the Caps Lock switch works and lets you choose:
+
+- whether to show the menu bar dot
+- whether to prevent all-caps typing while Capsomnia is on
+- English, Japanese, Simplified Chinese, or Korean
+
+"Open at login" is enabled by default and does not appear in initial setup. Open Capsomnia again later to use the two day-to-day controls directly: the opt-in "Keep display awake" setting and the optional auto-off timer. "Keep display awake" is off by default, so closing the lid normally puts the display to sleep. The timer is also off by default. Each time Capsomnia is enabled, the selected duration starts from the beginning; the restart button resets the current countdown. Advanced Settings contains the less frequently changed menu bar, all-caps prevention, language, login, lid-closed Caps Lock guard, and global shortcut options, plus an optional "Hide the Caps Lock indicator" toggle. This uses an undocumented system-wide macOS feature flag, may affect other text-cursor indicators, and takes effect after restarting the Mac. Capsomnia shows a reminder until the restart happens. It saves the previous target value before changing it and restores that value when the toggle is turned off or Capsomnia is uninstalled. "Show menu bar icon" remains independent when "Prevent all-caps typing" is enabled. If the icon is hidden, a red dot appears temporarily when an error occurs.
+
+The menu bar menu keeps the same day-to-day controls close at hand: choose Off or a timer preset, see the remaining time while it runs, open the custom timer editor, and toggle "Keep display awake" without opening Settings. Menu bar visibility and language remain in Settings.
+
+macOS Accessibility permission is required only when "Prevent all-caps typing" is enabled. Capsomnia installs a local Core Graphics event filter that removes only the Caps Lock modifier from keyboard events; it does not store keyboard input or send it anywhere. If permission is missing or the filter stops, the menu bar dot turns red and the app retries capitalization prevention. Awake mode and the running timer continue independently, including normal ON/OFF controls and timer expiry. Caps Lock may affect typing until the filter recovers. When this setting is disabled, Accessibility permission is not required and Capsomnia only checks the local Caps Lock state every 250 milliseconds.
+
+You can open Capsomnia from `/Applications/Capsomnia.app` after package installation, from `~/Applications/Capsomnia.app` after source installation, or from the menu bar item while it is visible.
+
+## Why Not `caffeinate`?
+
+`caffeinate` is useful for preventing idle sleep while your Mac is open. Closing a MacBook lid is different: normal `caffeinate` assertions do not reliably keep local jobs running in closed-lid use.
+
+Capsomnia keeps work running in closed-lid use the same way it would while the lid is open. The yellow-green Caps Lock light makes that state visible.
 
 ## Update
+
+For package installs, download and run the latest package from [GitHub Releases](https://github.com/fuji-mak/Capsomnia/releases/latest).
+
+For source installs, update from an existing clone:
 
 ```sh
 cd Capsomnia
@@ -81,114 +143,113 @@ git pull
 ./scripts/install.sh
 ```
 
-The installer rebuilds the app and helper, replaces the installed files, refreshes the sudoers rule, and restarts the login agent.
+The install script overwrites the app bundle, helper, sudoers rule, and LaunchAgent with the current version.
 
 ## Uninstall
 
-From the source checkout:
+For package installs:
 
 ```sh
-./scripts/uninstall.sh
+/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
 ```
 
-Or from the installed app:
+For source installs:
 
 ```sh
 ~/Applications/Capsomnia.app/Contents/Resources/uninstall.sh
 ```
 
-The uninstaller restores normal sleep, unloads the LaunchAgent, and removes the app, helper, logs, preferences, and sudoers rule.
-
-## Verify installation
-
-Check the process and sleep state:
+From a source clone, this is equivalent:
 
 ```sh
-pgrep -fl Capsomnia
-pmset -g | grep SleepDisabled
+./scripts/uninstall.sh
 ```
 
-With Caps Lock on, `SleepDisabled` should be `1`. With Caps Lock off, it should be `0`.
+The uninstaller unloads the LaunchAgent, stops Capsomnia, removes `Capsomnia.app` from `/Applications` or `~/Applications`, removes the helper and sudoers rule, restores normal sleep behavior, and restores the Caps Lock indicator setting captured before Capsomnia changed it. Administrator authentication may be required.
 
-Inspect active assertions:
+## Security Model
+
+Capsomnia's menu bar app does not run as root. System sleep settings require elevated privileges, so Capsomnia uses a small fixed native helper through passwordless `sudo`. The helper is a compiled executable and does not invoke a shell or load shell startup files.
+
+Package-installed app files, the helper, and the system LaunchAgent are owned by `root:wheel`. The packaged helper is also signed with the same Developer ID as the app. Capsomnia verifies the actual `SleepDisabled` state after every change and every ten seconds afterward. If the helper cannot apply a change, the state cannot be verified, or the setting drifts, the menu bar dot turns red and Capsomnia retries after five seconds instead of showing the requested state as active. The red error dot appears temporarily even if the menu bar icon is normally hidden.
+
+When "Prevent all-caps typing" is disabled, Capsomnia does not request Input Monitoring or inspect keyboard events. When it is enabled, a local active Core Graphics event filter uses Accessibility permission only to remove `.maskAlphaShift` and suppress the Caps Lock modifier-change event. It does not log event contents, persist them, or send them over the network. Capsomnia still reads the physical Caps Lock state every 250 milliseconds to control sleep.
+
+macOS may show "Taketo Fujimaki" instead of "Capsomnia" for an existing cached background-item registration. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
+
+If Capsomnia is force-killed while crash recovery is disabled or unavailable, the last system sleep setting can remain active. Use the manual recovery command below to restore normal sleep behavior.
+
+The app invokes these privileged commands:
 
 ```sh
-pmset -g assertions | grep -E 'Capsomnia|NoDisplaySleepAssertion|UserIsActive'
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset on
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset off
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show
+sudo -n /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
 ```
 
-Check helper authorization:
-
-```sh
-sudo -n -l \
-  /Library/PrivilegedHelperTools/capsomnia-pmset on \
-  /Library/PrivilegedHelperTools/capsomnia-pmset off
-```
-
-Review logs:
-
-```sh
-tail -f ~/Library/Logs/Capsomnia/capsomnia.log
-```
-
-Useful log events include:
-
-- `brightness_zero=ok`
-- `brightness_restore=ok`
-- `closed_lid_polling_started interval_ms=40`
-- `closed_lid_polling_stopped`
-
-## OBS verification workflow
-
-Before relying on the app for an important recording:
-
-1. Start a short OBS test recording.
-2. Turn Caps Lock on and confirm the menu bar indicator is active.
-3. Close the lid completely.
-4. Leave it closed long enough to verify that the recording and captured source continue updating.
-5. Open the lid and confirm that the previous brightness returns without a lock screen.
-6. Review the recording and Capsomnia log.
-
-macOS and MacBook hardware ultimately control whether an internal display remains logically available after the physical lid-detach event. This edition avoids deliberately sleeping the display and maintains the relevant power assertions, but it cannot guarantee every OBS capture source on every macOS release. Test the exact source type you plan to record.
-
-## Power and thermal considerations
-
-Closed-lid operation can increase heat and battery drain. Video recording and encoding are much more significant power consumers than the temporary 40 ms lid polling. Ensure adequate airflow, use external power for long sessions, and monitor temperatures during sustained workloads.
-
-## Security model
-
-The menu bar app does not run as root. The root-owned native helper accepts only:
-
-```sh
-/Library/PrivilegedHelperTools/capsomnia-pmset on
-/Library/PrivilegedHelperTools/capsomnia-pmset off
-```
-
-Those modes map directly to:
+The sudoers rule is limited to those six exact commands. The helper only accepts `on`, `off`, `display-sleep`, `indicator-hide`, `indicator-show`, and `indicator-restore`. The first three only call:
 
 ```sh
 /usr/bin/pmset -a disablesleep 1
 /usr/bin/pmset -a disablesleep 0
+/usr/bin/pmset displaysleepnow
 ```
 
-The helper does not invoke a shell, load shell configuration, access the network, or accept arbitrary commands. Capsomnia makes no network requests, collects no telemetry, and requires no account.
+The indicator modes only edit the fixed file `/Library/Preferences/FeatureFlags/Domain/UIKit.plist`. Hiding saves the original presence and value of `redesigned_text_cursor.Enabled` in a root-owned `0600` backup before writing the override. Showing restores it, while uninstall-only `indicator-restore` does nothing when Capsomnia has no backup. Unrelated flags are preserved, and unreadable or malformed plist data causes the operation to fail without replacing or deleting the file. This is an undocumented macOS feature flag and may affect other text-cursor indicators.
 
-## Development
+After an auto-off timer has successfully turned Caps Lock off and confirmed `SleepDisabled=0`, the app rechecks that the lid is closed before running `/usr/bin/pmset sleepnow` directly as the current user. This immediate sleep request does not use `sudo` and does not expand the helper or sudoers permissions.
 
-Run the tests:
+## Logs and Troubleshooting
+
+Logs are written to:
+
+```text
+~/Library/Logs/Capsomnia/
+```
+
+Check whether sleep is disabled:
 
 ```sh
-swift test -c release
+pmset -g | grep SleepDisabled
 ```
 
-Build an app bundle without installing:
+Restore normal sleep manually:
 
 ```sh
-./scripts/build-app.sh dist/Capsomnia.app
-codesign --verify --deep --strict --verbose=2 dist/Capsomnia.app
+sudo pmset -a disablesleep 0
 ```
 
-## Upstream attribution and license
+Restart the LaunchAgent:
 
-Original project: [fuji-mak/Capsomnia](https://github.com/fuji-mak/Capsomnia) by Taketo Fujimaki.
+```sh
+launchctl bootout "gui/$(id -u)" /Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist
+launchctl bootstrap "gui/$(id -u)" /Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist
+```
 
-This derivative retains the original MIT license. See [LICENSE](LICENSE).
+For source installs, use `$HOME/Library/LaunchAgents/com.github.fuji-mak.capsomnia.plist` instead.
+
+Capsomnia's LaunchAgent restarts the app after a crash or other unsuccessful exit. On startup, Capsomnia reads the current Caps Lock state and reapplies the matching sleep setting. Normal Quit still exits cleanly and does not restart the app.
+
+Check the helper permissions:
+
+```sh
+sudo -n -l /Library/PrivilegedHelperTools/capsomnia-pmset on \
+  /Library/PrivilegedHelperTools/capsomnia-pmset off \
+  /Library/PrivilegedHelperTools/capsomnia-pmset display-sleep \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-hide \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-show \
+  /Library/PrivilegedHelperTools/capsomnia-pmset indicator-restore
+```
+
+If the helper permission check fails, run `./scripts/install.sh` again. Capsomnia checks the Caps Lock state every 250 milliseconds, so the menu bar dot may update by up to roughly a quarter second after the physical LED changes.
+
+## Project Status
+
+Capsomnia 1.0.0 is the first stable public release. See [CHANGELOG.md](CHANGELOG.md) for release history and [SECURITY.md](SECURITY.md) for vulnerability reporting.
+
+## License
+
+MIT

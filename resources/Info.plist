@@ -26,6 +26,10 @@
 	<string>13.5</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Capsomnia uses Location access to find your configured Wi-Fi hotspot for optional automatic reconnection.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>Capsomnia uses Location access to find your configured Wi-Fi hotspot for optional automatic reconnection.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>CapsomniaToolsPackageURL</key>

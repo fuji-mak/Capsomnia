@@ -7,6 +7,8 @@ private enum PreferenceKey {
     static let language = "Language"
     static let launchAtLogin = "LaunchAtLogin"
     static let keepDisplayAwake = "KeepDisplayAwake"
+    static let autoConnectHotspot = "AutoConnectHotspot"
+    static let hotspotSSID = "HotspotSSID"
     static let keepHotspotAlive = "KeepHotspotAlive"
     static let ignoreExternalCapsLockOffWhileLidClosed = "IgnoreExternalCapsLockOffWhileLidClosed"
     static let autoOffMinutes = "AutoOffMinutes"
@@ -28,6 +30,7 @@ enum Preferences {
     private static let defaults = UserDefaults.standard
 
     static func registerDefaults() {
+        migrateLegacyDisplayPreference(defaults)
         defaults.register(defaults: [
             PreferenceKey.dedicatedCapsLockMode: false,
             PreferenceKey.secureInputCapsLockOverrideActive: false,
@@ -36,12 +39,36 @@ enum Preferences {
             PreferenceKey.launchAtLogin: true,
             PreferenceKey.keepDisplayAwake: false,
             PreferenceKey.keepHotspotAlive: false,
+            PreferenceKey.autoConnectHotspot: false,
+            PreferenceKey.hotspotSSID: "",
             PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed: false,
             PreferenceKey.autoOffMinutes: 0,
             PreferenceKey.didCompleteInitialSetup: false,
             PreferenceKey.forceWelcomeOnNextLaunch: false,
             PreferenceKey.automaticUpdateChecks: true
         ])
+    }
+
+    static func migrateLegacyDisplayPreference(_ defaults: UserDefaults, domain: String = appLabel) {
+        let saved = defaults.persistentDomain(forName: domain) ?? [:]
+        if saved[PreferenceKey.keepDisplayAwake] == nil,
+           (saved["DisplaySleepOnLidClose"] as? Bool) == true {
+            defaults.set(true, forKey: PreferenceKey.keepDisplayAwake)
+        }
+    }
+
+    static var autoConnectHotspot: Bool {
+        get { defaults.bool(forKey: PreferenceKey.autoConnectHotspot) }
+        set { defaults.set(newValue, forKey: PreferenceKey.autoConnectHotspot) }
+    }
+
+    static var hotspotSSID: String {
+        get { defaults.string(forKey: PreferenceKey.hotspotSSID) ?? "" }
+        set { defaults.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forKey: PreferenceKey.hotspotSSID) }
+    }
+
+    static var hotspotReconnectConfiguration: HotspotReconnectConfiguration {
+        HotspotReconnectConfiguration(enabled: autoConnectHotspot, ssid: hotspotSSID)
     }
 
     static var dedicatedCapsLockMode: Bool {

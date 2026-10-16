@@ -4,6 +4,7 @@ enum SettingsPage {
     case initialPreferences
     case settings
     case advancedSettings
+    case timerSettings
 }
 
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
@@ -12,6 +13,17 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private static let advancedColumnSpacing: CGFloat = 20
 
     private let headerIcon = NSImageView()
+    private let masterTitle = brandLabel(size: 15, weight: .semibold, color: Brand.text)
+    private let masterStatus = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let masterToggle = LEDToggle(isOn: false)
+    private let computerStatus = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let scenarioLabel = brandLabel(size: 12, color: Brand.textDim, wraps: true)
+    private let powerLabel = brandLabel(size: 11, color: Brand.textFaint, wraps: true)
+    private let timerButton = DisclosureButton(height: 36)
+    private var masterCard = NSView()
+    private let onAwakeChange: (Bool) -> Void
+    private let awakePresentationProvider: (() -> AwakePresentation)?
+    private var renderedPresentation: AwakePresentation?
     private let titleLabel = brandLabel(size: 21, weight: .bold, color: Brand.text)
     private let appHeader = NSStackView()
     private let advancedHeader = NSView()
@@ -55,7 +67,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let keepDisplayAwakeTitle = brandLabel(
         size: 13,
         weight: .medium,
-        color: Brand.text
+        color: Brand.text,
+        wraps: true
     )
     private let keepDisplayAwakeDesc = brandLabel(
         size: 12,
@@ -170,6 +183,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private var shortcutCard = NSView()
     private var autoOffCard = NSView()
     private var initialPreferencesLayoutConstraints: [NSLayoutConstraint] = []
+    private var timerLayoutConstraints: [NSLayoutConstraint] = []
     private var settingsLayoutConstraints: [NSLayoutConstraint] = []
     private var advancedSettingsLayoutConstraints: [NSLayoutConstraint] = []
 
@@ -212,7 +226,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onUpdate: @escaping (String) -> Void = { _ in },
         onReleaseNotes: @escaping (String) -> Void = { _ in },
         onToolsDownload: @escaping () -> Void = {},
-        autoOffDescriptionProvider: @escaping () -> String? = { nil }
+        autoOffDescriptionProvider: @escaping () -> String? = { nil },
+        onAwakeChange: @escaping (Bool) -> Void = { _ in },
+        awakePresentationProvider: (() -> AwakePresentation)? = nil
     ) {
         self.onDedicatedCapsLockModeChange = onDedicatedCapsLockModeChange
         self.onShowMenuBarIconChange = onShowMenuBarIconChange
@@ -233,6 +249,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.currentVersion = currentVersion
         self.onUpdate = onUpdate
         self.onReleaseNotes = onReleaseNotes
+        self.onAwakeChange = onAwakeChange
+        self.awakePresentationProvider = awakePresentationProvider
         self.onToolsDownload = onToolsDownload
         self.autoOffDescriptionProvider = autoOffDescriptionProvider
 
@@ -267,7 +285,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         let isInitialSetup = page == .initialPreferences
         let isAdvancedSettings = page == .advancedSettings
-        if isInitialSetup {
+        let isTimerSettings = page == .timerSettings
+        if isTimerSettings {
+            window?.title = AwakeText.current.autoEnd
+        } else if isInitialSetup {
             window?.title = strings.welcomeTitle
         } else if isAdvancedSettings {
             window?.title = strings.advancedSettings
@@ -275,7 +296,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             window?.title = strings.settingsTitle
         }
         titleLabel.stringValue = isInitialSetup ? strings.welcomeTitle : "Capsomnia"
-        advancedTitleLabel.stringValue = strings.advancedSettings
+        advancedTitleLabel.stringValue = isTimerSettings ? AwakeText.current.autoEnd : strings.advancedSettings
         updateBackButtonText(strings)
 
         explainerOnTitle.stringValue = strings.explainerOnTitle
@@ -300,7 +321,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         systemBehaviorHeading.stringValue = strings.systemBehavior.uppercased()
         keepDisplayAwakeTitle.stringValue = strings.keepDisplayAwake
-        keepDisplayAwakeDesc.stringValue = strings.keepDisplayAwakeDesc
+        keepDisplayAwakeDesc.stringValue = AwakeText.current.computerDescription
         keepDisplayAwakeToggle.setAccessibilityLabel(strings.keepDisplayAwake)
         keepHotspotAliveTitle.stringValue = strings.keepHotspotAlive
         keepHotspotAliveDesc.stringValue = strings.keepHotspotAliveDesc
@@ -321,7 +342,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         autoOffControl.setStrings(
             desc: autoOffDescriptionProvider() ?? strings.autoOffTimerDesc,
-            off: strings.autoOffOff,
+            off: AwakeText.current.never,
             custom: strings.autoOffCustom,
             turnsOffIn: strings.autoOffTurnsOffIn,
             hours: strings.autoOffHours,
@@ -359,9 +380,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         doneButton.title = isInitialSetup ? strings.getStarted : strings.done
 
-        appHeader.isHidden = isAdvancedSettings
+        appHeader.isHidden = isAdvancedSettings || isTimerSettings
 
         updateValues()
+        refreshAwakePresentation(force: true)
     }
 
     func updateAvailableVersion(_ version: String?) {
@@ -372,6 +394,30 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             applyLayout()
             resizeToFit()
         }
+    }
+
+    func refreshAwakePresentation(force: Bool = false) {
+        let state = awakePresentationProvider?() ?? AwakePresentation(phase: .unknown, computerUse: Preferences.keepDisplayAwake)
+        guard force || renderedPresentation != state else { return }
+        renderedPresentation = state
+        let t = AwakeText.current
+        masterTitle.stringValue = t.title
+        masterToggle.setAccessibilityLabel(t.title)
+        masterToggle.setOn(state.confirmedOn)
+        masterToggle.isEnabled = state.canToggle
+        masterStatus.stringValue = state.status(t)
+        masterStatus.textColor = state.color
+        headerIcon.image = BrandIcon.make(diameter: 40, color: state.color, glow: state.phase == .on)
+        headerIcon.setAccessibilityLabel(t.title + ": " + state.status(t))
+        computerStatus.stringValue = state.computerStatus(t)
+        keepDisplayAwakeToggle.setOn(state.computerUse)
+        scenarioLabel.stringValue = state.summary(t)
+        powerLabel.stringValue = t.power
+        timerButton.setTitle(t.autoEnd + ": " + (Preferences.autoOffMinutes == 0 ? t.never : AutoOffFormatter.durationLabel(minutes: Preferences.autoOffMinutes)))
+    }
+
+    func showAutoOffSettings() {
+        show(page: .timerSettings)
     }
 
     func show(page: SettingsPage) {
@@ -385,7 +431,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         }
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        if page == .settings {
+        if page == .timerSettings {
             autoOffControl.startDisplayUpdates()
         } else {
             autoOffControl.dismissCustomEditor()
@@ -444,7 +490,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         contentView.wantsLayer = true
         contentView.layer?.backgroundColor = Brand.bg.cgColor
 
-        headerIcon.image = BrandIcon.make(diameter: 60)
+        headerIcon.image = BrandIcon.make(diameter: 40)
         headerIcon.translatesAutoresizingMaskIntoConstraints = false
         headerIcon.setContentHuggingPriority(.required, for: .horizontal)
 
@@ -452,12 +498,26 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         appHeader.addArrangedSubview(headerIcon)
         appHeader.addArrangedSubview(titleLabel)
-        appHeader.orientation = .vertical
-        appHeader.alignment = .centerX
+        appHeader.orientation = .horizontal
+        appHeader.alignment = .centerY
         appHeader.spacing = 10
         appHeader.setCustomSpacing(14, after: headerIcon)
         appHeader.translatesAutoresizingMaskIntoConstraints = false
 
+        masterToggle.onToggle = { [weak self] target in
+            self?.onAwakeChange(target)
+            self?.refreshAwakePresentation(force: true)
+        }
+        masterCard = settingsCard(cardRows([
+            settingRow(title: masterTitle, desc: nil, accessory: masterToggle), masterStatus
+        ], spacing: 8))
+        masterStatus.heightAnchor.constraint(equalToConstant: 34).isActive = true
+        computerStatus.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        scenarioLabel.heightAnchor.constraint(equalToConstant: 66).isActive = true
+        timerButton.onClick = { [weak self] in self?.showAutoOffSettings() }
+        masterStatus.preferredMaxLayoutWidth = 312
+        computerStatus.preferredMaxLayoutWidth = 308
+        scenarioLabel.preferredMaxLayoutWidth = 344
         explainerCard = buildExplainerCard()
 
         preferencesCard = buildPreferencesCard()
@@ -506,12 +566,20 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
         ]
         settingsLayoutConstraints = [
+            masterCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            scenarioLabel.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            powerLabel.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            timerButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             keepDisplayAwakeCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
-            autoOffCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             advancedSettingsButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
         ]
         updateCardWidthConstraint = updateCard.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor)
+        timerLayoutConstraints = [
+            advancedHeader.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            autoOffCard.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
+            doneButton.widthAnchor.constraint(equalTo: bodyStack.widthAnchor)
+        ]
         advancedSettingsLayoutConstraints = [
             advancedHeader.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
             advancedColumns.widthAnchor.constraint(equalTo: bodyStack.widthAnchor),
@@ -541,7 +609,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         NSLayoutConstraint.deactivate(
             initialPreferencesLayoutConstraints
                 + settingsLayoutConstraints
-                + advancedSettingsLayoutConstraints
+                + advancedSettingsLayoutConstraints + timerLayoutConstraints
         )
         clearArrangedSubviews(bodyStack)
         clearArrangedSubviews(advancedLeftColumn)
@@ -557,14 +625,23 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             NSLayoutConstraint.activate(initialPreferencesLayoutConstraints)
 
         case .settings:
-            bodyStack.addArrangedSubview(autoOffCard)
+            bodyStack.addArrangedSubview(masterCard)
             bodyStack.addArrangedSubview(keepDisplayAwakeCard)
+            bodyStack.addArrangedSubview(scenarioLabel)
+            bodyStack.addArrangedSubview(timerButton)
+            bodyStack.addArrangedSubview(powerLabel)
             bodyStack.addArrangedSubview(advancedSettingsButton)
             bodyStack.addArrangedSubview(doneButton)
-            bodyStack.setCustomSpacing(20, after: autoOffCard)
             bodyStack.setCustomSpacing(20, after: keepDisplayAwakeCard)
             bodyStack.setCustomSpacing(20, after: advancedSettingsButton)
             NSLayoutConstraint.activate(settingsLayoutConstraints)
+
+        case .timerSettings:
+            autoOffCard.isHidden = false
+            bodyStack.addArrangedSubview(advancedHeader)
+            bodyStack.addArrangedSubview(autoOffCard)
+            bodyStack.addArrangedSubview(doneButton)
+            NSLayoutConstraint.activate(timerLayoutConstraints)
 
         case .advancedSettings:
             bodyStack.addArrangedSubview(advancedHeader)
@@ -730,13 +807,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         keepDisplayAwakeToggle.onToggle = { [weak self] enabled in
             self?.onKeepDisplayAwakeChange(enabled)
             self?.updateValues()
+            self?.refreshAwakePresentation(force: true)
         }
         let displayRow = settingRow(
             title: keepDisplayAwakeTitle,
             desc: keepDisplayAwakeDesc,
             accessory: keepDisplayAwakeToggle
         )
-        let stack = cardRows([displayRow])
+        let stack = cardRows([displayRow, computerStatus])
         return settingsCard(stack, insets: NSEdgeInsets(top: 16, left: 18, bottom: 16, right: 18))
     }
 

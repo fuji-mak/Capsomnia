@@ -64,18 +64,18 @@ func brandStatusDot(on: Bool) -> NSView {
 }
 
 enum BrandIcon {
-    static func make(diameter: CGFloat) -> NSImage {
+    static func make(diameter: CGFloat, color: NSColor = Brand.led, glow: Bool = true) -> NSImage {
         let image = NSImage(size: NSSize(width: diameter, height: diameter))
         image.lockFocus()
         let center = NSPoint(x: diameter / 2, y: diameter / 2)
-        if let glow = NSGradient(colors: [
-            Brand.ledBright.withAlphaComponent(0.95),
-            Brand.led.withAlphaComponent(0.45),
-            Brand.led.withAlphaComponent(0.0)
+        if glow, let glow = NSGradient(colors: [
+            color.withAlphaComponent(0.95),
+            color.withAlphaComponent(0.45),
+            color.withAlphaComponent(0.0)
         ]) {
             glow.draw(fromCenter: center, radius: 0, toCenter: center, radius: diameter / 2, options: [])
         }
-        Brand.led.setFill()
+        color.setFill()
         let radius = diameter * 0.20
         NSBezierPath(ovalIn: NSRect(
             x: center.x - radius,

@@ -52,7 +52,7 @@ final class SettingsWindowControllerTests: XCTestCase {
                 $0.accessibilityLabel() == strings.advancedSettings
             }
         )
-        let advancedSettingsButton = try XCTUnwrap(visibleButtons.first)
+        let advancedSettingsButton = try XCTUnwrap(visibleButtons.first { $0.accessibilityLabel() == strings.advancedSettings })
         XCTAssertTrue(advancedSettingsButton.accessibilityPerformPress())
         XCTAssertEqual(controller.window?.title, strings.advancedSettings)
     }
@@ -235,7 +235,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         )
         defer { controller.close() }
 
-        controller.show(page: .settings)
+        controller.showAutoOffSettings()
         let contentView = try XCTUnwrap(controller.window?.contentView)
         contentView.layoutSubtreeIfNeeded()
 
@@ -245,7 +245,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         )
         let displaySettingTitle = try XCTUnwrap(
             visibleDescendants(of: contentView).first {
-                $0.stringValue == strings.keepDisplayAwake
+                $0.stringValue == AwakeText.current.autoEnd
             } as NSTextField?
         )
         let originalContentSize = contentView.bounds.size
@@ -268,7 +268,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         let renderedText = Set(labels.map(\.stringValue))
 
         // Custom controls live in a separate popover, so the main window does not move.
-        XCTAssertTrue(renderedText.contains(strings.autoOffOff))
+        XCTAssertTrue(renderedText.contains(AwakeText.current.never))
         XCTAssertTrue(renderedText.contains(strings.autoOffCustom))
         XCTAssertFalse(renderedText.contains(strings.autoOffHours))
         XCTAssertFalse(renderedText.contains(strings.autoOffMinutesUnit))
@@ -304,7 +304,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         )
         defer { controller.close() }
 
-        controller.show(page: .settings)
+        controller.showAutoOffSettings()
         let contentView = try XCTUnwrap(controller.window?.contentView)
         contentView.layoutSubtreeIfNeeded()
         let selectedPreset = try XCTUnwrap(
@@ -335,7 +335,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         )
         defer { controller.close() }
 
-        controller.show(page: .settings)
+        controller.showAutoOffSettings()
         let contentView = try XCTUnwrap(controller.window?.contentView)
         contentView.layoutSubtreeIfNeeded()
         let customChip = try XCTUnwrap(
@@ -409,7 +409,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         Preferences.autoOffMinutes = 45
         let onController = makeController()
         defer { onController.close() }
-        onController.show(page: .settings)
+        onController.showAutoOffSettings()
         let onContent = try XCTUnwrap(onController.window?.contentView)
         onContent.layoutSubtreeIfNeeded()
         let shown = try XCTUnwrap(view(in: onContent, accessibilityLabel: restartLabel))
@@ -419,7 +419,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         Preferences.autoOffMinutes = 0
         let offController = makeController()
         defer { offController.close() }
-        offController.show(page: .settings)
+        offController.showAutoOffSettings()
         let offContent = try XCTUnwrap(offController.window?.contentView)
         offContent.layoutSubtreeIfNeeded()
         let hidden = try XCTUnwrap(view(in: offContent, accessibilityLabel: restartLabel))
@@ -478,7 +478,7 @@ final class SettingsWindowControllerTests: XCTestCase {
             onToolsDownload: { opened = true }
         )
         defer { controller.close() }
-        controller.show(page: .settings)
+        controller.showAutoOffSettings()
         let content = try XCTUnwrap(controller.window?.contentView)
         content.layoutSubtreeIfNeeded()
         XCTAssertNil(view(in: content, accessibilityLabel: ToolsDownloadText.current.entryTitle))

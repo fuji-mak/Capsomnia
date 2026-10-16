@@ -130,7 +130,26 @@ final class SystemCapsLockStateReader {
 }
 
 enum SystemCapsLockController {
+    private static let eventLock = NSLock()
+    private static var internalEventsUntil: TimeInterval = 0
+    private static var writing = false
+
+    static func isInternalKeyEvent(timestamp: TimeInterval) -> Bool {
+        eventLock.lock()
+        defer { eventLock.unlock() }
+        return writing || timestamp <= internalEventsUntil
+    }
+
+    private static func markWrite(_ active: Bool) {
+        eventLock.lock()
+        writing = active
+        internalEventsUntil = ProcessInfo.processInfo.systemUptime + 0.5
+        eventLock.unlock()
+    }
+
     static func set(_ target: Bool) -> CapsLockToggleResult {
+        markWrite(true)
+        defer { markWrite(false) }
         guard let connection = CapsLockHIDSystem.openConnection() else {
             return .unavailable
         }

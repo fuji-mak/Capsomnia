@@ -1,6 +1,8 @@
 import Foundation
 
 private enum PreferenceKey {
+    static let lockOnLidOpen = "LockOnLidOpen"
+    static let lastLidOpenLock = "LastLidOpenLock"
     static let dedicatedCapsLockMode = "DedicatedCapsLockMode"
     static let secureInputCapsLockOverrideActive = "SecureInputCapsLockOverrideActive"
     static let showMenuBarIcon = "ShowMenuBarIcon"
@@ -35,6 +37,7 @@ enum Preferences {
             PreferenceKey.language: AppLanguage.defaultLanguage.rawValue,
             PreferenceKey.launchAtLogin: true,
             PreferenceKey.keepDisplayAwake: false,
+            PreferenceKey.lockOnLidOpen: false,
             PreferenceKey.keepHotspotAlive: false,
             PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed: false,
             PreferenceKey.autoOffMinutes: 0,
@@ -79,6 +82,26 @@ enum Preferences {
     static var keepDisplayAwake: Bool {
         get { defaults.bool(forKey: PreferenceKey.keepDisplayAwake) }
         set { defaults.set(newValue, forKey: PreferenceKey.keepDisplayAwake) }
+    }
+
+    /// Opt-in locking after an eligible closed-to-open lid transition.
+    static var lockOnLidOpen: Bool {
+        get { defaults.bool(forKey: PreferenceKey.lockOnLidOpen) }
+        set { defaults.set(newValue, forKey: PreferenceKey.lockOnLidOpen) }
+    }
+
+    static var lastLidOpenLock: LidOpenLockRecord? {
+        get {
+            guard let data = defaults.data(forKey: PreferenceKey.lastLidOpenLock) else { return nil }
+            return try? JSONDecoder().decode(LidOpenLockRecord.self, from: data)
+        }
+        set {
+            if let newValue, let data = try? JSONEncoder().encode(newValue) {
+                defaults.set(data, forKey: PreferenceKey.lastLidOpenLock)
+            } else {
+                defaults.removeObject(forKey: PreferenceKey.lastLidOpenLock)
+            }
+        }
     }
 
     /// While Capsomnia is on and the default route is a phone hotspot,

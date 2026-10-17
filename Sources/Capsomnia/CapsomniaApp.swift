@@ -19,6 +19,27 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private lazy var hotspotKeepAlive = MobileHotspotKeepAlive(log: { [weak self] message in
         self?.log(message)
     })
+    private var lidLockNotice: LidOpenLockNotice?
+    private var lastLidLockAwakeState: Bool?
+    private lazy var lidOpenLockController: LidOpenLockController = {
+        let controller = LidOpenLockController(record: Preferences.lastLidOpenLock,
+                                              requestLock: ScreenLock.request,
+                                              save: { Preferences.lastLidOpenLock = $0 })
+        controller.onChange = { [weak self] event in
+            self?.settingsWindowController?.refreshLidLockRecord()
+            self?.log("lid_open_lock outcome=\(event.outcome.rawValue) opened_at=\(event.openedAt.timeIntervalSince1970) requested_at=\(event.requestedAt?.timeIntervalSince1970 ?? 0) confirmed_at=\(event.confirmedAt?.timeIntervalSince1970 ?? 0)")
+        }
+        controller.onConfirmed = ScreenLock.notify
+        controller.onNotice = { [weak self] event in
+            guard let self else { return }
+            self.lidLockNotice?.window?.orderOut(nil)
+            self.lidLockNotice = LidOpenLockNotice(record: event, onDismiss: { [weak self] in
+                self?.lidOpenLockController.acknowledge(event.id)
+            }, onViewRecord: { [weak self] in self?.showSettingsWindow(page: .advancedSettings) })
+            self.lidLockNotice?.present()
+        }
+        return controller
+    }()
     private var sessionTimer = SessionAutoOffTimer()
     private var controlServer: ControlServer?
     private var isControlMutationInFlight = false
@@ -46,6 +67,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private weak var autoOffStatusMenuItem: NSMenuItem?
     private var autoOffPresetMenuItems: [NSMenuItem] = []
     private weak var autoOffCustomMenuItem: NSMenuItem?
+    private weak var lidLockMenuItem: NSMenuItem?
     private weak var keepDisplayAwakeStatusMenuItem: NSMenuItem?
     private weak var checkForUpdatesMenuItem: NSMenuItem?
     private var updateController: UpdateController?
@@ -438,6 +460,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         keepDisplayAwakeItem.target = self
         menu.addItem(keepDisplayAwakeItem)
         keepDisplayAwakeStatusMenuItem = keepDisplayAwakeItem
+        let lockItem = NSMenuItem(title: LidOpenLockText.current.title,
+                                 action: #selector(toggleLidLockFromMenu), keyEquivalent: "")
+        lockItem.target = self
+        menu.addItem(lockItem)
+        lidLockMenuItem = lockItem
 
         menu.addItem(NSMenuItem.separator())
 
@@ -541,6 +568,18 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         showSettingsWindow(page: currentSettingsPage())
     }
 
+    @objc private func toggleLidLockFromMenu() {
+        setLidLockEnabled(!Preferences.lockOnLidOpen)
+    }
+
+    private func setLidLockEnabled(_ enabled: Bool) {
+        Preferences.lockOnLidOpen = enabled
+        if enabled { ScreenLock.requestNotificationPermission() }
+        settingsWindowController?.reloadText()
+        updateStatusMenuControls()
+        log("preference lock_on_lid_open=\(enabled ? "on" : "off")")
+    }
+
     @objc private func toggleKeepDisplayAwakeFromMenu() {
         setKeepDisplayAwake(!Preferences.keepDisplayAwake)
     }
@@ -621,7 +660,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 onToolsDownload: { [weak self] in
                     self?.toolsDownloadController.promptDownload(from: self?.settingsWindowController?.window)
                 },
-                autoOffDescriptionProvider: { [weak self] in self?.sessionTimerDescription() }
+                autoOffDescriptionProvider: { [weak self] in self?.sessionTimerDescription() },
+                onLidOpenLockChange: { [weak self] enabled in self?.setLidLockEnabled(enabled) },
+                awakeModeProvider: { [weak self] in
+                    guard let self else { return false }
+                    return self.currentCapsLockState && self.lastAppliedState == true && self.failedSleepState == nil
+                }
             )
         }
 
@@ -851,6 +895,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         autoOffCustomMenuItem?.state = selectedMinutes > 0
             && !AutoOffPreset.isQuickPick(selectedMinutes) ? .on : .off
         keepDisplayAwakeStatusMenuItem?.state = Preferences.keepDisplayAwake ? .on : .off
+        lidLockMenuItem?.title = LidOpenLockText.current.title
+        lidLockMenuItem?.state = Preferences.lockOnLidOpen ? .on : .off
+        lidLockMenuItem?.isHidden = !Preferences.keepDisplayAwake
         checkForUpdatesMenuItem?.title = updateController?.availableVersion.map {
             String(format: strings.updateAvailableMenuFormat, $0)
         } ?? strings.checkForUpdates
@@ -905,11 +952,23 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         log("shortcut_register resume_failed status=\(status)")
     }
 
+    private func pollLidOpenLock() {
+        let awake = currentCapsLockState && lastAppliedState == true && failedSleepState == nil
+        if lastLidLockAwakeState != awake {
+            lastLidLockAwakeState = awake
+            settingsWindowController?.refreshLidLockRecord()
+        }
+        let eligible = Preferences.lockOnLidOpen && Preferences.keepDisplayAwake && awake
+        lidOpenLockController.poll(closed: ClamshellStateReader.isClosed(), eligible: eligible,
+                                   locked: ScreenLock.isLocked(), now: Date())
+    }
+
     private func installPollingMonitor() {
         pollingTimer?.invalidate()
         let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             self?.applyCurrentCapsLockState(reason: "poll")
             self?.refreshSettingsHeaderStatus()
+            self?.pollLidOpenLock()
         }
         timer.tolerance = 0.05
         pollingTimer = timer

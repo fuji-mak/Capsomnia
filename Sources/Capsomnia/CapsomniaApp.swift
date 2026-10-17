@@ -19,23 +19,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private lazy var hotspotKeepAlive = MobileHotspotKeepAlive(log: { [weak self] message in
         self?.log(message)
     })
-    private var lidLockNotice: LidOpenLockNotice?
     private lazy var lidOpenLockController: LidOpenLockController = {
         let controller = LidOpenLockController(record: Preferences.lastLidOpenLock,
                                               requestLock: ScreenLock.request,
                                               save: { Preferences.lastLidOpenLock = $0 })
         controller.onChange = { [weak self] event in
-            self?.settingsWindowController?.refreshLidLockRecord()
             self?.log("lid_open_lock outcome=\(event.outcome.rawValue) opened_at=\(event.openedAt.timeIntervalSince1970) requested_at=\(event.requestedAt?.timeIntervalSince1970 ?? 0) confirmed_at=\(event.confirmedAt?.timeIntervalSince1970 ?? 0)")
-        }
-        controller.onConfirmed = ScreenLock.notify
-        controller.onNotice = { [weak self] event in
-            guard let self else { return }
-            self.lidLockNotice?.window?.orderOut(nil)
-            self.lidLockNotice = LidOpenLockNotice(record: event, onDismiss: { [weak self] in
-                self?.lidOpenLockController.acknowledge(event.id)
-            }, onViewRecord: { [weak self] in self?.showSettingsWindow(page: .advancedSettings) })
-            self.lidLockNotice?.present()
         }
         return controller
     }()
@@ -574,7 +563,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func setLidLockEnabled(_ enabled: Bool) {
         Preferences.lockOnLidOpen = enabled
-        if enabled { ScreenLock.requestNotificationPermission() }
         settingsWindowController?.reloadText()
         updateStatusMenuControls()
         log("preference lock_on_lid_open=\(enabled ? "on" : "off")")

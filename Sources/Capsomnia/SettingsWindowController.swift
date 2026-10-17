@@ -78,11 +78,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     )
     private var lockSection = NSView()
     private let lidLockCheckbox = NSButton(checkboxWithTitle: "", target: nil, action: nil)
-    private let lidLockRecordTitle = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
-    private let lidLockRecordText = brandLabel(size: 12, color: Brand.textDim, wraps: true)
-    private var lidLockRecordCard = NSView()
     private let onLidOpenLockChange: (Bool) -> Void
-    private let lidLockRecordProvider: () -> LidOpenLockRecord?
     private let keepHotspotAliveTitle = brandLabel(
         size: 13,
         weight: .medium,
@@ -231,8 +227,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onReleaseNotes: @escaping (String) -> Void = { _ in },
         onToolsDownload: @escaping () -> Void = {},
         autoOffDescriptionProvider: @escaping () -> String? = { nil },
-        onLidOpenLockChange: @escaping (Bool) -> Void = { _ in },
-        lidLockRecordProvider: @escaping () -> LidOpenLockRecord? = { Preferences.lastLidOpenLock }
+        onLidOpenLockChange: @escaping (Bool) -> Void = { _ in }
     ) {
         self.onDedicatedCapsLockModeChange = onDedicatedCapsLockModeChange
         self.onShowMenuBarIconChange = onShowMenuBarIconChange
@@ -254,7 +249,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onUpdate = onUpdate
         self.onReleaseNotes = onReleaseNotes
         self.onLidOpenLockChange = onLidOpenLockChange
-        self.lidLockRecordProvider = lidLockRecordProvider
         self.onToolsDownload = onToolsDownload
         self.autoOffDescriptionProvider = autoOffDescriptionProvider
 
@@ -325,12 +319,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         lidLockCheckbox.title = lockText.title
         lidLockCheckbox.setAccessibilityLabel(lockText.title)
         lidLockCheckbox.toolTip = lockText.description
-        lidLockRecordTitle.stringValue = lockText.history
-        if let event = lidLockRecordProvider() {
-            lidLockRecordText.stringValue = lockText.status(event) + "\n" + lockText.details(event)
-        } else {
-            lidLockRecordText.stringValue = lockText.empty
-        }
         keepDisplayAwakeTitle.stringValue = strings.keepDisplayAwake
         keepDisplayAwakeDesc.stringValue = strings.keepDisplayAwakeDesc
         keepDisplayAwakeToggle.setAccessibilityLabel(strings.keepDisplayAwake)
@@ -431,11 +419,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         }
     }
 
-    func refreshLidLockRecord() {
-        reloadText()
-        if window?.isVisible == true { resizeToFit() }
-    }
-
     func show(page: SettingsPage) {
         let wasVisible = window?.isVisible == true
         self.page = page
@@ -524,7 +507,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         preferencesCard = buildPreferencesCard()
         keepDisplayAwakeCard = buildKeepDisplayAwakeCard()
-        lidLockRecordCard = settingsCard(cardRows([lidLockRecordText]))
         systemCard = buildSystemCard()
         shortcutCard = buildShortcutCard()
         updateCard = buildUpdateCard()
@@ -581,7 +563,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             preferencesCard.widthAnchor.constraint(equalTo: advancedLeftColumn.widthAnchor),
             systemCard.widthAnchor.constraint(equalTo: advancedLeftColumn.widthAnchor),
             shortcutCard.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
-            lidLockRecordCard.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
             toolsDownloadButton.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
             advancedRightColumn.bottomAnchor.constraint(equalTo: advancedColumns.bottomAnchor),
             toolsDownloadButton.bottomAnchor.constraint(equalTo: advancedRightColumn.bottomAnchor)
@@ -644,10 +625,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
             advancedRightColumn.addArrangedSubview(shortcutHeading)
             advancedRightColumn.addArrangedSubview(shortcutCard)
-            advancedRightColumn.addArrangedSubview(lidLockRecordTitle)
-            advancedRightColumn.addArrangedSubview(lidLockRecordCard)
-            advancedRightColumn.setCustomSpacing(8, after: lidLockRecordTitle)
-            advancedRightColumn.setCustomSpacing(16, after: lidLockRecordCard)
             advancedRightColumn.addArrangedSubview(updateHeading)
             advancedRightColumn.addArrangedSubview(updateCard)
             advancedRightColumn.addArrangedSubview(advancedRightSpacer)

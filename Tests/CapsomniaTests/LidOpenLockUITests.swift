@@ -8,7 +8,7 @@ final class LidOpenLockUITests: XCTestCase {
         view.subviews.flatMap { [$0] + descendants($0) }
     }
 
-    func testSwitchFollowsParentAndHistoryShowsConfirmedTimesInEveryLanguage() throws {
+    func testCheckboxAppearsOnlyWithComputerUseAndPreservesSelectionInEveryLanguage() throws {
         _ = NSApplication.shared
         let previousLanguage = Preferences.language
         let previousParent = Preferences.keepDisplayAwake
@@ -25,7 +25,7 @@ final class LidOpenLockUITests: XCTestCase {
         let controller = SettingsWindowController(
             onDedicatedCapsLockModeChange: { _ in }, onShowMenuBarIconChange: { _ in },
             onLanguageChange: { _ in }, onLaunchAtLoginChange: { _ in },
-            onKeepDisplayAwakeChange: { _ in }, onKeepHotspotAliveChange: { _ in },
+            onKeepDisplayAwakeChange: { Preferences.keepDisplayAwake = $0 }, onKeepHotspotAliveChange: { _ in },
             onIgnoreExternalCapsLockOffWhileLidClosedChange: { _ in }, onHideCapsLockIndicatorChange: { _ in },
             capsLockIndicatorStateProvider: { .init(hidden: false, restartPending: false) },
             onAutoOffMinutesChange: { _ in }, onAutoOffRestart: {}, autoOffDisplayProvider: { .idle(minutes: 0) },
@@ -33,7 +33,7 @@ final class LidOpenLockUITests: XCTestCase {
             onAutomaticUpdateChecksChange: { _ in }, onFinishInitialSetup: {}, onLidOpenLockChange: { value in
                 toggles += 1
                 Preferences.lockOnLidOpen = value
-            }, lidLockRecordProvider: { record }, awakeModeProvider: { true })
+            }, lidLockRecordProvider: { record })
         defer { controller.close() }
         for language in AppLanguage.allCases {
             Preferences.language = language
@@ -41,21 +41,48 @@ final class LidOpenLockUITests: XCTestCase {
             Preferences.lockOnLidOpen = true
             controller.show(page: .settings)
             let content = try XCTUnwrap(controller.window?.contentView)
-            let toggle = try XCTUnwrap(descendants(content).compactMap { $0 as? LEDToggle }.first {
+            let checkbox = try XCTUnwrap(descendants(content).compactMap { $0 as? NSButton }.first {
                 $0.accessibilityLabel() == LidOpenLockText.current.title
             })
-            XCTAssertFalse(toggle.isEnabled)
-            XCTAssertTrue(toggle.isOn, "Turning off the parent preserves the user's selection")
-            XCTAssertFalse(toggle.accessibilityPerformPress())
-            let before = toggles
-            Preferences.keepDisplayAwake = true
-            controller.refreshLidLockRecord()
-            XCTAssertTrue(toggle.isEnabled)
-            XCTAssertTrue(toggle.accessibilityPerformPress())
-            XCTAssertEqual(toggles, before + 1)
+            let parent = try XCTUnwrap(descendants(content).compactMap { $0 as? LEDToggle }.first {
+                $0.accessibilityLabel() == AppStrings.current().keepDisplayAwake
+            })
             content.layoutSubtreeIfNeeded()
-            XCTAssertTrue(content.bounds.contains(toggle.convert(toggle.bounds, to: content)))
-            if language == .simplifiedChinese { try capture(content, name: "lid-lock-settings") }
+            let hiddenHeight = content.bounds.height
+            XCTAssertTrue(checkbox.isHiddenOrHasHiddenAncestor)
+            XCTAssertFalse(checkbox.isEnabled)
+            XCTAssertEqual(checkbox.state, .on, "Hiding the option preserves the user's selection")
+            if language == .japanese { try capture(content, name: "lid-lock-disabled-ja") }
+
+            XCTAssertTrue(parent.accessibilityPerformPress())
+            content.layoutSubtreeIfNeeded()
+            XCTAssertFalse(checkbox.isHiddenOrHasHiddenAncestor)
+            XCTAssertTrue(checkbox.isEnabled)
+            XCTAssertEqual(checkbox.state, .on)
+            XCTAssertGreaterThan(content.bounds.height, hiddenHeight)
+            let checkboxFrame = checkbox.convert(checkbox.bounds, to: content)
+            XCTAssertTrue(content.bounds.contains(checkboxFrame))
+            let title = try XCTUnwrap(descendants(content).compactMap { $0 as? NSTextField }.first {
+                $0.stringValue == AppStrings.current().keepDisplayAwake
+            })
+            XCTAssertGreaterThan(checkboxFrame.minX, title.convert(title.bounds, to: content).minX)
+            if language == .japanese { try capture(content, name: "lid-lock-enabled-ja") }
+            let before = toggles
+            checkbox.performClick(nil)
+            XCTAssertFalse(Preferences.lockOnLidOpen)
+            XCTAssertEqual(toggles, before + 1)
+            checkbox.performClick(nil)
+            XCTAssertTrue(Preferences.lockOnLidOpen)
+
+            XCTAssertTrue(parent.accessibilityPerformPress())
+            content.layoutSubtreeIfNeeded()
+            XCTAssertTrue(checkbox.isHiddenOrHasHiddenAncestor)
+            XCTAssertEqual(checkbox.state, .on)
+            XCTAssertTrue(Preferences.lockOnLidOpen)
+            XCTAssertEqual(content.bounds.height, hiddenHeight, accuracy: 1, "Hidden options leave no extra space")
+            XCTAssertTrue(parent.accessibilityPerformPress())
+            XCTAssertFalse(checkbox.isHiddenOrHasHiddenAncestor)
+            XCTAssertEqual(checkbox.state, .on)
             controller.show(page: .advancedSettings)
             let text = LidOpenLockText.current
             let detail = try XCTUnwrap(descendants(content).compactMap { $0 as? NSTextField }.first {

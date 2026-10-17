@@ -20,7 +20,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         self?.log(message)
     })
     private var lidLockNotice: LidOpenLockNotice?
-    private var lastLidLockAwakeState: Bool?
     private lazy var lidOpenLockController: LidOpenLockController = {
         let controller = LidOpenLockController(record: Preferences.lastLidOpenLock,
                                               requestLock: ScreenLock.request,
@@ -463,6 +462,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let lockItem = NSMenuItem(title: LidOpenLockText.current.title,
                                  action: #selector(toggleLidLockFromMenu), keyEquivalent: "")
         lockItem.target = self
+        lockItem.indentationLevel = 1
         menu.addItem(lockItem)
         lidLockMenuItem = lockItem
 
@@ -661,11 +661,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     self?.toolsDownloadController.promptDownload(from: self?.settingsWindowController?.window)
                 },
                 autoOffDescriptionProvider: { [weak self] in self?.sessionTimerDescription() },
-                onLidOpenLockChange: { [weak self] enabled in self?.setLidLockEnabled(enabled) },
-                awakeModeProvider: { [weak self] in
-                    guard let self else { return false }
-                    return self.currentCapsLockState && self.lastAppliedState == true && self.failedSleepState == nil
-                }
+                onLidOpenLockChange: { [weak self] enabled in self?.setLidLockEnabled(enabled) }
             )
         }
 
@@ -954,10 +950,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func pollLidOpenLock() {
         let awake = currentCapsLockState && lastAppliedState == true && failedSleepState == nil
-        if lastLidLockAwakeState != awake {
-            lastLidLockAwakeState = awake
-            settingsWindowController?.refreshLidLockRecord()
-        }
         let eligible = Preferences.lockOnLidOpen && Preferences.keepDisplayAwake && awake
         lidOpenLockController.poll(closed: ClamshellStateReader.isClosed(), eligible: eligible,
                                    locked: ScreenLock.isLocked(), now: Date())

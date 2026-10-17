@@ -19,8 +19,8 @@ struct LidOpenLockText {
                         caution: "如有浏览器自动化正在执行，请检查任务状态。",
                         acknowledge: "知道了", viewRecord: "查看记录")
         case .japanese:
-            return Self(title: "蓋を開いたらロック", description: "閉じたまま動作中、蓋を開くと Mac をロックします。画面操作の自動化に影響する場合があります。",
-                        inactive: "無効：Capsomnia と画面のスリープ防止をオンにしてください。",
+            return Self(title: "蓋を開けたら画面をロック", description: "閉じたまま動作中、蓋を開くと Mac をロックします。画面操作の自動化に影響する場合があります。",
+                        inactive: "無効：Capsomnia と「Computer Use等を使う」をオンにしてください。",
                         history: "最近の開蓋ロック", empty: "開蓋ロックの記録はありません。", pending: "ロックを要求済み・確認待ち",
                         confirmed: "蓋を開いたためロック", alreadyLocked: "開蓋検出時にロック済み", unconfirmed: "ロックを確認できませんでした",
                         unavailable: "ロック失敗：システム機能が利用不可", stateUnavailable: "要求なし：ロック状態を取得できません",
@@ -29,7 +29,7 @@ struct LidOpenLockText {
                         caution: "ブラウザの自動化タスクの状態を確認してください。", acknowledge: "了解", viewRecord: "記録を表示")
         case .korean:
             return Self(title: "덮개를 열면 자동 잠금", description: "덮개를 닫고 실행 중일 때 열면 Mac을 잠급니다. 화면 자동화에 영향을 줄 수 있습니다.",
-                        inactive: "비활성: Capsomnia와 화면 깨우기 기능을 켜세요.",
+                        inactive: "비활성: Capsomnia와 ‘Computer Use 등 사용’을 켜세요.",
                         history: "최근 덮개 열기 잠금", empty: "잠금 기록이 없습니다.", pending: "잠금 요청됨 · 확인 대기",
                         confirmed: "덮개를 열어 자동 잠금", alreadyLocked: "열림 감지 시 이미 잠겨 있음", unconfirmed: "잠금을 확인하지 못함",
                         unavailable: "잠금 실패: 시스템 기능 사용 불가", stateUnavailable: "요청하지 않음: 잠금 상태를 읽을 수 없음",
@@ -38,7 +38,7 @@ struct LidOpenLockText {
                         caution: "실행 중인 브라우저 자동화 작업을 확인하세요.", acknowledge: "확인", viewRecord: "기록 보기")
         case .english:
             return Self(title: "Lock when lid opens", description: "Lock the Mac when opening the lid during closed-lid work. Locking may affect desktop automation.",
-                        inactive: "Inactive: enable Capsomnia and keep-display-awake mode.",
+                        inactive: "Inactive: enable Capsomnia and “Use Computer Use and similar tools”.",
                         history: "Last lid-open lock", empty: "No lid-open lock recorded.", pending: "Lock requested · awaiting confirmation",
                         confirmed: "Locked because the lid opened", alreadyLocked: "Already locked when lid opening was detected", unconfirmed: "Lock could not be confirmed",
                         unavailable: "Lock failed: system lock API unavailable", stateUnavailable: "No request: lock state unavailable",

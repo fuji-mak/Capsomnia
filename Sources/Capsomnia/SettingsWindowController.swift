@@ -77,15 +77,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         isOn: Preferences.keepDisplayAwake
     )
     private var lockSection = NSView()
-    private let lidLockTitle = brandLabel(size: 13, weight: .medium, color: Brand.text, wraps: true)
-    private let lidLockDescription = brandLabel(size: 12, color: Brand.textDim, wraps: true)
-    private let lidLockToggle = LEDToggle(isOn: Preferences.lockOnLidOpen)
+    private let lidLockCheckbox = NSButton(checkboxWithTitle: "", target: nil, action: nil)
     private let lidLockRecordTitle = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
     private let lidLockRecordText = brandLabel(size: 12, color: Brand.textDim, wraps: true)
     private var lidLockRecordCard = NSView()
     private let onLidOpenLockChange: (Bool) -> Void
     private let lidLockRecordProvider: () -> LidOpenLockRecord?
-    private let awakeModeProvider: () -> Bool
     private let keepHotspotAliveTitle = brandLabel(
         size: 13,
         weight: .medium,
@@ -235,8 +232,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onToolsDownload: @escaping () -> Void = {},
         autoOffDescriptionProvider: @escaping () -> String? = { nil },
         onLidOpenLockChange: @escaping (Bool) -> Void = { _ in },
-        lidLockRecordProvider: @escaping () -> LidOpenLockRecord? = { Preferences.lastLidOpenLock },
-        awakeModeProvider: @escaping () -> Bool = { false }
+        lidLockRecordProvider: @escaping () -> LidOpenLockRecord? = { Preferences.lastLidOpenLock }
     ) {
         self.onDedicatedCapsLockModeChange = onDedicatedCapsLockModeChange
         self.onShowMenuBarIconChange = onShowMenuBarIconChange
@@ -259,7 +255,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onReleaseNotes = onReleaseNotes
         self.onLidOpenLockChange = onLidOpenLockChange
         self.lidLockRecordProvider = lidLockRecordProvider
-        self.awakeModeProvider = awakeModeProvider
         self.onToolsDownload = onToolsDownload
         self.autoOffDescriptionProvider = autoOffDescriptionProvider
 
@@ -327,8 +322,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         systemBehaviorHeading.stringValue = strings.systemBehavior.uppercased()
         let lockText = LidOpenLockText.current
-        lidLockTitle.stringValue = lockText.title
-        lidLockToggle.setAccessibilityLabel(lockText.title)
+        lidLockCheckbox.title = lockText.title
+        lidLockCheckbox.setAccessibilityLabel(lockText.title)
+        lidLockCheckbox.toolTip = lockText.description
         lidLockRecordTitle.stringValue = lockText.history
         if let event = lidLockRecordProvider() {
             lidLockRecordText.stringValue = lockText.status(event) + "\n" + lockText.details(event)
@@ -808,14 +804,28 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             desc: keepDisplayAwakeDesc,
             accessory: keepDisplayAwakeToggle
         )
-        lidLockToggle.onToggle = { [weak self] enabled in
-            self?.onLidOpenLockChange(enabled)
-            self?.updateValues()
-        }
-        let lockRow = settingRow(title: lidLockTitle, desc: lidLockDescription, accessory: lidLockToggle)
-        lockSection = cardRows([brandDivider(), lockRow])
+        lidLockCheckbox.target = self
+        lidLockCheckbox.action = #selector(changeLidOpenLock)
+        lidLockCheckbox.font = .systemFont(ofSize: 12)
+        lidLockCheckbox.contentTintColor = Brand.text
+        lidLockCheckbox.translatesAutoresizingMaskIntoConstraints = false
+        lockSection = NSView()
+        lockSection.translatesAutoresizingMaskIntoConstraints = false
+        lockSection.addSubview(lidLockCheckbox)
+        NSLayoutConstraint.activate([
+            lidLockCheckbox.leadingAnchor.constraint(equalTo: lockSection.leadingAnchor, constant: 12),
+            lidLockCheckbox.trailingAnchor.constraint(lessThanOrEqualTo: lockSection.trailingAnchor),
+            lidLockCheckbox.topAnchor.constraint(equalTo: lockSection.topAnchor),
+            lidLockCheckbox.bottomAnchor.constraint(equalTo: lockSection.bottomAnchor)
+        ])
         let stack = cardRows([displayRow, lockSection])
+        lockSection.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         return settingsCard(stack, insets: NSEdgeInsets(top: 16, left: 18, bottom: 16, right: 18))
+    }
+
+    @objc private func changeLidOpenLock() {
+        onLidOpenLockChange(lidLockCheckbox.state == .on)
+        updateValues()
     }
 
     private func buildSystemCard() -> NSView {
@@ -958,10 +968,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         menuBarToggle.setOn(Preferences.showMenuBarIcon)
         languagePopUp.setSelected(Preferences.language.rawValue)
         keepDisplayAwakeToggle.setOn(Preferences.keepDisplayAwake)
-        lidLockToggle.setOn(Preferences.lockOnLidOpen)
-        lidLockToggle.isEnabled = Preferences.keepDisplayAwake
-        let text = LidOpenLockText.current
-        lidLockDescription.stringValue = text.description + (awakeModeProvider() ? "" : "\n" + text.inactive)
+        lidLockCheckbox.state = Preferences.lockOnLidOpen ? .on : .off
+        lidLockCheckbox.isEnabled = Preferences.keepDisplayAwake
         let wasHidden = lockSection.isHidden
         lockSection.isHidden = !Preferences.keepDisplayAwake
         if wasHidden != lockSection.isHidden, page == .settings, window?.isVisible == true { resizeToFit() }

@@ -5,12 +5,6 @@ final class LEDToggle: NSView {
     private let track = CALayer()
     private let knob = CALayer()
     private(set) var isOn: Bool
-    var isEnabled = true {
-        didSet {
-            alphaValue = isEnabled ? 1 : 0.45
-            setAccessibilityEnabled(isEnabled)
-        }
-    }
     var onToggle: ((Bool) -> Void)?
 
     init(isOn: Bool) {
@@ -44,7 +38,7 @@ final class LEDToggle: NSView {
     required init?(coder: NSCoder) { nil }
 
     override var acceptsFirstResponder: Bool {
-        isEnabled
+        true
     }
 
     func setOn(_ value: Bool) {
@@ -53,7 +47,6 @@ final class LEDToggle: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
-        guard isEnabled else { return }
         window?.makeFirstResponder(self)
         toggle()
     }
@@ -67,7 +60,6 @@ final class LEDToggle: NSView {
     }
 
     override func accessibilityPerformPress() -> Bool {
-        guard isEnabled else { return false }
         toggle()
         return true
     }
@@ -97,7 +89,6 @@ final class LEDToggle: NSView {
     }
 
     private func toggle() {
-        guard isEnabled else { return }
         isOn.toggle()
         apply(animated: true)
         onToggle?(isOn)

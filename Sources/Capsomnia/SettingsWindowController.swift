@@ -6,12 +6,23 @@ enum SettingsPage {
     case advancedSettings
 }
 
+enum SettingsHeaderStatus {
+    case on, off, error
+
+    static func resolve(confirmed: Bool?, hasError: Bool, changing: Bool, previous: Self) -> Self {
+        if changing { return previous }
+        guard !hasError, let confirmed else { return .error }
+        return confirmed ? .on : .off
+    }
+}
+
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private static let settingsContentWidth: CGFloat = 400
     private static let advancedContentWidth: CGFloat = 920
     private static let advancedColumnSpacing: CGFloat = 20
 
     private let headerIcon = NSImageView()
+    private var headerStatus = SettingsHeaderStatus.error
     private let titleLabel = brandLabel(size: 21, weight: .bold, color: Brand.text)
     private let appHeader = NSStackView()
     private let advancedHeader = NSView()
@@ -362,6 +373,31 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         appHeader.isHidden = isAdvancedSettings
 
         updateValues()
+        refreshHeaderIcon()
+    }
+
+    func updateHeaderStatus(_ status: SettingsHeaderStatus) {
+        guard status != headerStatus else { return }
+        headerStatus = status
+        refreshHeaderIcon()
+    }
+
+    private func refreshHeaderIcon() {
+        let strings = AppStrings.current()
+        let description: String
+        switch headerStatus {
+        case .on:
+            headerIcon.image = BrandIcon.make(diameter: 60)
+            description = strings.tooltipOn
+        case .off:
+            headerIcon.image = BrandIcon.make(diameter: 60, color: NSColor(calibratedWhite: 0.58, alpha: 1), glow: false)
+            description = strings.tooltipOff
+        case .error:
+            headerIcon.image = BrandIcon.make(diameter: 60, color: .systemRed, glow: false)
+            description = strings.tooltipError
+        }
+        headerIcon.toolTip = description
+        headerIcon.setAccessibilityLabel(description)
     }
 
     func updateAvailableVersion(_ version: String?) {

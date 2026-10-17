@@ -4,6 +4,59 @@ import XCTest
 
 @MainActor
 final class SettingsWindowControllerTests: XCTestCase {
+    func testHeaderRetainsPreviousStatusUntilAChangeFinishes() {
+        XCTAssertEqual(SettingsHeaderStatus.resolve(confirmed: false, hasError: false, changing: true, previous: .on), .on)
+        XCTAssertEqual(SettingsHeaderStatus.resolve(confirmed: true, hasError: false, changing: true, previous: .off), .off)
+        XCTAssertEqual(SettingsHeaderStatus.resolve(confirmed: nil, hasError: true, changing: true, previous: .on), .on)
+        XCTAssertEqual(SettingsHeaderStatus.resolve(confirmed: true, hasError: false, changing: false, previous: .off), .on)
+        XCTAssertEqual(SettingsHeaderStatus.resolve(confirmed: false, hasError: false, changing: false, previous: .on), .off)
+        XCTAssertEqual(SettingsHeaderStatus.resolve(confirmed: true, hasError: true, changing: false, previous: .on), .error)
+        XCTAssertEqual(SettingsHeaderStatus.resolve(confirmed: nil, hasError: false, changing: false, previous: .off), .error)
+    }
+
+    func testHeaderChangesColorWithoutChangingLayoutAndOnlyOnGlows() throws {
+        _ = NSApplication.shared
+        let controller = makeController()
+        defer { controller.close() }
+        controller.show(page: .settings)
+        let content = try XCTUnwrap(controller.window?.contentView)
+        let header = try XCTUnwrap((descendants(of: content) as [NSImageView]).first {
+            $0.image?.size == NSSize(width: 60, height: 60)
+        })
+        let originalSize = content.bounds.size
+        for status in [SettingsHeaderStatus.on, .off, .error] {
+            controller.updateHeaderStatus(status)
+            content.layoutSubtreeIfNeeded()
+            XCTAssertEqual(content.bounds.size, originalSize)
+            let image = try XCTUnwrap(header.image)
+            let pixels = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(image.tiffRepresentation)))
+            let center = try XCTUnwrap(pixels.colorAt(x: pixels.pixelsWide / 2, y: pixels.pixelsHigh / 2)?.usingColorSpace(.deviceRGB))
+            let halo = try XCTUnwrap(pixels.colorAt(x: pixels.pixelsWide / 2, y: pixels.pixelsHigh / 6))
+            switch status {
+            case .on:
+                XCTAssertGreaterThan(center.greenComponent, center.redComponent)
+                XCTAssertGreaterThan(halo.alphaComponent, 0)
+                XCTAssertEqual(header.toolTip, AppStrings.current().tooltipOn)
+            case .off:
+                XCTAssertEqual(center.redComponent, center.greenComponent, accuracy: 0.01)
+                XCTAssertEqual(halo.alphaComponent, 0, accuracy: 0.01)
+                XCTAssertEqual(header.toolTip, AppStrings.current().tooltipOff)
+            case .error:
+                XCTAssertGreaterThan(center.redComponent, center.greenComponent)
+                XCTAssertEqual(halo.alphaComponent, 0, accuracy: 0.01)
+                XCTAssertEqual(header.toolTip, AppStrings.current().tooltipError)
+            }
+            controller.updateHeaderStatus(status)
+            XCTAssertTrue(header.image === image, "Polling the same state must not redraw the icon")
+            if let path = ProcessInfo.processInfo.environment["CAPSOMNIA_UI_CAPTURE_DIR"] {
+                let bitmap = try XCTUnwrap(content.bitmapImageRepForCachingDisplay(in: content.bounds))
+                content.cacheDisplay(in: content.bounds, to: bitmap)
+                try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+                    .write(to: URL(fileURLWithPath: path).appendingPathComponent("header-\(status).png"))
+            }
+        }
+    }
+
     func testJapaneseInitialSetupHidesDefaultOnSettings() throws {
         let previousLanguage = Preferences.language
         let previousShortcut = Preferences.keyboardShortcut

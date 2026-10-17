@@ -2,6 +2,13 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## Unreleased
+
+- Match the settings header indicator to confirmed awake status: glowing green
+  for on, gray for off, and red for failures or unknown state. Keep the previous
+  color while an operation is in progress, without changing the settings layout.
+  Thanks to @orut34iop for the state-aware indicator idea in [PR 130](https://github.com/fuji-mak/Capsomnia/pull/130).
+
 ## 4.2.4 - 2026-10-07
 
 - Keep capitalization-prevention failures from turning off awake mode or

@@ -5,6 +5,9 @@ import Foundation
 
 final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastAppliedState: Bool?
+    private var lastConfirmedSleepState: Bool?
+    private var failedTogglePhysicalState: Bool?
+    private var settingsHeaderStatus = SettingsHeaderStatus.error
     private var failedSleepState: Bool?
     private var nextSleepStateRetryAt = Date.distantPast
     private var nextSleepStateVerificationAt = Date.distantPast
@@ -487,6 +490,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard !isExplicitCapsLockToggleInFlight else { return }
         let target = !currentCapsLockState
         isExplicitCapsLockToggleInFlight = true
+        failedTogglePhysicalState = nil
         prepareSecureInputOverrideForExplicitTarget(target)
         suppressInputSourceRecoveryForUserAction(reason: source)
         log("\(source)_toggle_capslock requested target=\(target ? "on" : "off")")
@@ -504,19 +508,24 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     ) {
         switch result {
         case let .changed(target):
+            failedTogglePhysicalState = nil
             cancelInputSourceRecovery()
             log("\(source)_toggle_capslock target=\(target ? "on" : "off") succeeded=true")
         case .unavailable:
+            failedTogglePhysicalState = currentCapsLockState
             log("\(source)_toggle_capslock failed=hid_system_unavailable")
         case let .writeFailed(target):
+            failedTogglePhysicalState = currentCapsLockState
             log("\(source)_toggle_capslock target=\(target ? "on" : "off") failed=write_state")
         case let .verificationFailed(target, actual):
+            failedTogglePhysicalState = currentCapsLockState
             let actualValue = actual.map { $0 ? "on" : "off" } ?? "unknown"
             log(
                 "\(source)_toggle_capslock target=\(target ? "on" : "off")"
                     + " failed=verification actual=\(actualValue)"
             )
         }
+        refreshSettingsHeaderStatus()
     }
 
     @objc private func selectAutoOffPreset(_ sender: NSMenuItem) {
@@ -618,6 +627,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         settingsWindowController?.updateAvailableVersion(updateController?.availableVersion)
         settingsWindowController?.updateToolsDownloading(toolsDownloadController.isDownloading)
+        refreshSettingsHeaderStatus()
+        settingsWindowController?.updateHeaderStatus(settingsHeaderStatus)
         settingsWindowController?.show(page: page)
     }
 
@@ -898,6 +909,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         pollingTimer?.invalidate()
         let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             self?.applyCurrentCapsLockState(reason: "poll")
+            self?.refreshSettingsHeaderStatus()
         }
         timer.tolerance = 0.05
         pollingTimer = timer
@@ -1355,6 +1367,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func markSleepStateConfirmed(_ capsLockOn: Bool, at now: Date, reason: String) {
+        lastConfirmedSleepState = capsLockOn
         hasLoggedMissingSleepState = false
         failedSleepState = nil
         nextSleepStateRetryAt = .distantPast
@@ -1453,7 +1466,22 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    private func refreshSettingsHeaderStatus() {
+        let physical = capsLockStateReader.currentState()
+        if let failed = failedTogglePhysicalState, let physical, physical != failed {
+            failedTogglePhysicalState = nil
+        }
+        settingsHeaderStatus = SettingsHeaderStatus.resolve(
+            confirmed: lastConfirmedSleepState,
+            hasError: physical == nil || dedicatedModeError || failedSleepState != nil || failedTogglePhysicalState != nil,
+            changing: isExplicitCapsLockToggleInFlight || isControlMutationInFlight || isAutoOffToggleInFlight,
+            previous: settingsHeaderStatus
+        )
+        settingsWindowController?.updateHeaderStatus(settingsHeaderStatus)
+    }
+
     private func updateStatus(capsLockOn: Bool) {
+        refreshSettingsHeaderStatus()
         guard let button = statusItem?.button else { return }
         let strings = AppStrings.current()
         button.image = capsLockOn ? onImage : offImage
@@ -1469,6 +1497,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func updateStatusError() {
+        refreshSettingsHeaderStatus()
         if statusItem == nil {
             installStatusItem()
         }
@@ -1620,6 +1649,7 @@ extension Capsomnia {
         }
         prepareSecureInputOverrideForExplicitTarget(target)
         isControlMutationInFlight = true
+        failedTogglePhysicalState = nil
         suppressInputSourceRecoveryForUserAction(reason: "cli")
         ExplicitAwakeCommand.run(
             target: target,
@@ -1644,6 +1674,10 @@ extension Capsomnia {
             sleep: { SystemSleepRequester.request() },
             completion: { result in
                 self.isControlMutationInFlight = false
+                if case .failure = result {
+                    self.failedTogglePhysicalState = self.currentCapsLockState
+                }
+                self.refreshSettingsHeaderStatus()
                 self.updateStatusMenuControls()
                 self.settingsWindowController?.reloadText()
                 switch result {

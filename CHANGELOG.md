@@ -7,7 +7,9 @@ All notable changes to Capsomnia will be documented in this file.
 - Add optional screen locking when the lid opens during Computer Use sessions,
   contributed by @orut34iop in [PR 131](https://github.com/fuji-mak/Capsomnia/pull/131).
   Show a compact checkbox under Computer Use only when that mode is enabled,
-  preserve its selection while hidden, and keep the latest event in Advanced Settings.
+  and preserve its selection while hidden. Keep lock outcomes in diagnostic logs;
+  do not request notification permission, send banners, show post-unlock notices,
+  or add an event-history card to Advanced Settings.
 - Match the settings header indicator to confirmed awake status: glowing green
   for on, gray for off, and red for failures or unknown state. Keep the previous
   color while an operation is in progress, without changing the settings layout.

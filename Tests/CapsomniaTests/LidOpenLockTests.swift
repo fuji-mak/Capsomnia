@@ -38,12 +38,6 @@ final class LidOpenLockTests: XCTestCase {
         XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("closedAt"))
         let restored = try JSONDecoder().decode(LidOpenLockRecord.self, from: data)
         XCTAssertEqual(restored, original)
-        let text = LidOpenLockText.localized(.simplifiedChinese)
-        let lines = text.details(restored).components(separatedBy: "\n")
-        XCTAssertEqual(lines[0], "最近一次合盖：未记录")
-        XCTAssertTrue(lines[1].hasPrefix("检测到开盖："))
-        XCTAssertTrue(lines[2].hasPrefix("确认已锁定："))
-        XCTAssertFalse(lines.contains { $0.hasPrefix("请求锁定：") })
     }
 
     func testOnlyAnEligibleClosedToOpenEdgeRequestsLockOnce() {
@@ -65,32 +59,22 @@ final class LidOpenLockTests: XCTestCase {
         XCTAssertEqual(requests, 1)
     }
 
-    func testConfirmationAndUnlockNoticeHaveSeparateTimesAndPersist() {
+    func testConfirmedLockHasSeparateTimesAndPersistsWhileDisabled() {
         var saved: LidOpenLockRecord?
-        var notices: [LidOpenLockRecord] = []
-        var notifications = 0
         let controller = LidOpenLockController(requestLock: { true }, save: { saved = $0 })
-        controller.onNotice = { notices.append($0) }
-        controller.onConfirmed = { _ in notifications += 1 }
         controller.poll(closed: true, eligible: true, locked: false, now: start)
         let opened = start.addingTimeInterval(2)
         controller.poll(closed: false, eligible: true, locked: false, now: opened)
-        XCTAssertTrue(notices.isEmpty)
+        XCTAssertEqual(saved?.outcome, .pending)
         let locked = opened.addingTimeInterval(0.25)
         controller.poll(closed: false, eligible: true, locked: true, now: locked)
         XCTAssertEqual(saved?.confirmedAt, locked)
         XCTAssertEqual(saved?.outcome, .locked)
-        XCTAssertEqual(notifications, 1)
-        XCTAssertTrue(notices.isEmpty, "Never display application UI over the lock screen")
         controller.poll(closed: false, eligible: false, locked: nil, now: locked.addingTimeInterval(1))
-        XCTAssertTrue(notices.isEmpty, "Unknown/background session is not an unlock")
         controller.poll(closed: false, eligible: false, locked: false, now: locked.addingTimeInterval(2))
-        controller.poll(closed: false, eligible: false, locked: false, now: locked.addingTimeInterval(3))
-        XCTAssertEqual(notices.count, 1)
-        XCTAssertEqual(notices[0].requestedAt, opened)
-        controller.acknowledge(notices[0].id)
-        XCTAssertEqual(saved?.acknowledged, true)
-        XCTAssertEqual(saved?.confirmedAt, locked, "Acknowledgement retains the record")
+        XCTAssertEqual(saved?.requestedAt, opened)
+        XCTAssertEqual(saved?.confirmedAt, locked)
+        XCTAssertEqual(saved?.outcome, .locked)
     }
 
     func testDisabledModeAndUnknownLidDoNotCreateSpuriousEdges() {
@@ -138,19 +122,10 @@ final class LidOpenLockTests: XCTestCase {
             let record = LidOpenLockRecord(id: UUID(), openedAt: start, requestedAt: start,
                                           confirmedAt: outcome == .locked ? start : nil, outcome: outcome)
             let restored = try JSONDecoder().decode(LidOpenLockRecord.self, from: JSONEncoder().encode(record))
-            var notices = 0
             let controller = LidOpenLockController(record: restored, requestLock: { XCTFail("Unexpected lock"); return true })
-            controller.onNotice = { _ in notices += 1 }
             controller.poll(closed: false, eligible: false, locked: false, now: start)
-            XCTAssertEqual(notices, 1)
             XCTAssertEqual(controller.record?.outcome, outcome == .locked ? .locked : .unconfirmed)
         }
     }
 
-    func testAcknowledgedRecordIsNotShownAgainAfterRestart() {
-        let record = LidOpenLockRecord(id: UUID(), openedAt: start, outcome: .locked, acknowledged: true)
-        let controller = LidOpenLockController(record: record, requestLock: { true })
-        controller.onNotice = { _ in XCTFail("Already acknowledged") }
-        controller.poll(closed: false, eligible: true, locked: false, now: start)
-    }
 }

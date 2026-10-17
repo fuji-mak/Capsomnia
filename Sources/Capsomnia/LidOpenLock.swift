@@ -10,7 +10,6 @@ struct LidOpenLockRecord: Codable, Equatable {
     var requestedAt: Date?
     var confirmedAt: Date?
     var outcome: Outcome
-    var acknowledged = false
 }
 
 /// Main-thread state machine. Lock requests are injected so tests never lock the Mac.
@@ -20,12 +19,9 @@ final class LidOpenLockController {
     private var observedClosed: Bool?
     private var lastClosedAt: Date?
     private var pendingDeadline: Date?
-    private var presentedID: UUID?
     private let requestLock: () -> Bool
     private let save: (LidOpenLockRecord?) -> Void
     var onChange: ((LidOpenLockRecord) -> Void)?
-    var onNotice: ((LidOpenLockRecord) -> Void)?
-    var onConfirmed: ((LidOpenLockRecord) -> Void)?
 
     init(record: LidOpenLockRecord? = nil,
          requestLock: @escaping () -> Bool,
@@ -60,7 +56,6 @@ final class LidOpenLockController {
                 event.confirmedAt = now
                 pendingDeadline = nil
                 store(event)
-                onConfirmed?(event)
             }
         }
 
@@ -93,17 +88,6 @@ final class LidOpenLockController {
             lastClosed = nil
         }
 
-        if locked == false, let event = record, event.outcome != .pending,
-           !event.acknowledged, presentedID != event.id {
-            presentedID = event.id
-            onNotice?(event)
-        }
-    }
-
-    func acknowledge(_ id: UUID) {
-        guard var event = record, event.id == id else { return }
-        event.acknowledged = true
-        store(event)
     }
 
     private func store(_ event: LidOpenLockRecord) {

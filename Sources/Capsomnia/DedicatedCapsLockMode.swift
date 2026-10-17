@@ -33,6 +33,7 @@ enum AccessibilityPermission {
 }
 
 final class DedicatedCapsLockFilter {
+    var onCapsLockKey: ((Bool, TimeInterval) -> Void)?
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
@@ -108,7 +109,7 @@ final class DedicatedCapsLockFilter {
         state = .inactive
     }
 
-    fileprivate func handle(
+    func handle(
         type: CGEventType,
         event: CGEvent
     ) -> Unmanaged<CGEvent>? {
@@ -124,11 +125,13 @@ final class DedicatedCapsLockFilter {
         }
 
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
-        event.flags = DedicatedCapsLockEventPolicy.sanitizedFlags(event.flags)
-
         if DedicatedCapsLockEventPolicy.shouldSuppress(eventType: type, keyCode: keyCode) {
+            // NSEvent monitors never see an event that this tap swallows.
+            // Capture the original state before removing the capitalization flag.
+            onCapsLockKey?(event.flags.contains(.maskAlphaShift), Double(event.timestamp) / 1_000_000_000)
             return nil
         }
+        event.flags = DedicatedCapsLockEventPolicy.sanitizedFlags(event.flags)
 
         return Unmanaged.passUnretained(event)
     }

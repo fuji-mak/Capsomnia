@@ -2,7 +2,7 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
-## Unreleased
+## 4.2.5 - 2026-10-18
 
 - Add optional screen locking when the lid opens during Computer Use sessions,
   contributed by @orut34iop in [PR 131](https://github.com/fuji-mak/Capsomnia/pull/131).

@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `4.2.4`
+Current version: `4.2.5`
 
 [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
@@ -31,6 +31,8 @@ Turn Caps Lock on when local work should keep running. Turn Caps Lock off when y
 It is useful for AI agents, mobile access, and other long-running or remote work.
 
 Capsomnia does not collect telemetry or require an account. Network use is limited to an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), downloading installers from GitHub when you choose to update or install CLI & Skill, and local gateway probes when "Keep hotspot connected" is enabled. Capsomnia sends no telemetry, identifiers, or personal data.
+
+When “Use Computer Use and similar tools” is enabled, an optional “Lock when lid opens” checkbox appears beneath it. It is off by default and locks the Mac after a closed-to-open lid transition is detected while Capsomnia is on. The settings header indicator shows confirmed ON in glowing green, OFF in gray, and failure or unknown state in red. Lid-open locking is detected after opening; it does not guarantee that screen contents are never briefly visible.
 
 <p align="center">
   <img src="resources/caps-lock-on.jpg" alt="Caps Lock light on" width="560">

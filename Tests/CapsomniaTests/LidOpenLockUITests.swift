@@ -13,10 +13,12 @@ final class LidOpenLockUITests: XCTestCase {
         let previousLanguage = Preferences.language
         let previousParent = Preferences.keepDisplayAwake
         let previousEnabled = Preferences.lockOnLidOpen
+        let previousNotifications = Preferences.notifyOnLidOpenLock
         defer {
             Preferences.language = previousLanguage
             Preferences.keepDisplayAwake = previousParent
             Preferences.lockOnLidOpen = previousEnabled
+            Preferences.notifyOnLidOpenLock = previousNotifications
         }
         let date = Date(timeIntervalSince1970: 1_791_873_128)
         let record = LidOpenLockRecord(id: UUID(), openedAt: date, closedAt: date.addingTimeInterval(-3600), requestedAt: date,
@@ -33,12 +35,14 @@ final class LidOpenLockUITests: XCTestCase {
             onAutomaticUpdateChecksChange: { _ in }, onFinishInitialSetup: {}, onLidOpenLockChange: { value in
                 toggles += 1
                 Preferences.lockOnLidOpen = value
-            }, lidLockRecordProvider: { record })
+            }, onLidLockNotificationsChange: { Preferences.notifyOnLidOpenLock = $0 }, lidLockRecordProvider: { record })
         defer { controller.close() }
         for language in AppLanguage.allCases {
             Preferences.language = language
             Preferences.keepDisplayAwake = false
             Preferences.lockOnLidOpen = true
+            Preferences.notifyOnLidOpenLock = false
+            controller.updateHeaderStatus(.on)
             controller.show(page: .settings)
             let content = try XCTUnwrap(controller.window?.contentView)
             let checkbox = try XCTUnwrap(descendants(content).compactMap { $0 as? NSButton }.first {
@@ -66,23 +70,47 @@ final class LidOpenLockUITests: XCTestCase {
                 $0.stringValue == AppStrings.current().keepDisplayAwake
             })
             XCTAssertGreaterThan(checkboxFrame.minX, title.convert(title.bounds, to: content).minX)
+            let notificationCheckbox = try XCTUnwrap(descendants(content).compactMap { $0 as? NSButton }.first {
+                $0.accessibilityLabel() == LidOpenLockText.notificationTitle
+            })
+            XCTAssertFalse(notificationCheckbox.isHiddenOrHasHiddenAncestor)
+            XCTAssertEqual(notificationCheckbox.state, .off)
+            let notificationFrame = notificationCheckbox.convert(notificationCheckbox.bounds, to: content)
+            XCTAssertTrue(content.bounds.contains(notificationFrame))
+            XCTAssertGreaterThan(notificationFrame.minX, checkboxFrame.minX)
+            notificationCheckbox.performClick(nil)
+            XCTAssertTrue(Preferences.notifyOnLidOpenLock)
             if language == .japanese { try capture(content, name: "lid-lock-enabled-ja") }
             let before = toggles
             checkbox.performClick(nil)
             XCTAssertFalse(Preferences.lockOnLidOpen)
             XCTAssertEqual(toggles, before + 1)
+            content.layoutSubtreeIfNeeded()
+            XCTAssertTrue(notificationCheckbox.isHiddenOrHasHiddenAncestor)
+            XCTAssertTrue(Preferences.notifyOnLidOpenLock, "Disabling locking preserves the notification preference")
+            if language == .japanese { try capture(content, name: "lid-lock-notification-hidden-ja") }
             checkbox.performClick(nil)
             XCTAssertTrue(Preferences.lockOnLidOpen)
+            XCTAssertFalse(notificationCheckbox.isHiddenOrHasHiddenAncestor)
+            XCTAssertEqual(notificationCheckbox.state, .on)
+            notificationCheckbox.performClick(nil)
+            XCTAssertFalse(Preferences.notifyOnLidOpenLock)
+            XCTAssertTrue(Preferences.lockOnLidOpen, "Notification opt-out must not disable locking")
+            notificationCheckbox.performClick(nil)
 
             XCTAssertTrue(parent.accessibilityPerformPress())
             content.layoutSubtreeIfNeeded()
             XCTAssertTrue(checkbox.isHiddenOrHasHiddenAncestor)
             XCTAssertEqual(checkbox.state, .on)
+            XCTAssertTrue(notificationCheckbox.isHiddenOrHasHiddenAncestor)
+            XCTAssertEqual(notificationCheckbox.state, .on)
             XCTAssertTrue(Preferences.lockOnLidOpen)
             XCTAssertEqual(content.bounds.height, hiddenHeight, accuracy: 1, "Hidden options leave no extra space")
             XCTAssertTrue(parent.accessibilityPerformPress())
             XCTAssertFalse(checkbox.isHiddenOrHasHiddenAncestor)
             XCTAssertEqual(checkbox.state, .on)
+            XCTAssertFalse(notificationCheckbox.isHiddenOrHasHiddenAncestor)
+            XCTAssertEqual(notificationCheckbox.state, .on)
             controller.show(page: .advancedSettings)
             let text = LidOpenLockText.current
             let detail = try XCTUnwrap(descendants(content).compactMap { $0 as? NSTextField }.first {

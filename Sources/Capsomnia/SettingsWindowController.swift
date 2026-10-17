@@ -78,10 +78,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     )
     private var lockSection = NSView()
     private let lidLockCheckbox = NSButton(checkboxWithTitle: "", target: nil, action: nil)
+    private var lockNotificationSection = NSView()
+    private let lidLockNotificationCheckbox = NSButton(checkboxWithTitle: "", target: nil, action: nil)
     private let lidLockRecordTitle = brandLabel(size: 11, weight: .semibold, color: Brand.textFaint)
     private let lidLockRecordText = brandLabel(size: 12, color: Brand.textDim, wraps: true)
     private var lidLockRecordCard = NSView()
     private let onLidOpenLockChange: (Bool) -> Void
+    private let onLidLockNotificationsChange: (Bool) -> Void
     private let lidLockRecordProvider: () -> LidOpenLockRecord?
     private let keepHotspotAliveTitle = brandLabel(
         size: 13,
@@ -232,6 +235,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onToolsDownload: @escaping () -> Void = {},
         autoOffDescriptionProvider: @escaping () -> String? = { nil },
         onLidOpenLockChange: @escaping (Bool) -> Void = { _ in },
+        onLidLockNotificationsChange: @escaping (Bool) -> Void = { _ in },
         lidLockRecordProvider: @escaping () -> LidOpenLockRecord? = { Preferences.lastLidOpenLock }
     ) {
         self.onDedicatedCapsLockModeChange = onDedicatedCapsLockModeChange
@@ -254,6 +258,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onUpdate = onUpdate
         self.onReleaseNotes = onReleaseNotes
         self.onLidOpenLockChange = onLidOpenLockChange
+        self.onLidLockNotificationsChange = onLidLockNotificationsChange
         self.lidLockRecordProvider = lidLockRecordProvider
         self.onToolsDownload = onToolsDownload
         self.autoOffDescriptionProvider = autoOffDescriptionProvider
@@ -325,6 +330,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         lidLockCheckbox.title = lockText.title
         lidLockCheckbox.setAccessibilityLabel(lockText.title)
         lidLockCheckbox.toolTip = lockText.description
+        lidLockNotificationCheckbox.title = LidOpenLockText.notificationTitle
+        lidLockNotificationCheckbox.setAccessibilityLabel(LidOpenLockText.notificationTitle)
         lidLockRecordTitle.stringValue = lockText.history
         if let event = lidLockRecordProvider() {
             lidLockRecordText.stringValue = lockText.status(event) + "\n" + lockText.details(event)
@@ -806,25 +813,37 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         )
         lidLockCheckbox.target = self
         lidLockCheckbox.action = #selector(changeLidOpenLock)
-        lidLockCheckbox.font = .systemFont(ofSize: 12)
-        lidLockCheckbox.contentTintColor = Brand.text
-        lidLockCheckbox.translatesAutoresizingMaskIntoConstraints = false
-        lockSection = NSView()
-        lockSection.translatesAutoresizingMaskIntoConstraints = false
-        lockSection.addSubview(lidLockCheckbox)
-        NSLayoutConstraint.activate([
-            lidLockCheckbox.leadingAnchor.constraint(equalTo: lockSection.leadingAnchor, constant: 12),
-            lidLockCheckbox.trailingAnchor.constraint(lessThanOrEqualTo: lockSection.trailingAnchor),
-            lidLockCheckbox.topAnchor.constraint(equalTo: lockSection.topAnchor),
-            lidLockCheckbox.bottomAnchor.constraint(equalTo: lockSection.bottomAnchor)
-        ])
-        let stack = cardRows([displayRow, lockSection])
-        lockSection.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        lockSection = indentedCheckbox(lidLockCheckbox, by: 12)
+        lidLockNotificationCheckbox.target = self
+        lidLockNotificationCheckbox.action = #selector(changeLidLockNotifications)
+        lockNotificationSection = indentedCheckbox(lidLockNotificationCheckbox, by: 24)
+        let stack = cardRows([displayRow, lockSection, lockNotificationSection])
         return settingsCard(stack, insets: NSEdgeInsets(top: 16, left: 18, bottom: 16, right: 18))
+    }
+
+    private func indentedCheckbox(_ checkbox: NSButton, by indent: CGFloat) -> NSView {
+        checkbox.font = .systemFont(ofSize: 12)
+        checkbox.contentTintColor = Brand.text
+        checkbox.translatesAutoresizingMaskIntoConstraints = false
+        let row = NSView()
+        row.translatesAutoresizingMaskIntoConstraints = false
+        row.addSubview(checkbox)
+        NSLayoutConstraint.activate([
+            checkbox.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: indent),
+            checkbox.trailingAnchor.constraint(lessThanOrEqualTo: row.trailingAnchor),
+            checkbox.topAnchor.constraint(equalTo: row.topAnchor),
+            checkbox.bottomAnchor.constraint(equalTo: row.bottomAnchor)
+        ])
+        return row
     }
 
     @objc private func changeLidOpenLock() {
         onLidOpenLockChange(lidLockCheckbox.state == .on)
+        updateValues()
+    }
+
+    @objc private func changeLidLockNotifications() {
+        onLidLockNotificationsChange(lidLockNotificationCheckbox.state == .on)
         updateValues()
     }
 
@@ -970,9 +989,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         keepDisplayAwakeToggle.setOn(Preferences.keepDisplayAwake)
         lidLockCheckbox.state = Preferences.lockOnLidOpen ? .on : .off
         lidLockCheckbox.isEnabled = Preferences.keepDisplayAwake
+        lidLockNotificationCheckbox.state = Preferences.notifyOnLidOpenLock ? .on : .off
+        lidLockNotificationCheckbox.isEnabled = Preferences.keepDisplayAwake && Preferences.lockOnLidOpen
         let wasHidden = lockSection.isHidden
+        let notificationWasHidden = lockNotificationSection.isHidden
         lockSection.isHidden = !Preferences.keepDisplayAwake
-        if wasHidden != lockSection.isHidden, page == .settings, window?.isVisible == true { resizeToFit() }
+        lockNotificationSection.isHidden = !Preferences.keepDisplayAwake || !Preferences.lockOnLidOpen
+        if wasHidden != lockSection.isHidden || notificationWasHidden != lockNotificationSection.isHidden,
+           page == .settings, window?.isVisible == true { resizeToFit() }
         keepHotspotAliveToggle.setOn(Preferences.keepHotspotAlive)
         externalCapsLockOffToggle.setOn(Preferences.ignoreExternalCapsLockOffWhileLidClosed)
         let indicatorState = capsLockIndicatorStateProvider()

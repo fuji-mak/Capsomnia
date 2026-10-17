@@ -4,6 +4,9 @@ All notable changes to Capsomnia will be documented in this file.
 
 ## Unreleased
 
+- Make lid-open lock notifications a separate, default-off choice. Show the
+  notification checkbox only when lid-open locking is enabled, and request
+  notification permission only when that checkbox is selected.
 - Add optional screen locking when the lid opens during Computer Use sessions,
   contributed by @orut34iop in [PR 131](https://github.com/fuji-mak/Capsomnia/pull/131).
   Show a compact checkbox under Computer Use only when that mode is enabled,

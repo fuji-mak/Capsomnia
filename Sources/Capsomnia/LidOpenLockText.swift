@@ -4,6 +4,15 @@ struct LidOpenLockText {
     let title, description, inactive, history, empty, pending, confirmed, alreadyLocked: String
     let unconfirmed, unavailable, stateUnavailable, closed, opened, notRecorded, verified, reason, caution, acknowledge, viewRecord: String
 
+    static var notificationTitle: String {
+        switch Preferences.language {
+        case .english: return "Notify when locked"
+        case .japanese: return "ロック時に通知する"
+        case .korean: return "잠금 시 알림 표시"
+        case .simplifiedChinese: return "锁定时通知"
+        }
+    }
+
     static var current: Self { localized(Preferences.language) }
 
     static func localized(_ language: AppLanguage) -> Self {

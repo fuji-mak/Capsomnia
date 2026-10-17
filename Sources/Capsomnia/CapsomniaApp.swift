@@ -574,10 +574,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func setLidLockEnabled(_ enabled: Bool) {
         Preferences.lockOnLidOpen = enabled
-        if enabled { ScreenLock.requestNotificationPermission() }
         settingsWindowController?.reloadText()
         updateStatusMenuControls()
         log("preference lock_on_lid_open=\(enabled ? "on" : "off")")
+    }
+
+    private func setLidLockNotificationsEnabled(_ enabled: Bool) {
+        Preferences.notifyOnLidOpenLock = enabled
+        if enabled { ScreenLock.requestNotificationPermission() }
+        settingsWindowController?.reloadText()
+        log("preference notify_on_lid_open_lock=\(enabled ? "on" : "off")")
     }
 
     @objc private func toggleKeepDisplayAwakeFromMenu() {
@@ -661,7 +667,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     self?.toolsDownloadController.promptDownload(from: self?.settingsWindowController?.window)
                 },
                 autoOffDescriptionProvider: { [weak self] in self?.sessionTimerDescription() },
-                onLidOpenLockChange: { [weak self] enabled in self?.setLidLockEnabled(enabled) }
+                onLidOpenLockChange: { [weak self] enabled in self?.setLidLockEnabled(enabled) },
+                onLidLockNotificationsChange: { [weak self] enabled in self?.setLidLockNotificationsEnabled(enabled) }
             )
         }
 

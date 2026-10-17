@@ -35,10 +35,11 @@ enum ScreenLock {
     }
 
     static func notify(_ record: LidOpenLockRecord) {
+        guard Preferences.notifyOnLidOpenLock else { return }
         let center = UNUserNotificationCenter.current()
         let text = LidOpenLockText.current
         center.getNotificationSettings { settings in
-            guard settings.authorizationStatus == .authorized else { return }
+            guard Preferences.notifyOnLidOpenLock, settings.authorizationStatus == .authorized else { return }
             let content = UNMutableNotificationContent()
             content.title = "Capsomnia · " + text.confirmed
             content.body = text.details(record)

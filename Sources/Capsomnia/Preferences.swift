@@ -2,6 +2,7 @@ import Foundation
 
 private enum PreferenceKey {
     static let lockOnLidOpen = "LockOnLidOpen"
+    static let notifyOnLidOpenLock = "NotifyOnLidOpenLock"
     static let lastLidOpenLock = "LastLidOpenLock"
     static let dedicatedCapsLockMode = "DedicatedCapsLockMode"
     static let secureInputCapsLockOverrideActive = "SecureInputCapsLockOverrideActive"
@@ -38,6 +39,7 @@ enum Preferences {
             PreferenceKey.launchAtLogin: true,
             PreferenceKey.keepDisplayAwake: false,
             PreferenceKey.lockOnLidOpen: false,
+            PreferenceKey.notifyOnLidOpenLock: false,
             PreferenceKey.keepHotspotAlive: false,
             PreferenceKey.ignoreExternalCapsLockOffWhileLidClosed: false,
             PreferenceKey.autoOffMinutes: 0,
@@ -88,6 +90,11 @@ enum Preferences {
     static var lockOnLidOpen: Bool {
         get { defaults.bool(forKey: PreferenceKey.lockOnLidOpen) }
         set { defaults.set(newValue, forKey: PreferenceKey.lockOnLidOpen) }
+    }
+
+    static var notifyOnLidOpenLock: Bool {
+        get { defaults.bool(forKey: PreferenceKey.notifyOnLidOpenLock) }
+        set { defaults.set(newValue, forKey: PreferenceKey.notifyOnLidOpenLock) }
     }
 
     static var lastLidOpenLock: LidOpenLockRecord? {

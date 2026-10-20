@@ -74,7 +74,15 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
     private let errorImage = DotImage.make(color: .systemRed)
     private let capsLockStateReader = SystemCapsLockStateReader()
-    private let dedicatedCapsLockFilter = DedicatedCapsLockFilter()
+    private lazy var dedicatedCapsLockFilter: DedicatedCapsLockFilter = {
+        let filter = DedicatedCapsLockFilter()
+        filter.onCapsLockChange = { [weak self] in
+            // The tap also sees programmatic changes. Use it as a prompt to
+            // read the hardware, not as evidence of a user's ON/OFF intent.
+            self?.refreshAfterCapsLockEvent()
+        }
+        return filter
+    }()
     private let capsLockToggleCoordinator = CapsLockToggleCoordinator()
     private let autoOffSleepCoordinator = AutoOffSleepCoordinator()
     private let globalHotKeyManager = GlobalHotKeyManager()
@@ -278,6 +286,16 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         suppressInputSourceRecoveryForUserAction(reason: "capslock_key")
+        refreshAfterCapsLockEvent()
+    }
+
+    private func refreshAfterCapsLockEvent() {
+        // Leave the event callback before running the helper or updating UI.
+        // Read the actual state; event flags are not the source of truth.
+        DispatchQueue.main.async { [weak self] in
+            self?.applyCurrentCapsLockState(reason: "capslock_event")
+            self?.refreshSettingsHeaderStatus()
+        }
     }
 
     private func suppressInputSourceRecoveryForUserAction(reason: String) {

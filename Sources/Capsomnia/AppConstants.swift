@@ -448,3 +448,46 @@ struct AppStrings {
         }
     }
 }
+
+struct HotspotStrings {
+    let language: AppLanguage
+    static func current() -> HotspotStrings { localized(for: Preferences.language) }
+    static func localized(for language: AppLanguage) -> HotspotStrings { HotspotStrings(language: language) }
+    private func text(_ en: String, _ ko: String, _ ja: String, _ zh: String) -> String {
+        switch language {
+        case .english: return en
+        case .korean: return ko
+        case .japanese: return ja
+        case .simplifiedChinese: return zh
+        }
+    }
+    var title: String { text("Auto-connect to hotspot", "핫스팟 자동 연결", "ホットスポットに自動接続", "自动连接热点") }
+    var description: String { text("While Capsomnia is on, reconnect after Wi-Fi is lost for 5 seconds. The hotspot must already be broadcasting.", "Capsomnia가 켜져 있을 때 Wi-Fi가 5초간 끊기면 다시 연결합니다. 핫스팟이 이미 켜져 있어야 합니다.", "Capsomniaがオンの間、Wi-Fi切断が5秒続くと再接続します。ホットスポットが発信中である必要があります。", "Capsomnia 开启时，Wi-Fi 断开 5 秒后重新连接。热点必须已开启并广播。") }
+    var ssid: String { text("Hotspot Wi-Fi name (SSID)", "핫스팟 Wi-Fi 이름 (SSID)", "ホットスポットのWi-Fi名 (SSID)", "热点 Wi-Fi 名称 (SSID)") }
+    var password: String { text("Password (saved only in Keychain)", "암호 (키체인에만 저장)", "パスワード (キーチェーンのみに保存)", "密码（仅存于钥匙串）") }
+    var save: String { text("Save password", "암호 저장", "パスワードを保存", "保存密码") }
+    var forget: String { text("Forget password", "암호 삭제", "パスワードを削除", "忘记密码") }
+    var requestLocation: String { text("Allow Location access", "위치 접근 허용", "位置情報を許可", "允许位置访问") }
+    var locationSettings: String { text("Location Settings", "위치 설정", "位置情報設定", "位置设置") }
+    var wifiSettings: String { text("Open Wi-Fi Settings", "Wi-Fi 설정 열기", "Wi-Fi設定を開く", "打开 Wi-Fi 设置") }
+    var instantHotspot: String { text("To wake a nearby iPhone hotspot, use macOS 26 or later: Wi-Fi Settings > Ask to join hotspots > Automatic. Use the same Apple Account or Family Sharing, with Wi-Fi and Bluetooth on. This system setting also works when Capsomnia is off; no hotspot password is needed.", "근처 iPhone 핫스팟을 켜려면 macOS 26 이상에서 Wi-Fi 설정 > 핫스팟 연결 요청 > 자동을 선택하세요. 동일한 Apple 계정 또는 가족 공유를 사용하고 Wi-Fi와 Bluetooth를 켜세요. 이 시스템 설정은 Capsomnia가 꺼져 있어도 작동하며 핫스팟 암호가 필요하지 않습니다.", "近くのiPhoneのホットスポットを起動するには、macOS 26以降のWi-Fi設定で「ホットスポットへの接続を確認」を「自動」にします。同じApple Accountまたはファミリー共有を使い、Wi-FiとBluetoothをオンにしてください。このシステム設定はCapsomniaがオフでも機能し、パスワードは不要です。", "要唤醒附近的 iPhone 热点，请在 macOS 26 或更高版本的 Wi-Fi 设置中，将“询问是否加入热点”设为“自动”。使用同一 Apple 账户或家人共享，并开启 Wi-Fi 和蓝牙。此系统设置在 Capsomnia 关闭时也有效，无需热点密码。") }
+    var saved: String { text("Password saved in Keychain.", "암호를 키체인에 저장했습니다.", "キーチェーンに保存しました。", "密码已保存到钥匙串。") }
+    var forgotten: String { text("Password forgotten for this SSID.", "이 SSID의 암호를 삭제했습니다.", "このSSIDのパスワードを削除しました。", "已忘记此 SSID 的密码。") }
+    var editFailed: String { text("Keychain change failed. Check access and try again. Existing credentials were not removed automatically.", "키체인 변경에 실패했습니다. 접근 권한을 확인하고 다시 시도하세요. 기존 암호는 자동 삭제되지 않았습니다.", "キーチェーンの変更に失敗しました。アクセス権を確認して再試行してください。既存の認証情報は自動削除されません。", "钥匙串更改失败。请检查访问权限后重试。现有凭据不会被自动删除。") }
+    func status(_ status: HotspotReconnectStatus) -> String {
+        switch status {
+        case .disabled: return text("Auto-connect is off.", "자동 연결 꺼짐.", "自動接続はオフです。", "自动连接已关闭。")
+        case .sessionInactive: return text("Ready when Capsomnia turns on.", "Capsomnia가 켜지면 대기합니다.", "Capsomniaがオンになると待機します。", "Capsomnia 开启后就绪。")
+        case .needsSSID: return text("Enter a hotspot Wi-Fi name.", "핫스팟 Wi-Fi 이름을 입력하세요.", "ホットスポットのWi-Fi名を入力してください。", "请输入热点 Wi-Fi 名称。")
+        case .ready: return text("Wi-Fi monitoring is ready.", "Wi-Fi 감시 준비 완료.", "Wi-Fi監視の準備ができました。", "Wi-Fi 监测已就绪。")
+        case .waiting: return text("Waiting for Wi-Fi; retries use 5–30 second backoff.", "Wi-Fi 대기 중. 5~30초 간격으로 재시도합니다.", "Wi-Fiを待機中。5〜30秒間隔で再試行します。", "正在等待 Wi-Fi；重试间隔为 5 至 30 秒。")
+        case .joining: return text("Joining saved hotspot…", "저장된 핫스팟 연결 중…", "保存したホットスポットに接続中…", "正在连接已保存的热点…")
+        case .needsLocation: return text("Location access is needed to find Wi-Fi networks.", "Wi-Fi 검색을 위해 위치 접근이 필요합니다.", "Wi-Fi検索には位置情報の許可が必要です。", "查找 Wi-Fi 网络需要位置访问权限。")
+        case .passwordMissing: return text("No saved password. Save one below.", "저장된 암호가 없습니다. 아래에서 저장하세요.", "パスワードがありません。下で保存してください。", "没有已保存的密码。请在下方保存。")
+        case .passwordUnreadable: return text("Saved password cannot be read without a prompt. Check Keychain access or save it again.", "확인 대화상자 없이 암호를 읽을 수 없습니다. 키체인 접근을 확인하거나 다시 저장하세요.", "確認なしでパスワードを読めません。キーチェーンのアクセス権を確認するか再保存してください。", "无法在不提示的情况下读取密码。请检查钥匙串访问权限或重新保存。")
+        case .targetNotVisible: return text("Hotspot not visible. Turn it on; retrying.", "핫스팟이 보이지 않습니다. 핫스팟을 켜세요. 재시도 중.", "ホットスポットが見つかりません。オンにしてください。再試行中です。", "热点不可见。请开启热点；正在重试。")
+        case .interfaceUnavailable: return text("Wi-Fi interface unavailable; retrying.", "Wi-Fi 인터페이스를 사용할 수 없습니다. 재시도 중.", "Wi-Fiインターフェースが利用できません。再試行中です。", "Wi-Fi 接口不可用；正在重试。")
+        case .associationFailed: return text("Hotspot connection failed. Check its password and availability; retrying.", "핫스팟 연결 실패. 암호와 핫스팟 상태를 확인하세요. 재시도 중.", "接続に失敗しました。パスワードとホットスポットを確認してください。再試行中です。", "热点连接失败。请检查密码和热点状态；正在重试。")
+        }
+    }
+}

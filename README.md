@@ -30,7 +30,7 @@ Turn Caps Lock on when local work should keep running. Turn Caps Lock off when y
 
 It is useful for AI agents, mobile access, and other long-running or remote work.
 
-Capsomnia does not collect telemetry or require an account. Network use is limited to an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), downloading installers from GitHub when you choose to update or install CLI & Skill, and local gateway probes when "Keep hotspot connected" is enabled. Capsomnia sends no telemetry, identifiers, or personal data.
+Capsomnia does not collect telemetry or require an account. Network use is limited to an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), downloading installers from GitHub when you choose to update or install CLI & Skill, local gateway probes when "Keep hotspot connected" is enabled, and SSID-filtered Wi-Fi scans and association when "Auto-connect to hotspot" is enabled. Capsomnia sends no telemetry, identifiers, or personal data.
 
 When “Use Computer Use and similar tools” is enabled, an optional “Lock when lid opens” checkbox appears beneath it. It is off by default and locks the Mac after a closed-to-open lid transition is detected while Capsomnia is on. The settings header indicator shows confirmed ON in glowing green, OFF in gray, and failure or unknown state in red. Lid-open locking is detected after opening; it does not guarantee that screen contents are never briefly visible.
 
@@ -112,6 +112,14 @@ Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions,
 ## Settings
 
 Advanced Settings includes an optional "Keep hotspot connected" switch, off by default. While Capsomnia is on, it sends one small probe per minute to a recognized hotspot gateway, including iPhone Personal Hotspot, to help prevent idle disconnections. The probes stay on the local network and may slightly increase the phone's battery use. This does not automatically reconnect a lost hotspot connection.
+
+Open **Advanced Settings > Auto-connect to hotspot** to configure a broadcasting hotspot's Wi-Fi name and save its password in your login Keychain. Auto-connect is off by default. Enable it and grant Location access to let CoreWLAN find that network. While Capsomnia is on, a Wi-Fi outage lasting five seconds triggers a targeted scan and association. Failed attempts retry after 5, 10, 20, then 30 seconds, capped at 30. Recovery, Caps Lock off, opt-out, and configuration or credential edits cancel pending work. A healthy Wi-Fi path prevents joining. CoreWLAN association already in progress cannot be interrupted, so a stop or recovery at that exact boundary can still let that association finish.
+
+Passwords are saved and forgotten only through explicit Settings actions. Automatic Keychain reads run without prompts. A locked Keychain or another build's access restrictions produce a visible failure; Capsomnia does not delete unreadable credentials. The secure password field clears after Save and when the window closes. Passwords never go through the CLI, process arguments, UserDefaults, logs, or status. The CLI can change `auto-connect-hotspot` and `hotspot-ssid` through its existing `settings set` commands.
+
+To wake a nearby iPhone's Personal Hotspot, use the supported native setting on **macOS 26 or later**. Open **Wi-Fi Settings > Ask to join hotspots > Automatic**. Use the same Apple Account or Family Sharing, and keep Wi-Fi and Bluetooth enabled. This system setting works even when Capsomnia is off and requires no hotspot password. Capsomnia's Wi-Fi Settings link helps set it up. CoreWLAN reconnect only joins already broadcasting hotspots; it cannot start an iPhone hotspot. Full phone wake and connection behavior has not been verified end to end in this implementation.
+
+The reconnect behavior and login Keychain prompt handling adapt Insomnia's MIT-licensed source. Its full copyright and permission notice is included in the app as `Insomnia-MIT-LICENSE`.
 
 On first launch, Capsomnia explains how the Caps Lock switch works and lets you choose:
 

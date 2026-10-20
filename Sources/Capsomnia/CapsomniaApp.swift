@@ -95,13 +95,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let sleepStateVerificationInterval: TimeInterval = 10
     private let capsLockOffDebounceInterval: TimeInterval = 0.35
     private let inputSourceNotificationDebounceInterval: TimeInterval = 0.1
-    private let inputSourceInternalNotificationSuppression: TimeInterval = 0.5
     private let userCapsLockEventSuppressionInterval: TimeInterval = 0.5
     // Longer than the input-source suppression window: the external-off guard
     // consults this after the 350 ms off-debounce and possible polling delay,
     // so an intentional turn-off must stay recognizable for a few seconds.
     private let userActionExternalGuardBypassInterval: TimeInterval = 3
-    private var suppressInputSourceNotificationsUntil = Date.distantPast
     private var suppressInputSourceRecoveryUntil = Date.distantPast
     private var externalCapsLockOffGuardBypassUntil = Date.distantPast
     private let selectedKeyboardInputSourceChangedNotificationName = Notification.Name(
@@ -241,8 +239,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         let now = Date()
-        guard now >= suppressInputSourceNotificationsUntil,
-              now >= suppressInputSourceRecoveryUntil,
+        guard now >= suppressInputSourceRecoveryUntil,
               !isAutoOffInProgress,
               !secureInputCapsLockOverrideActive,
               lastAppliedState == true else { return }
@@ -343,9 +340,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
 
-        suppressInputSourceNotificationsUntil = Date().addingTimeInterval(
-            inputSourceInternalNotificationSuppression
-        )
+        // Do not suppress input-source notifications after this write: another
+        // real switch can arrive immediately. The debounce coalesces notifications,
+        // and the ON check above makes a notification from our own write a no-op.
         let result = SystemCapsLockController.set(true)
         log("\(reason) reassert_capslock result=\(String(describing: result))")
         guard result == .changed(to: true) else {
@@ -360,7 +357,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         cancelPendingCapsLockOff()
         pendingInputSourceRecoveryWorkItem?.cancel()
         pendingInputSourceRecoveryWorkItem = nil
-        suppressInputSourceNotificationsUntil = .distantPast
     }
 
     private func cancelPendingCapsLockOff() {

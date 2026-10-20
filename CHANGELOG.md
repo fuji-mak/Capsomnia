@@ -2,6 +2,13 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## Unreleased
+
+- Preserve OBS display sessions with a 30-second user-activity heartbeat and
+  40-millisecond polling only during closed-lid Keep display awake sessions.
+  Retain brightness restore and crash recovery, and migrate an explicit legacy
+  display preference only when the new preference has no explicit value.
+
 ## 4.2.5 - 2026-10-18
 
 - Add optional screen locking when the lid opens during Computer Use sessions,

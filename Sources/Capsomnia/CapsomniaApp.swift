@@ -187,6 +187,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         displayAwakeAssertion.setActive(false)
         hotspotKeepAlive.setActive(false)
+        pollingTimer?.invalidate()
         guard shouldRestoreSleepOnTerminate else { return }
 
         Preferences.secureInputCapsLockOverrideActive = false
@@ -943,17 +944,17 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                                    locked: ScreenLock.isLocked(), now: Date())
     }
 
-    private func installPollingMonitor() {
+    private func installPollingMonitor(interval: TimeInterval = 0.25) {
         pollingTimer?.invalidate()
-        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             self?.applyCurrentCapsLockState(reason: "poll")
             self?.refreshSettingsHeaderStatus()
             self?.pollLidOpenLock()
         }
-        timer.tolerance = 0.05
+        timer.tolerance = interval * 0.2
         pollingTimer = timer
         RunLoop.main.add(timer, forMode: .common)
-        log("polling_ready interval_ms=250 tolerance_ms=50")
+        log("polling_ready interval_ms=\(Int(interval * 1000))")
     }
 
     private func applyCurrentCapsLockState(reason: String) {
@@ -1225,7 +1226,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         let now = Date()
-        if shouldHold != displayAwakeAssertion.isActive,
+        if shouldHold != displayAwakeAssertion.isActive || !displayAwakeAssertion.isHealthy,
            now >= nextDisplayAwakeRetryAt {
             let succeeded = displayAwakeAssertion.setActive(shouldHold)
             nextDisplayAwakeRetryAt = succeeded
@@ -1324,6 +1325,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func apply(capsLockOn: Bool, reason: String) {
+        let interval = KeepDisplayAwakePolicy.pollingInterval(
+            preferenceEnabled: Preferences.keepDisplayAwake,
+            capsLockOn: capsLockOn,
+            lidClosed: ClamshellStateReader.isClosed()
+        )
+        if pollingTimer?.timeInterval != interval { installPollingMonitor(interval: interval) }
+
         if !capsLockOn, closedLidDimmingController.isDimmed {
             // Restore before the helper reenables system sleep. With a closed
             // lid, waiting until after that transition can be too late.
@@ -1561,6 +1569,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             source.setEventHandler { [weak self] in
                 self?.dedicatedCapsLockFilter.stop()
                 self?.secureInputFocusMonitor.stop()
+                self?.pollingTimer?.invalidate()
+                self?.closedLidDimmingController.setDimmed(false)
+                self?.displayAwakeAssertion.setActive(false)
                 Preferences.secureInputCapsLockOverrideActive = false
                 let result = self?.runHelper("off")
                 self?.log(

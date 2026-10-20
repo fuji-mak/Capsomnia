@@ -30,6 +30,7 @@ enum Preferences {
     private static let defaults = UserDefaults.standard
 
     static func registerDefaults() {
+        migrateLegacyDisplayPreference(defaults)
         defaults.register(defaults: [
             PreferenceKey.dedicatedCapsLockMode: false,
             PreferenceKey.secureInputCapsLockOverrideActive: false,
@@ -45,6 +46,14 @@ enum Preferences {
             PreferenceKey.forceWelcomeOnNextLaunch: false,
             PreferenceKey.automaticUpdateChecks: true
         ])
+    }
+
+    static func migrateLegacyDisplayPreference(_ defaults: UserDefaults, domain: String = appLabel) {
+        let saved = defaults.persistentDomain(forName: domain) ?? [:]
+        if saved[PreferenceKey.keepDisplayAwake] == nil,
+           (saved["DisplaySleepOnLidClose"] as? Bool) == true {
+            defaults.set(true, forKey: PreferenceKey.keepDisplayAwake)
+        }
     }
 
     static var dedicatedCapsLockMode: Bool {

@@ -113,6 +113,8 @@ Capsomnia is useful for long-running local jobs, AI coding agents, SSH sessions,
 
 Advanced Settings includes an optional "Keep hotspot connected" switch, off by default. While Capsomnia is on, it sends one small probe per minute to a recognized hotspot gateway, including iPhone Personal Hotspot, to help prevent idle disconnections. The probes stay on the local network and may slightly increase the phone's battery use. This does not automatically reconnect a lost hotspot connection.
 
+For OBS and other remote UI sessions, **Keep display awake** retains the upstream brightness restore, retry, and crash recovery behavior and refreshes a user-activity assertion every 30 seconds while active. Caps Lock polling runs every 40 milliseconds only while Capsomnia is on, Keep display awake is enabled, and the lid is known closed. Other use retains 250-millisecond polling. An explicit legacy `DisplaySleepOnLidClose=true` migrates to `KeepDisplayAwake=true` only if the new key has no explicit value.
+
 On first launch, Capsomnia explains how the Caps Lock switch works and lets you choose:
 
 - whether to show the menu bar dot
@@ -175,7 +177,7 @@ Capsomnia's menu bar app does not run as root. System sleep settings require ele
 
 Package-installed app files, the helper, and the system LaunchAgent are owned by `root:wheel`. The packaged helper is also signed with the same Developer ID as the app. Capsomnia verifies the actual `SleepDisabled` state after every change and every ten seconds afterward. If the helper cannot apply a change, the state cannot be verified, or the setting drifts, the menu bar dot turns red and Capsomnia retries after five seconds instead of showing the requested state as active. The red error dot appears temporarily even if the menu bar icon is normally hidden.
 
-When "Prevent all-caps typing" is disabled, Capsomnia does not request Input Monitoring or inspect keyboard events. When it is enabled, a local active Core Graphics event filter uses Accessibility permission only to remove `.maskAlphaShift` and suppress the Caps Lock modifier-change event. It does not log event contents, persist them, or send them over the network. Capsomnia still reads the physical Caps Lock state every 250 milliseconds to control sleep.
+When "Prevent all-caps typing" is disabled, Capsomnia does not request Input Monitoring or inspect keyboard events. When it is enabled, a local active Core Graphics event filter uses Accessibility permission only to remove `.maskAlphaShift` and suppress the Caps Lock modifier-change event. It does not log event contents, persist them, or send them over the network. Capsomnia reads the physical Caps Lock state every 250 milliseconds to control sleep, or every 40 milliseconds during a closed-lid Keep display awake session.
 
 macOS may show "Taketo Fujimaki" instead of "Capsomnia" for an existing cached background-item registration. This is the LaunchAgent that starts Capsomnia at login and restarts it after crashes. Disabling it can stop automatic startup and crash recovery.
 

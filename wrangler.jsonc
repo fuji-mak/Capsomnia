@@ -4,6 +4,7 @@
   "main": "worker/index.mjs",
   "compatibility_date": "2026-07-17",
   "workers_dev": false,
+  "upload_source_maps": false,
   "routes": [
     {
       "pattern": "capsomnia.com/*",

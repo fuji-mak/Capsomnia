@@ -74,6 +74,14 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let offImage = DotImage.make(color: NSColor(calibratedWhite: 0.58, alpha: 1.0))
     private let errorImage = DotImage.make(color: .systemRed)
     private let capsLockStateReader = SystemCapsLockStateReader()
+    private lazy var hidCapsLockMonitor: HIDCapsLockMonitor = {
+        let monitor = HIDCapsLockMonitor()
+        monitor.onPress = { [weak self] in
+            self?.handleHIDCapsLockPress()
+        }
+        return monitor
+    }()
+    private var nextHIDCapsLockMonitorCheckAt = Date.distantPast
     private lazy var dedicatedCapsLockFilter: DedicatedCapsLockFilter = {
         let filter = DedicatedCapsLockFilter()
         filter.onCapsLockChange = { [weak self] in
@@ -170,6 +178,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         controlServer?.stop()
+        hidCapsLockMonitor.stop()
         dedicatedCapsLockFilter.stop()
         secureInputFocusMonitor.stop()
         if let globalCapsLockEventMonitor {
@@ -187,6 +196,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         pendingAutoOffPreferenceApplyWorkItem?.cancel()
         pendingAutoOffPreferenceApplyWorkItem = nil
         DistributedNotificationCenter.default().removeObserver(self)
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
         if closedLidDimmingController.isDimmed {
             let restored = closedLidDimmingController.setDimmed(false)
             log("terminate built_in_display_restore succeeded=\(restored ? "true" : "false")")
@@ -252,26 +262,78 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func installCapsLockEventMonitors() {
+        ensureHIDCapsLockMonitor()
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(restartHIDCapsLockMonitorAfterWake),
+            name: NSWorkspace.didWakeNotification,
+            object: nil
+        )
         let capsLockKeyCode = UInt16(kVK_CapsLock)
         globalCapsLockEventMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: .flagsChanged
         ) { [weak self] event in
             guard event.keyCode == capsLockKeyCode else { return }
             DispatchQueue.main.async {
-                self?.handleUserCapsLockKeyEvent()
+                self?.handleObservedCapsLockChange()
             }
         }
         localCapsLockEventMonitor = NSEvent.addLocalMonitorForEvents(
             matching: .flagsChanged
         ) { [weak self] event in
             if event.keyCode == capsLockKeyCode {
-                self?.handleUserCapsLockKeyEvent()
+                self?.handleObservedCapsLockChange()
             }
             return event
         }
         log(
             "capslock_key_monitor global=\(globalCapsLockEventMonitor != nil ? "active" : "unavailable")"
         )
+    }
+
+    @objc private func restartHIDCapsLockMonitorAfterWake(_ notification: Notification) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.hidCapsLockMonitor.stop()
+            self.nextHIDCapsLockMonitorCheckAt = .distantPast
+            self.ensureHIDCapsLockMonitor()
+        }
+    }
+
+    private func ensureHIDCapsLockMonitor() {
+        let now = Date()
+        guard now >= nextHIDCapsLockMonitorCheckAt else { return }
+        nextHIDCapsLockMonitorCheckAt = now.addingTimeInterval(helperRetryInterval)
+        let previous = hidCapsLockMonitor.state
+        let state = hidCapsLockMonitor.start()
+        if state != previous {
+            log("capslock_hid_monitor state=\(state) observing=\(hidCapsLockMonitor.isActive)")
+        }
+    }
+
+    private func handleObservedCapsLockChange() {
+        if hidCapsLockMonitor.isActive {
+            // Only the HID press is evidence of user intent. A flagsChanged
+            // event can also be produced by an OS or application state change.
+            refreshAfterCapsLockEvent()
+        } else {
+            // Keep the existing behavior when HID observation is unavailable.
+            handleUserCapsLockKeyEvent()
+        }
+    }
+
+    private func handleHIDCapsLockPress() {
+        log("capslock_hid pressed")
+        if lastAppliedState == true {
+            // Protect a possible manual OFF from an already-running session.
+            suppressInputSourceRecoveryForUserAction(reason: "capslock_hid")
+        } else {
+            // Starting a session must not mask an immediate language switch.
+            cancelInputSourceRecovery()
+            suppressInputSourceRecoveryUntil = .distantPast
+            externalCapsLockOffGuardBypassUntil = .distantPast
+        }
+        refreshAfterCapsLockEvent()
     }
 
     private func handleUserCapsLockKeyEvent() {
@@ -971,6 +1033,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func applyCurrentCapsLockState(reason: String) {
+        ensureHIDCapsLockMonitor()
         // While an auto-off toggle is being applied on the background queue,
         // pause state application; the toggle's completion re-syncs afterward.
         if isAutoOffToggleInFlight || isControlMutationInFlight || isExplicitCapsLockToggleInFlight {

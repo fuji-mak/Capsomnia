@@ -53,6 +53,48 @@ struct CapsLockStateConfirmation {
     }
 }
 
+/// Reconcile the per-keyboard state used by IOHIDSetModifierLockState with the
+/// global flags read by IOHIDGetModifierLockState. Apple's keyboard filter skips
+/// writes equal to its cached state, even if the global flags disagree.
+struct CapsLockStateWriter {
+    let writeState: (Bool) -> Bool
+    let confirmation: CapsLockStateConfirmation
+    var onReconcile: (Bool, Bool) -> Void = { _, _ in }
+
+    func set(_ target: Bool) -> CapsLockToggleResult {
+        guard writeState(target) else { return .writeFailed(target: target) }
+        let first = confirmation.confirm(target: target)
+        if first.confirmed { return .changed(to: target) }
+
+        // Only recover a known mismatch. Never pulse to an invented opposite
+        // state when reads are unavailable or merely not yet stable.
+        guard let actual = first.actual, actual != target else {
+            return .verificationFailed(target: target, actual: first.actual)
+        }
+        // Read again before resetting caches: a delayed successful transition
+        // must not be undone by recovery based on a stale observation.
+        let current = confirmation.confirm(target: target)
+        if current.confirmed { return .changed(to: target) }
+        guard current.actual == actual else {
+            return .verificationFailed(target: target, actual: current.actual)
+        }
+
+        onReconcile(target, actual)
+        // Set the state the system already reports, not an arbitrary toggle.
+        // Then generate a real transition to the user's target. Exactly one
+        // reconciliation is allowed; persistent interference remains a failure.
+        guard writeState(actual) else { return .writeFailed(target: target) }
+        let baseline = confirmation.confirm(target: actual)
+        guard baseline.confirmed else {
+            return .verificationFailed(target: target, actual: baseline.actual)
+        }
+        guard writeState(target) else { return .writeFailed(target: target) }
+        let final = confirmation.confirm(target: target)
+        return final.confirmed ? .changed(to: target)
+            : .verificationFailed(target: target, actual: final.actual)
+    }
+}
+
 enum CapsLockHIDSystem {
     static func openConnection() -> io_connect_t? {
         let service = IOServiceGetMatchingService(
@@ -130,7 +172,26 @@ final class SystemCapsLockStateReader {
 }
 
 enum SystemCapsLockController {
+    private static let eventLock = NSLock()
+    private static var internalEventsUntil: TimeInterval = 0
+    private static var writing = false
+
+    static func isInternalKeyEvent(timestamp: TimeInterval) -> Bool {
+        eventLock.lock()
+        defer { eventLock.unlock() }
+        return writing || timestamp <= internalEventsUntil
+    }
+
+    private static func markWrite(_ active: Bool) {
+        eventLock.lock()
+        writing = active
+        internalEventsUntil = ProcessInfo.processInfo.systemUptime + 0.5
+        eventLock.unlock()
+    }
+
     static func set(_ target: Bool) -> CapsLockToggleResult {
+        markWrite(true)
+        defer { markWrite(false) }
         guard let connection = CapsLockHIDSystem.openConnection() else {
             return .unavailable
         }
@@ -143,13 +204,6 @@ enum SystemCapsLockController {
         _ target: Bool,
         connection: io_connect_t
     ) -> CapsLockToggleResult {
-        guard CapsLockHIDSystem.setState(
-            target,
-            connection: connection
-        ) else {
-            return .writeFailed(target: target)
-        }
-
         let confirmation = CapsLockStateConfirmation(
             readState: {
                 CapsLockHIDSystem.readState(connection: connection)
@@ -159,16 +213,14 @@ enum SystemCapsLockController {
             },
             maximumAttempts: 25,
             requiredConsecutiveMatches: 3
-        ).confirm(target: target)
-
-        guard confirmation.confirmed else {
-            return .verificationFailed(
-                target: target,
-                actual: confirmation.actual
-            )
-        }
-
-        return .changed(to: target)
+        )
+        return CapsLockStateWriter(
+            writeState: { CapsLockHIDSystem.setState($0, connection: connection) },
+            confirmation: confirmation,
+            onReconcile: { target, actual in
+                NSLog("capslock_reconcile target=%@ observed=%@", target ? "on" : "off", actual ? "on" : "off")
+            }
+        ).set(target)
     }
 }
 

@@ -49,23 +49,13 @@ final class CapsLockControlTests: XCTestCase {
             _ = SystemCapsLockController.set(initial)
         }
 
-        XCTAssertEqual(
-            SystemCapsLockController.set(!initial),
-            .changed(to: !initial)
-        )
-        XCTAssertEqual(
-            stateReader.currentState(),
-            !initial
-        )
-
-        XCTAssertEqual(
-            SystemCapsLockController.set(initial),
-            .changed(to: initial)
-        )
-        XCTAssertEqual(
-            stateReader.currentState(),
-            initial
-        )
+        let cycles = min(100, max(1, Int(ProcessInfo.processInfo.environment["CAPSOMNIA_HARDWARE_CYCLES"] ?? "1") ?? 1))
+        for cycle in 1...cycles {
+            for target in [!initial, initial] {
+                XCTAssertEqual(SystemCapsLockController.set(target), .changed(to: target), "Cycle \(cycle)")
+                XCTAssertEqual(stateReader.currentState(), target, "Cycle \(cycle)")
+            }
+        }
     }
 
     func testSystemSetWhenHardwareTargetIsProvided() throws {

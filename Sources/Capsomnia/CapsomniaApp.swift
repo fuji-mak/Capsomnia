@@ -82,6 +82,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return monitor
     }()
     private var nextHIDCapsLockMonitorCheckAt = Date.distantPast
+    private var manualCapsLockOffConfirmation = ManualCapsLockOffConfirmation()
     private lazy var dedicatedCapsLockFilter: DedicatedCapsLockFilter = {
         let filter = DedicatedCapsLockFilter()
         filter.onCapsLockChange = { [weak self] in
@@ -248,6 +249,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
 
+        // Once a language switch is observed, an OFF could be caused by that
+        // switch. Keep the usual debounce even if its recovery is suppressed.
+        manualCapsLockOffConfirmation.cancel()
         let now = Date()
         guard now >= suppressInputSourceRecoveryUntil,
               !isAutoOffInProgress,
@@ -294,6 +298,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func restartHIDCapsLockMonitorAfterWake(_ notification: Notification) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            self.manualCapsLockOffConfirmation.cancel()
             self.hidCapsLockMonitor.stop()
             self.nextHIDCapsLockMonitorCheckAt = .distantPast
             self.ensureHIDCapsLockMonitor()
@@ -327,6 +332,15 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if lastAppliedState == true {
             // Protect a possible manual OFF from an already-running session.
             suppressInputSourceRecoveryForUserAction(reason: "capslock_hid")
+            if !secureInputCapsLockOverrideActive,
+               !isAutoOffInProgress,
+               !isControlMutationInFlight,
+               !isExplicitCapsLockToggleInFlight {
+                manualCapsLockOffConfirmation.begin(
+                    now: Date(),
+                    validFor: userCapsLockEventSuppressionInterval
+                )
+            }
         } else {
             // Starting a session must not mask an immediate language switch.
             cancelInputSourceRecovery()
@@ -416,6 +430,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func cancelInputSourceRecovery() {
+        manualCapsLockOffConfirmation.cancel()
         cancelPendingCapsLockOff()
         pendingInputSourceRecoveryWorkItem?.cancel()
         pendingInputSourceRecoveryWorkItem = nil
@@ -1056,6 +1071,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         guard let physicalCapsLockOn = capsLockStateReader.currentState() else {
+            manualCapsLockOffConfirmation.cancel()
             if pendingInputSourceRecoveryWorkItem != nil {
                 return
             }
@@ -1082,6 +1098,15 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         if lastAppliedState == true, !capsLockOn {
+            if manualCapsLockOffConfirmation.consume(
+                physicalCapsLockOn: physicalCapsLockOn,
+                now: Date()
+            ) {
+                cancelPendingCapsLockOff()
+                _ = evaluateAutoOff(capsLockOn: false, reason: "\(reason)_manual")
+                apply(capsLockOn: false, reason: "\(reason)_manual")
+                return
+            }
             if ExternalCapsLockOffPolicy.shouldReassert(
                 preferenceEnabled: Preferences.ignoreExternalCapsLockOffWhileLidClosed,
                 sleepPreventionActive: true,
@@ -1219,6 +1244,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             overrideActive: secureInputCapsLockOverrideActive,
             snapshot: snapshot
         )
+        if action != .none {
+            manualCapsLockOffConfirmation.cancel()
+        }
 
         switch action {
         case .none:

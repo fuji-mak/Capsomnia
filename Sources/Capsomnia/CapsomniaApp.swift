@@ -28,6 +28,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         return controller
     }()
+    private lazy var hotspotReconnect = HotspotReconnectController { [weak self] status in
+        self?.settingsWindowController?.updateHotspotReconnectStatus(status)
+    }
     private var sessionTimer = SessionAutoOffTimer()
     private var controlServer: ControlServer?
     private var isControlMutationInFlight = false
@@ -187,6 +190,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         displayAwakeAssertion.setActive(false)
         hotspotKeepAlive.setActive(false)
+        hotspotReconnect.service.stop()
         guard shouldRestoreSleepOnTerminate else { return }
 
         Preferences.secureInputCapsLockOverrideActive = false
@@ -649,7 +653,20 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     self?.toolsDownloadController.promptDownload(from: self?.settingsWindowController?.window)
                 },
                 autoOffDescriptionProvider: { [weak self] in self?.sessionTimerDescription() },
-                onLidOpenLockChange: { [weak self] enabled in self?.setLidLockEnabled(enabled) }
+                onLidOpenLockChange: { [weak self] enabled in self?.setLidLockEnabled(enabled) },
+                onHotspotConfigurationChange: { [weak self] enabled, ssid in
+                    self?.setHotspotReconnect(enabled: enabled, ssid: ssid)
+                },
+                onHotspotPasswordSave: { [weak self] password, ssid, done in
+                    guard let self else { done(false); return }
+                    self.hotspotReconnect.savePassword(password, ssid: ssid, completion: done)
+                },
+                onHotspotPasswordForget: { [weak self] ssid, done in
+                    guard let self else { done(false); return }
+                    self.hotspotReconnect.forgetPassword(ssid: ssid, completion: done)
+                },
+                onHotspotLocationRequest: { [weak self] in self?.hotspotReconnect.requestLocation() },
+                hotspotStatusProvider: { [weak self] in self?.hotspotReconnect.service.status ?? .disabled }
             )
         }
 
@@ -743,6 +760,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         syncHotspotKeepAlive(capsLockOn: currentCapsLockState, reason: "preference")
         settingsWindowController?.reloadText()
         log("preference keep_hotspot_alive=\(enabled ? "on" : "off")")
+    }
+
+    private func setHotspotReconnect(enabled: Bool, ssid: String) {
+        Preferences.autoConnectHotspot = enabled
+        Preferences.hotspotSSID = ssid
+        hotspotReconnect.service.setActive(currentCapsLockState, configuration: Preferences.hotspotReconnectConfiguration)
     }
 
     private func setIgnoreExternalCapsLockOffWhileLidClosed(_ enabled: Bool) {
@@ -1324,6 +1347,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func apply(capsLockOn: Bool, reason: String) {
+        hotspotReconnect.service.setActive(capsLockOn, configuration: Preferences.hotspotReconnectConfiguration)
+
         if !capsLockOn, closedLidDimmingController.isDimmed {
             // Restore before the helper reenables system sleep. With a closed
             // lid, waiting until after that transition can be too late.
@@ -1391,6 +1416,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func markSleepStateFailed(_ capsLockOn: Bool, at now: Date, resetVerification: Bool = true) {
+        hotspotReconnect.service.setActive(capsLockOn, configuration: Preferences.hotspotReconnectConfiguration)
         failedSleepState = capsLockOn
         nextSleepStateRetryAt = now.addingTimeInterval(helperRetryInterval)
         if resetVerification {
@@ -1407,6 +1433,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func markSleepStateConfirmed(_ capsLockOn: Bool, at now: Date, reason: String) {
         lastConfirmedSleepState = capsLockOn
+        hotspotReconnect.service.setActive(capsLockOn, configuration: Preferences.hotspotReconnectConfiguration)
         hasLoggedMissingSleepState = false
         failedSleepState = nil
         nextSleepStateRetryAt = .distantPast
@@ -1561,6 +1588,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             source.setEventHandler { [weak self] in
                 self?.dedicatedCapsLockFilter.stop()
                 self?.secureInputFocusMonitor.stop()
+                self?.hotspotReconnect.service.stop()
+                self?.hotspotKeepAlive.setActive(false)
                 Preferences.secureInputCapsLockOverrideActive = false
                 let result = self?.runHelper("off")
                 self?.log(
@@ -1789,6 +1818,8 @@ extension Capsomnia {
             "launch-at-login": .bool(Preferences.launchAtLogin),
             "keep-display-awake": .bool(Preferences.keepDisplayAwake),
             "keep-hotspot-alive": .bool(Preferences.keepHotspotAlive),
+            "auto-connect-hotspot": .bool(Preferences.autoConnectHotspot),
+            "hotspot-ssid": .string(Preferences.hotspotSSID),
             "ignore-external-caps-lock-off-while-lid-closed": .bool(Preferences.ignoreExternalCapsLockOffWhileLidClosed),
             "auto-off-minutes": .number(Double(Preferences.autoOffMinutes)),
             "automatic-update-checks": .bool(Preferences.automaticUpdateChecks),
@@ -1797,6 +1828,11 @@ extension Capsomnia {
     }
 
     private func setControlSetting(_ key: String, value: String) throws {
+        if key == "hotspot-ssid" {
+            setHotspotReconnect(enabled: Preferences.autoConnectHotspot, ssid: value)
+            settingsWindowController?.reloadText()
+            return
+        }
         if key == "language" {
             guard let language = AppLanguage(rawValue: value) else {
                 throw ExplicitAwakeCommand.Failure("Language must be en, ja, ko or zh-Hans.")
@@ -1827,6 +1863,9 @@ extension Capsomnia {
         case "launch-at-login": try setLaunchAtLogin(enabled)
         case "keep-display-awake": setKeepDisplayAwake(enabled)
         case "keep-hotspot-alive": setKeepHotspotAlive(enabled)
+        case "auto-connect-hotspot":
+            setHotspotReconnect(enabled: enabled, ssid: Preferences.hotspotSSID)
+            settingsWindowController?.reloadText()
         case "ignore-external-caps-lock-off-while-lid-closed": setIgnoreExternalCapsLockOffWhileLidClosed(enabled)
         case "automatic-update-checks": setAutomaticUpdateChecks(enabled)
         default: throw ExplicitAwakeCommand.Failure("Unknown setting. Run cpsm settings get.")

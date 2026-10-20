@@ -2,6 +2,17 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## Unreleased
+
+- Add opt-in hotspot auto-connect with an SSID-filtered CoreWLAN scan after a
+  five-second Wi-Fi outage during a raw Caps Lock session. Retry after 5, 10,
+  20, then 30 seconds, and cancel pending work on recovery or configuration edits.
+- Add a scrollable hotspot Settings window with Keychain-only password Save and
+  Forget, safe status messages, and Location access controls in all four languages.
+- Link to native macOS 26+ Instant Hotspot Automatic setup for waking nearby
+  iPhones. The native system setting also applies while Capsomnia is off.
+- Bundle the full Insomnia MIT notice for adapted reconnect and Keychain behavior.
+
 ## 4.2.5 - 2026-10-18
 
 - Add optional screen locking when the lid opens during Computer Use sessions,

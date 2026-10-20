@@ -15,6 +15,11 @@ final class DisplayAwakeAssertion {
     private let create: (UnsafeMutablePointer<IOPMAssertionID>) -> IOReturn
     private let release: (IOPMAssertionID) -> IOReturn
     private var assertionID: IOPMAssertionID?
+    private var activityID: IOPMAssertionID?
+    private let declareActivity: (UnsafeMutablePointer<IOPMAssertionID>) -> IOReturn
+    private let scheduleHeartbeat: (@escaping () -> Void) -> (() -> Void)
+    private var cancelHeartbeat: (() -> Void)?
+    private(set) var isHealthy = true
 
     init(
         create: @escaping (UnsafeMutablePointer<IOPMAssertionID>) -> IOReturn = { id in
@@ -25,14 +30,24 @@ final class DisplayAwakeAssertion {
                 id
             )
         },
-        release: @escaping (IOPMAssertionID) -> IOReturn = IOPMAssertionRelease
+        release: @escaping (IOPMAssertionID) -> IOReturn = IOPMAssertionRelease,
+        declareActivity: @escaping (UnsafeMutablePointer<IOPMAssertionID>) -> IOReturn = { id in
+            IOPMAssertionDeclareUserActivity("Capsomnia display session" as CFString, kIOPMUserActiveLocal, id)
+        },
+        scheduleHeartbeat: @escaping (@escaping () -> Void) -> (() -> Void) = { action in
+            let timer = Timer(timeInterval: 30, repeats: true) { _ in action() }
+            RunLoop.main.add(timer, forMode: .common)
+            return { timer.invalidate() }
+        }
     ) {
         self.create = create
         self.release = release
+        self.declareActivity = declareActivity
+        self.scheduleHeartbeat = scheduleHeartbeat
     }
 
     var isActive: Bool {
-        assertionID != nil
+        assertionID != nil || activityID != nil
     }
 
     /// Idempotently creates or releases the assertion.
@@ -40,25 +55,43 @@ final class DisplayAwakeAssertion {
     @discardableResult
     func setActive(_ active: Bool) -> Bool {
         if active {
-            guard assertionID == nil else { return true }
-            var id = IOPMAssertionID(0)
-            guard create(&id) == kIOReturnSuccess else { return false }
-            assertionID = id
-            return true
+            if assertionID == nil {
+                var id = IOPMAssertionID(0)
+                guard create(&id) == kIOReturnSuccess else { isHealthy = false; return false }
+                assertionID = id
+            }
+            if cancelHeartbeat == nil {
+                heartbeat()
+                cancelHeartbeat = scheduleHeartbeat { [weak self] in self?.heartbeat() }
+            } else if !isHealthy {
+                heartbeat()
+            }
+            return isHealthy
         }
 
-        guard let id = assertionID else { return true }
+        cancelHeartbeat?()
+        cancelHeartbeat = nil
+        let displayReleased = releaseHeld(&assertionID)
+        let activityReleased = releaseHeld(&activityID)
+        isHealthy = displayReleased && activityReleased
+        return isHealthy
+    }
+
+    private func heartbeat() {
+        var id = activityID ?? IOPMAssertionID(0)
+        let status = declareActivity(&id)
+        isHealthy = status == kIOReturnSuccess
+        if isHealthy { activityID = id }
+        else if status == kIOReturnBadArgument || status == kIOReturnNotPermitted { activityID = nil }
+    }
+
+    private func releaseHeld(_ held: inout IOPMAssertionID?) -> Bool {
+        guard let id = held else { return true }
         switch release(id) {
         case kIOReturnSuccess, kIOReturnBadArgument, kIOReturnNotPermitted:
-            // Released, the ID names no assertion, or it names one owned by
-            // another process — either way this instance holds nothing, so
-            // drop the ID.
-            assertionID = nil
+            held = nil
             return true
         default:
-            // A transient failure (for example a broken power-management
-            // connection) can leave this assertion alive in powerd; keep the
-            // ID so the caller can retry the release.
             return false
         }
     }

@@ -6,6 +6,7 @@ import IOKit.hid
 /// Tracks key presses, not the Caps Lock LED or modifier state.
 struct HIDCapsLockPressTracker {
     private var pressedDevices: Set<UInt64> = []
+    var isPressed: Bool { !pressedDevices.isEmpty }
 
     mutating func handle(
         deviceID: UInt64,
@@ -18,8 +19,7 @@ struct HIDCapsLockPressTracker {
         case 1:
             return pressedDevices.insert(deviceID).inserted
         case 0:
-            pressedDevices.remove(deviceID)
-            return false
+            return pressedDevices.remove(deviceID) != nil
         default:
             return false
         }
@@ -37,13 +37,14 @@ final class HIDCapsLockMonitor {
         case inactive, active, permissionRequired, unavailable
     }
 
-    var onPress: (() -> Void)?
+    var onChange: (() -> Void)?
     private(set) var state: State = .inactive
     private var manager: IOHIDManager?
     private var tracker = HIDCapsLockPressTracker()
     private var devices: Set<UInt64> = []
 
     var isActive: Bool { state == .active && !devices.isEmpty }
+    var isPressed: Bool { isActive && tracker.isPressed }
 
     deinit { stop() }
 
@@ -130,7 +131,7 @@ final class HIDCapsLockMonitor {
             usage: IOHIDElementGetUsage(element),
             value: IOHIDValueGetIntegerValue(value)
         ) {
-            onPress?()
+            onChange?()
         }
     }
 

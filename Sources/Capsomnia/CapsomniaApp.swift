@@ -76,13 +76,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let capsLockStateReader = SystemCapsLockStateReader()
     private lazy var hidCapsLockMonitor: HIDCapsLockMonitor = {
         let monitor = HIDCapsLockMonitor()
-        monitor.onPress = { [weak self] in
-            self?.handleHIDCapsLockPress()
+        monitor.onChange = { [weak self] in
+            self?.handleHIDCapsLockChange()
         }
         return monitor
     }()
     private var nextHIDCapsLockMonitorCheckAt = Date.distantPast
-    private var manualCapsLockOffConfirmation = ManualCapsLockOffConfirmation()
     private lazy var dedicatedCapsLockFilter: DedicatedCapsLockFilter = {
         let filter = DedicatedCapsLockFilter()
         filter.onCapsLockChange = { [weak self] in
@@ -249,11 +248,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
 
-        // Once a language switch is observed, an OFF could be caused by that
-        // switch. Keep the usual debounce even if its recovery is suppressed.
-        manualCapsLockOffConfirmation.cancel()
         let now = Date()
         guard now >= suppressInputSourceRecoveryUntil,
+              !hidCapsLockMonitor.isPressed,
               !isAutoOffInProgress,
               !secureInputCapsLockOverrideActive,
               lastAppliedState == true else { return }
@@ -298,7 +295,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func restartHIDCapsLockMonitorAfterWake(_ notification: Notification) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            self.manualCapsLockOffConfirmation.cancel()
             self.hidCapsLockMonitor.stop()
             self.nextHIDCapsLockMonitorCheckAt = .distantPast
             self.ensureHIDCapsLockMonitor()
@@ -327,27 +323,25 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    private func handleHIDCapsLockPress() {
-        log("capslock_hid pressed")
-        if lastAppliedState == true {
-            // Protect a possible manual OFF from an already-running session.
-            suppressInputSourceRecoveryForUserAction(reason: "capslock_hid")
-            if !secureInputCapsLockOverrideActive,
-               !isAutoOffInProgress,
-               !isControlMutationInFlight,
-               !isExplicitCapsLockToggleInFlight {
-                manualCapsLockOffConfirmation.begin(
-                    now: Date(),
-                    validFor: userCapsLockEventSuppressionInterval
-                )
-            }
-        } else {
-            // Starting a session must not mask an immediate language switch.
-            cancelInputSourceRecovery()
+    private func handleHIDCapsLockChange() {
+        let pressed = hidCapsLockMonitor.isPressed
+        log("capslock_hid \(pressed ? "pressed" : "released")")
+        // A key press has no ON/OFF direction. Discard recovery from before
+        // this physical action and follow the actual modifier-lock state.
+        cancelInputSourceRecovery()
+        if !isAutoOffInProgress,
+           !isControlMutationInFlight,
+           !isExplicitCapsLockToggleInFlight {
             suppressInputSourceRecoveryUntil = .distantPast
-            externalCapsLockOffGuardBypassUntil = .distantPast
         }
-        refreshAfterCapsLockEvent()
+        if pressed {
+            refreshAfterCapsLockEvent()
+        } else {
+            // Finish the key action before accepting later source notifications.
+            // No guessed intent or grace period survives the release.
+            applyCurrentCapsLockState(reason: "capslock_hid_release", keyReleased: true)
+            refreshSettingsHeaderStatus()
+        }
     }
 
     private func handleUserCapsLockKeyEvent() {
@@ -430,7 +424,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func cancelInputSourceRecovery() {
-        manualCapsLockOffConfirmation.cancel()
         cancelPendingCapsLockOff()
         pendingInputSourceRecoveryWorkItem?.cancel()
         pendingInputSourceRecoveryWorkItem = nil
@@ -1047,7 +1040,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         log("polling_ready interval_ms=250 tolerance_ms=50")
     }
 
-    private func applyCurrentCapsLockState(reason: String) {
+    private func applyCurrentCapsLockState(reason: String, keyReleased: Bool = false) {
         ensureHIDCapsLockMonitor()
         // While an auto-off toggle is being applied on the background queue,
         // pause state application; the toggle's completion re-syncs afterward.
@@ -1071,7 +1064,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         guard let physicalCapsLockOn = capsLockStateReader.currentState() else {
-            manualCapsLockOffConfirmation.cancel()
             if pendingInputSourceRecoveryWorkItem != nil {
                 return
             }
@@ -1098,10 +1090,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         if lastAppliedState == true, !capsLockOn {
-            if manualCapsLockOffConfirmation.consume(
-                physicalCapsLockOn: physicalCapsLockOn,
-                now: Date()
-            ) {
+            if hidCapsLockMonitor.isPressed || keyReleased {
+                externalCapsLockOffGuardBypassUntil = Date().addingTimeInterval(
+                    userActionExternalGuardBypassInterval
+                )
                 cancelPendingCapsLockOff()
                 _ = evaluateAutoOff(capsLockOn: false, reason: "\(reason)_manual")
                 apply(capsLockOn: false, reason: "\(reason)_manual")
@@ -1244,10 +1236,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             overrideActive: secureInputCapsLockOverrideActive,
             snapshot: snapshot
         )
-        if action != .none {
-            manualCapsLockOffConfirmation.cancel()
-        }
-
         switch action {
         case .none:
             return physicalCapsLockOn

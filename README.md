@@ -20,13 +20,15 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-Current version: `4.2.5`
+Current version: `4.3.0`
 
 [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
 Capsomnia is a small macOS menu bar app that turns Caps Lock into a physical keep-awake switch for closed-lid MacBook work.
 
 Turn Caps Lock on when local work should keep running. Turn Caps Lock off when you want normal sleep behavior back.
+
+Capsomnia responds faster to Caps Lock key presses and handles rapid switches between Japanese and English input more reliably.
 
 It is useful for AI agents, mobile access, and other long-running or remote work.
 

@@ -20,13 +20,15 @@
   <a href="LICENSE"><img alt="MIT 라이선스" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-현재 버전: `4.2.5`
+현재 버전: `4.3.0`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [简体中文 README](README.zh-Hans.md)
 
 Capsomnia는 Caps Lock을 MacBook 덮개를 닫은 채 작업할 때 쓰는 물리 잠자기 방지 스위치로 바꿔 주는 작은 macOS 메뉴 막대 앱입니다.
 
 로컬 작업을 계속 돌리고 싶을 때 Caps Lock을 켜세요. 평소 잠자기 동작으로 돌아가려면 Caps Lock을 끄면 됩니다.
+
+Caps Lock 키 입력에 더 빠르게 반응하며, 일본어와 영어 입력을 빠르게 전환할 때의 안정성도 개선했습니다.
 
 AI 에이전트를 돌리거나 모바일로 접속하는 등, 오래 걸리거나 원격으로 진행하는 작업에 유용합니다.
 

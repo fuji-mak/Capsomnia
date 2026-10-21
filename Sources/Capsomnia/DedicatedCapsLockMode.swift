@@ -33,6 +33,7 @@ enum AccessibilityPermission {
 }
 
 final class DedicatedCapsLockFilter {
+    var onCapsLockChange: (() -> Void)?
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
@@ -108,7 +109,7 @@ final class DedicatedCapsLockFilter {
         state = .inactive
     }
 
-    fileprivate func handle(
+    func handle(
         type: CGEventType,
         event: CGEvent
     ) -> Unmanaged<CGEvent>? {
@@ -127,6 +128,8 @@ final class DedicatedCapsLockFilter {
         event.flags = DedicatedCapsLockEventPolicy.sanitizedFlags(event.flags)
 
         if DedicatedCapsLockEventPolicy.shouldSuppress(eventType: type, keyCode: keyCode) {
+            // NSEvent monitors will not receive the event we swallow.
+            onCapsLockChange?()
             return nil
         }
 

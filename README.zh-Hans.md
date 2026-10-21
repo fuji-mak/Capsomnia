@@ -20,7 +20,7 @@
   <a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-当前版本：`4.2.5`
+当前版本：`4.3.0`
 
 [English README](README.md) · [日本語 README](README.ja.md) · [한국어 README](README.ko.md)
 
@@ -29,6 +29,8 @@
 Capsomnia是一款小巧的macOS菜单栏应用，可将Caps Lock变成MacBook合盖工作时的实体防休眠开关。
 
 需要让本地任务继续运行时，请开启Caps Lock。需要恢复正常睡眠行为时，请关闭Caps Lock。
+
+Capsomnia 对 Caps Lock 按键的响应更快，并提高了快速切换日语和英语输入时的稳定性。
 
 它适用于AI智能体、移动端访问，以及其他耗时较长或需要远程操作的任务。
 

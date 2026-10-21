@@ -20,13 +20,15 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b7ff3c?style=flat-square&labelColor=111111"></a>
 </p>
 
-現在のバージョン: `4.2.5`
+現在のバージョン: `4.3.0`
 
 [English README](README.md) · [简体中文 README](README.zh-Hans.md) · [한국어 README](README.ko.md)
 
 **Capsomnia** は、Caps Lock を「閉じた MacBook でも作業を止めないための物理スイッチ」にする小さな macOS アプリです。
 
 作業を走らせ続けたいときは Caps Lock をオン。通常のスリープ動作に戻したいときは Caps Lock をオフにします。
+
+Caps Lock操作への反応を高速化し、英数／かなキーで続けて入力を切り替えたときの安定性も改善しています。
 
 AIエージェントの実行、モバイル接続、その他長時間の実行や遠隔での作業に有効です。
 

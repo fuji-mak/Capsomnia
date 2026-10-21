@@ -2,6 +2,19 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 4.3.0 - 2026-10-21
+
+- Respond faster to Caps Lock changes by checking the actual state after key
+  events, alongside the existing polling fallback. Refresh the settings
+  indicator after the awake state is confirmed.
+- Reduce manual OFF latency when physical Caps Lock input can be observed.
+  Use optional, non-exclusive HID monitoring to distinguish key activity from
+  OS-driven state changes, with the existing behavior as a fallback when
+  monitoring is unavailable.
+- Improve awake-mode stability during rapid Japanese/English input switching.
+  Keep consecutive input-source changes eligible for recovery, and prioritize
+  a confirmed manual OFF when key activity overlaps input-source notifications.
+
 ## 4.2.5 - 2026-10-18
 
 - Add optional screen locking when the lid opens during Computer Use sessions,

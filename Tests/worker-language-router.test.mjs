@@ -7,6 +7,7 @@ import {
   normalizeLocale,
   readCookie
 } from "../worker/index.mjs";
+import worker from "../worker/index.mjs";
 
 function originRecorder() {
   const requests = [];
@@ -212,4 +213,74 @@ test("localized paths and non-navigation methods pass through", async () => {
   );
   assert.equal(postResponse.status, 200);
   assert.equal(postOrigin.requests.length, 1);
+});
+
+test("default worker fetch serves root, localized paths, assets, and missing paths through ASSETS", async () => {
+  const assetRequests = [];
+  const workerEnv = {
+    ASSETS: {
+      fetch: async (request) => {
+        assetRequests.push(request);
+        const pathname = new URL(request.url).pathname;
+        return new Response(pathname === "/missing" ? "not found" : pathname, {
+          status: pathname === "/missing" ? 404 : 200
+        });
+      }
+    }
+  };
+  const originalFetch = globalThis.fetch;
+  const originRequests = [];
+  globalThis.fetch = async (request) => {
+    originRequests.push(request);
+    throw new Error("unexpected origin fetch");
+  };
+
+  try {
+    const cases = [
+      ["https://capsomnia.com/", 200, "/"],
+      ["https://capsomnia.com/ja/", 200, "/ja/"],
+      ["https://capsomnia.com/assets/site.css", 200, "/assets/site.css"],
+      ["https://capsomnia.com/missing", 404, "not found"]
+    ];
+
+    for (const [url, expectedStatus, expectedBody] of cases) {
+      const response = await worker.fetch(new Request(url), workerEnv, {});
+      assert.equal(response.status, expectedStatus);
+      assert.equal(await response.text(), expectedBody);
+    }
+
+    assert.deepEqual(
+      assetRequests.map((request) => new URL(request.url).pathname),
+      ["/", "/ja/", "/assets/site.css", "/missing"]
+    );
+    assert.equal(originRequests.length, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("default worker fetch does not fall back to origin when ASSETS throws", async () => {
+  const workerEnv = {
+    ASSETS: {
+      fetch: async () => {
+        throw new Error("ASSETS failed");
+      }
+    }
+  };
+  const originalFetch = globalThis.fetch;
+  const originRequests = [];
+  globalThis.fetch = async (request) => {
+    originRequests.push(request);
+    return new Response("origin fallback");
+  };
+
+  try {
+    await assert.rejects(
+      worker.fetch(new Request("https://capsomnia.com/"), workerEnv, {}),
+      /ASSETS failed/
+    );
+    assert.equal(originRequests.length, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

@@ -10,7 +10,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - '.node-version'
-      - '.github/workflows/pages.yml'
+      - '.github/workflows/cloudflare.yml'
   workflow_dispatch:
 
 permissions:

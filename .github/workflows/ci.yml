@@ -101,7 +101,7 @@ jobs:
           swift test
 
   site:
-    name: GitHub Pages site
+    name: Website
     needs: changes
     if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest

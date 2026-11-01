@@ -27,9 +27,11 @@ Please include:
 
 Capsomnia's menu bar app runs as the current user. It does not run as root.
 
-Capsomnia does not collect telemetry or require an account. Its only network use is an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), plus downloading installers from GitHub when you choose to update or install CLI & Skill. Capsomnia sends no telemetry, identifiers, or personal data; the requests carry only standard network metadata.
+Capsomnia does not collect telemetry or require an account. Its network use includes an optional daily update check that reads GitHub's public release information (off switch in Advanced Settings), plus downloading installers from GitHub when you choose to update or install CLI & Skill. The optional "Keep hotspot connected" setting is off by default. When enabled while Capsomnia is on, it sends a single ICMP ping about once a minute to the local gateway only when the default route matches a recognized phone hotspot. Capsomnia sends no telemetry, identifiers, or personal data; the requests carry only standard network metadata.
 
-When "Prevent all-caps typing" is disabled, Capsomnia does not request Input Monitoring or inspect keyboard events. When enabled, it requires Accessibility permission for a local active Core Graphics event filter. The filter removes only the Caps Lock modifier and suppresses the Caps Lock modifier-change event; it does not log, persist, or transmit event contents. If the filter is unavailable, Capsomnia turns sleep prevention off and reports an error instead of acting on the physical switch.
+Capsomnia observes Caps Lock changes independently of the "Prevent all-caps typing" setting. It registers local and global modifier-change monitors and filters them to Caps Lock events. When Input Monitoring access is already available, it also uses a non-exclusive HID monitor restricted to Caps Lock key presses and releases. The HID monitor does not prompt for permission; when observation is unavailable, the app falls back to its existing event handling and state polling. These monitors do not collect typed text.
+
+When "Prevent all-caps typing" is enabled, it requires Accessibility permission for a local active Core Graphics event filter. The filter removes only the Caps Lock modifier and suppresses the Caps Lock modifier-change event; it does not log, persist, or transmit event contents. If the filter is unavailable, Capsomnia reports the input-assistance error and retries the filter while sleep prevention, the running timer, and normal on/off controls continue independently.
 
 System sleep settings require elevated privileges, so Capsomnia installs a small root-owned native helper at:
 

@@ -21,13 +21,14 @@ The `Deploy Cloudflare site` workflow publishes main when website files, Worker
 code, dependencies, or deployment configuration change. It also supports manual
 runs from main. It uses the `CLOUDFLARE_ACCOUNT_ID` repository variable and the
 `CLOUDFLARE_API_TOKEN` repository secret. The token must be limited to deploying
-this Worker and managing its configured route. Unrelated app-only changes do not
+this Worker. Creating or changing domain routes requires separate zone permissions. Unrelated app-only changes do not
 trigger website deployment.
 
 ## Domain and TLS
 
 `wrangler.jsonc` declares the production Worker route. Cloudflare DNS proxying
-must stay enabled. The zone redirects HTTP to HTTPS and `www.capsomnia.com` to
+must stay enabled. A proxied placeholder address keeps this route active without
+an external origin. The zone redirects HTTP to HTTPS and `www.capsomnia.com` to
 `capsomnia.com`, preserving paths and query parameters. SSL/TLS mode is Full
 (strict). Website content is served inside Cloudflare, so it does not depend on
 the former GitHub Pages origin certificate.

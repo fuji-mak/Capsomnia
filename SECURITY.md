@@ -67,7 +67,11 @@ Explicit CLI off, including a toggle targeting off, verifies Caps Lock and
 sleep-prevention release before requesting sleep as the signed-in user.
 
 The optional Tools download uses an HTTPS release URL. Capsomnia checks the
-installer's Developer ID team before opening it and marks it as a downloaded
-file. Local preview builds may use an explicitly configured file URL. Tools
+installer's Developer ID team after downloading it and marks it as a downloaded
+file. After administrator approval, it copies the package into a root-owned
+private directory, checks the signature and Tools format of that copy, and
+installs only that copy. The private directory is removed when installation
+finishes or fails. Local preview builds may use an explicitly configured file
+URL and unsigned packages; their protected copy is still checked for the Tools format. Tools
 installers contain two CLIs and optional common Skills, written as the console
 user. App uninstallation leaves these separately installed tools in place.

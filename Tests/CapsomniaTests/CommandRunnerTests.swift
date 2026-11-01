@@ -38,6 +38,15 @@ final class CommandRunnerTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.02))
         XCTAssertTrue(timerDidFire)
     }
+
+    func testTimeoutTerminatesHungProcess() {
+        let start = Date()
+        let result = CommandRunner.run("/bin/sh", ["-c", "sleep 30"], timeout: 0.5)
+
+        XCTAssertLessThan(Date().timeIntervalSince(start), 5)
+        XCTAssertEqual(result.status, -2)
+        XCTAssertTrue(result.stderr.contains("timeout"))
+    }
 }
 
 final class SystemSleepRequesterTests: XCTestCase {

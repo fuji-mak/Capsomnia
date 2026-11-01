@@ -3,6 +3,20 @@ import XCTest
 @testable import Capsomnia
 
 final class SleepStateReaderTests: XCTestCase {
+    @MainActor
+    func testIsDisabledDoesNotRunMainRunLoopCallbacks() {
+        var timerDidFire = false
+        let timer = Timer(timeInterval: 0.01, repeats: false) { _ in
+            timerDidFire = true
+        }
+        RunLoop.main.add(timer, forMode: .default)
+        defer { timer.invalidate() }
+
+        _ = SleepStateReader.isDisabled()
+
+        XCTAssertFalse(timerDidFire)
+    }
+
     func testParsesDisabledState() {
         let output = """
         System-wide power settings:

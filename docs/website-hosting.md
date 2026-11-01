@@ -21,7 +21,9 @@ The `Deploy Cloudflare site` workflow publishes main when website files, Worker
 code, dependencies, or deployment configuration change. It also supports manual
 runs from main. It uses the `CLOUDFLARE_ACCOUNT_ID` repository variable and the
 `CLOUDFLARE_API_TOKEN` repository secret. The token must be limited to deploying
-this Worker. Creating or changing domain routes requires separate zone permissions. Unrelated app-only changes do not
+this Worker. CI uploads and deploys the commit-tagged version without changing
+domain routes. Creating or changing routes requires separate zone permissions
+and a manual `npm run deploy:worker`. Unrelated app-only changes do not
 trigger website deployment.
 
 ## Domain and TLS

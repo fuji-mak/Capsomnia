@@ -40,7 +40,9 @@ jobs:
       - name: Check generated site CSS
         run: git diff --exit-code -- docs/styles.css
       - name: Deploy to Cloudflare
-        run: npm run deploy:worker
+        run: |
+          npx wrangler versions upload --tag "$GITHUB_SHA"
+          npx wrangler versions deploy --version-tag "$GITHUB_SHA@100%" --yes
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

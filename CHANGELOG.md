@@ -2,6 +2,16 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 4.3.1 - 2026-11-01
+
+- Fix a hang after extended use caused by sleep-state checks re-entering the
+  main event loop. Prevent overlapping Caps Lock state updates and use the
+  existing command runner for sleep-state reads.
+- Add timeouts to sleep-state reads and privileged helper commands so a stalled
+  command can return an error instead of waiting indefinitely.
+- Thanks to [gigun-dev](https://github.com/gigun-dev) for the report and fix in
+  [PR 145](https://github.com/fuji-mak/Capsomnia/pull/145).
+
 ## 4.3.0 - 2026-10-21
 
 - Respond faster to Caps Lock changes by checking the actual state after key

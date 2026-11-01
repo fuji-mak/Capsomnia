@@ -88,6 +88,8 @@ cd Capsomnia
 ./scripts/install.sh
 ```
 
+CIではXcode 16.0とランナー既定のXcodeを使い、Swift 5言語モードでビルド・テストします。GitHubのmacOS 14ランナー廃止に伴い、Swift 5.9自体の継続的なCI検証は終了しています。
+
 ソースインストーラはローカルで`Capsomnia.app`をビルドして`~/Applications/`へ配置し、限定的なhelperとsudoers ruleをインストールして、ユーザーLaunchAgentを起動します。署名・公証済みのリリースパッケージは引き続きApple silicon専用で、macOS 14以降が必要です。
 
 ## できること

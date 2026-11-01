@@ -75,6 +75,8 @@ cd Capsomnia
 ./scripts/install.sh
 ```
 
+CI使用Xcode 16.0和运行器默认的Xcode，以Swift 5语言模式进行构建和测试。由于GitHub停止提供macOS 14运行器，CI不再持续验证Swift 5.9本身。
+
 源代码安装程序会在本地构建`Capsomnia.app`，将其放入`~/Applications/`，安装权限受限的辅助程序和sudoers规则，并启动用户LaunchAgent。已签名并经过公证的发布软件包仍仅支持Apple芯片，并要求macOS 14或更高版本。
 
 ## 功能

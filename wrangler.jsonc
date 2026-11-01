@@ -10,5 +10,13 @@
       "pattern": "capsomnia.com/*",
       "zone_name": "capsomnia.com"
     }
-  ]
+  ],
+  "preview_urls": false,
+  "assets": {
+    "directory": "./docs",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  }
 }

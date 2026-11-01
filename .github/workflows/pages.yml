@@ -1,20 +1,23 @@
-name: Deploy GitHub Pages
+name: Deploy Cloudflare site
 
 on:
   push:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'worker/**'
+      - 'wrangler.jsonc'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.node-version'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
-# Let an active deployment finish before publishing the next version.
 concurrency:
-  group: pages
+  group: cloudflare-site
   cancel-in-progress: false
 
 jobs:
@@ -22,17 +25,22 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: cloudflare
+      url: https://capsomnia.com
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Configure Pages
-        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-      - name: Upload site
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          path: docs
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run build:site
+      - run: npm test
+      - name: Check generated site CSS
+        run: git diff --exit-code -- docs/styles.css
+      - name: Deploy to Cloudflare
+        run: npm run deploy:worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

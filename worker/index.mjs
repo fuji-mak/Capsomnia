@@ -128,8 +128,8 @@ function redirectLegacyEnglishPath(sourceUrl) {
   });
 }
 
-async function fetchRootWithVary(request, fetchOrigin) {
-  const response = await fetchOrigin(request);
+async function fetchRootWithVary(request, fetchAsset) {
+  const response = await fetchAsset(request);
   const headers = new Headers(response.headers);
   addLanguageVary(headers);
 
@@ -140,9 +140,9 @@ async function fetchRootWithVary(request, fetchOrigin) {
   });
 }
 
-export async function handleRequest(request, fetchOrigin = fetch) {
+export async function handleRequest(request, fetchAsset) {
   if (request.method !== "GET" && request.method !== "HEAD") {
-    return fetchOrigin(request);
+    return fetchAsset(request);
   }
 
   const url = new URL(request.url);
@@ -157,7 +157,7 @@ export async function handleRequest(request, fetchOrigin = fetch) {
   }
 
   if (url.pathname !== "/") {
-    return fetchOrigin(request);
+    return fetchAsset(request);
   }
 
   const cookieLocale = normalizeLocale(
@@ -172,12 +172,11 @@ export async function handleRequest(request, fetchOrigin = fetch) {
     return redirectToLocale(url, preferredLocale);
   }
 
-  return fetchRootWithVary(request, fetchOrigin);
+  return fetchRootWithVary(request, fetchAsset);
 }
 
 export default {
-  fetch(request, _env, ctx) {
-    ctx.passThroughOnException();
-    return handleRequest(request, (originRequest) => fetch(originRequest));
+  fetch(request, env) {
+    return handleRequest(request, (assetRequest) => env.ASSETS.fetch(assetRequest));
   }
 };

@@ -22,6 +22,10 @@ private final class CommandOutputBuffer: @unchecked Sendable {
 
 enum CommandRunner {
     static func run(_ executablePath: String, _ arguments: [String]) -> CommandResult {
+        run(executablePath, arguments, timeout: nil)
+    }
+
+    static func run(_ executablePath: String, _ arguments: [String], timeout: TimeInterval?) -> CommandResult {
         let process = Process()
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
@@ -50,7 +54,26 @@ enum CommandRunner {
             return (-1, "", "\(error)")
         }
 
-        terminationSemaphore.wait()
+        if let timeout {
+            if terminationSemaphore.wait(timeout: .now() + timeout) == .timedOut {
+                process.terminate()
+                if terminationSemaphore.wait(timeout: .now() + 2) == .timedOut {
+                    kill(process.processIdentifier, SIGKILL)
+                    terminationSemaphore.wait()
+                }
+                // A grandchild may keep the pipes open; never block on drain.
+                _ = outputGroup.wait(timeout: .now() + 1)
+                let partial = stderrBuffer.string()
+                let message = "timeout after \(timeout)s"
+                return (
+                    -2,
+                    stdoutBuffer.string(),
+                    partial.isEmpty ? message : "\(message)\n\(partial)"
+                )
+            }
+        } else {
+            terminationSemaphore.wait()
+        }
         outputGroup.wait()
 
         return (

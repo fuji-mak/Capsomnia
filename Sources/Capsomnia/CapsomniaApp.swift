@@ -5,6 +5,7 @@ import Foundation
 
 final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastAppliedState: Bool?
+    private var isApplyingCapsLockState = false
     private var lastConfirmedSleepState: Bool?
     private var failedTogglePhysicalState: Bool?
     private var settingsHeaderStatus = SettingsHeaderStatus.error
@@ -1041,6 +1042,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func applyCurrentCapsLockState(reason: String, keyReleased: Bool = false) {
+        guard !isApplyingCapsLockState else {
+            log("\(reason) capslock_apply_reentry_skipped")
+            return
+        }
+        isApplyingCapsLockState = true
+        defer { isApplyingCapsLockState = false }
         ensureHIDCapsLockMonitor()
         // While an auto-off toggle is being applied on the background queue,
         // pause state application; the toggle's completion re-syncs afterward.
@@ -1642,7 +1649,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func runHelper(_ mode: String) -> (status: Int32, stdout: String, stderr: String) {
-        CommandRunner.run("/usr/bin/sudo", ["-n", helperPath, mode])
+        CommandRunner.run("/usr/bin/sudo", ["-n", helperPath, mode], timeout: 10)
     }
 
     private func installSignalHandlers() {

@@ -73,6 +73,8 @@ cd Capsomnia
 ./scripts/install.sh
 ```
 
+CI는 Xcode 16.0과 실행기의 기본 Xcode를 사용해 Swift 5 언어 모드로 빌드하고 테스트합니다. GitHub의 macOS 14 실행기 지원 종료로 Swift 5.9 자체에 대한 지속적인 CI 검증은 종료되었습니다.
+
 소스 설치 프로그램은 로컬에서 `Capsomnia.app`을 빌드해 `~/Applications/`에 배치하고, 제한된 helper와 sudoers 규칙을 설치한 뒤 사용자 LaunchAgent를 시작합니다. 서명 및 공증된 릴리스 패키지는 계속 Apple silicon 전용이며 macOS 14 이상이 필요합니다.
 
 ## 작동 방식

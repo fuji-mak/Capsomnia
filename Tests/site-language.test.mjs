@@ -125,9 +125,6 @@ for (const readme of readmes) {
 }
 
 test("site discovery and ownership files match the published domain", () => {
-  const domain = readFileSync(new URL("../docs/CNAME", import.meta.url), "utf8").trim();
-  assert.equal(domain, new URL(siteUrl).hostname);
-
   const robots = readFileSync(new URL("../docs/robots.txt", import.meta.url), "utf8");
   assert.ok(robots.includes(`Sitemap: ${siteUrl}sitemap.xml`));
 

@@ -88,6 +88,8 @@ cd Capsomnia
 ./scripts/install.sh
 ```
 
+CI builds and tests with Xcode 16.0 and the runner's default Xcode in Swift 5 language mode. Swift 5.9 itself is no longer continuously tested because GitHub retired its macOS 14 runners.
+
 The source installer builds `Capsomnia.app` locally, places it in `~/Applications/`, installs the restricted helper and sudoers rule, and starts a user LaunchAgent. The signed and notarized release package remains Apple silicon-only and requires macOS 14 or later.
 
 ## What It Does

@@ -3,12 +3,12 @@
 The public website at https://capsomnia.com is served by the
 `capsomnia-language-router` Cloudflare Worker and its `ASSETS` binding.
 The HTML, CSS, images, sitemap, and verification file are uploaded from `docs/`.
-GitHub Pages is no longer the production origin. App downloads still use GitHub Releases.
+GitHub Pages is disabled. App downloads still use GitHub Releases.
 
 The Worker runs before static assets to apply the language cookie, browser-language
 preference, and legacy English URL redirects. Missing assets return 404; requests
 and Worker errors do not fall back to an external origin. `docs/.assetsignore`
-excludes GitHub Pages configuration, Markdown documentation, and CSS source files.
+excludes Markdown documentation and CSS source files.
 
 ## Develop and deploy
 
@@ -17,14 +17,18 @@ Wrangler with the same static-asset and language-routing behavior as production.
 With Cloudflare authentication configured, `npm run deploy:worker` publishes both
 Worker code and static assets.
 
-The `Deploy Cloudflare site` workflow publishes main when website files, Worker
-code, dependencies, or deployment configuration change. It also supports manual
+The `Deploy Cloudflare site` workflow (`.github/workflows/cloudflare.yml`)
+publishes main when website files, Worker code, dependencies, or deployment
+configuration change. It also supports manual
 runs from main. It uses the `CLOUDFLARE_ACCOUNT_ID` repository variable and the
 `CLOUDFLARE_API_TOKEN` repository secret. The token must be limited to deploying
 this Worker. CI uploads and deploys the commit-tagged version without changing
 domain routes. Creating or changing routes requires separate zone permissions
 and a manual `npm run deploy:worker`. Unrelated app-only changes do not
 trigger website deployment.
+
+The required `Website` CI check builds the CSS and tests the website and Worker.
+Its name must match the repository's branch protection rule.
 
 ## Domain and TLS
 

@@ -3,6 +3,18 @@ import XCTest
 @testable import Capsomnia
 
 final class ToolsDownloadTests: XCTestCase {
+    func testRemoteSourceRequiresSignatureAtTheInstallationBoundary() {
+        let done = expectation(description: "Remote installation requires signature validation")
+        let controller = ToolsDownloadController(download: { _, completion in
+            completion(.success(URL(fileURLWithPath: "/tmp/unused-test-package.pkg")))
+        }, install: { _, requiresTrustedSignature, _, completion in
+            XCTAssertTrue(requiresTrustedSignature)
+            completion(.failure(ToolsInstallation.Failure.cancelled))
+        })
+        controller.startDownload(from: URL(string: "https://example.com/tools.pkg")!) { _ in done.fulfill() }
+        wait(for: [done], timeout: 2)
+    }
+
     func testBusyStateIncludesInstallationAndRejectsDuplicateClick() {
         let source = URL(fileURLWithPath: "/tmp/source.pkg")
         let destination = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".pkg")
@@ -14,8 +26,9 @@ final class ToolsDownloadTests: XCTestCase {
         let controller = ToolsDownloadController(download: { _, done in
             downloads += 1
             downloaded = done
-        }, install: { package, _, done in
+        }, install: { package, requiresTrustedSignature, _, done in
             XCTAssertEqual(package, destination)
+            XCTAssertFalse(requiresTrustedSignature)
             installed = done
             installing.fulfill()
         })
@@ -65,7 +78,7 @@ final class ToolsDownloadTests: XCTestCase {
         let controller = ToolsDownloadController(download: { _, done in
             attempts += 1
             done(.failure(ToolsDownloadController.DownloadError.invalidResponse))
-        }, install: { _, _, _ in XCTFail("Failed download must not install") })
+        }, install: { _, _, _, _ in XCTFail("Failed download must not install") })
         for _ in 0..<2 {
             let done = expectation(description: "Failure delivered")
             controller.startDownload(from: URL(fileURLWithPath: "/tmp/missing.pkg")) { result in
@@ -101,7 +114,7 @@ final class ToolsDownloadTests: XCTestCase {
             let done = expectation(description: "Result delivered after cleanup")
             let controller = ToolsDownloadController(download: { _, completion in
                 completion(.success(destination))
-            }, install: { package, _, completion in
+            }, install: { package, _, _, completion in
                 XCTAssertEqual(package, destination)
                 installed = completion
                 installing.fulfill()

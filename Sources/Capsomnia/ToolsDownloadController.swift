@@ -5,7 +5,7 @@ import AppKit
 final class ToolsDownloadController {
     /// A successful download transfers ownership of a temporary package copy.
     typealias Download = (URL, @escaping (Result<URL, Error>) -> Void) -> Void
-    typealias Install = (URL, @escaping () -> Void, @escaping (Result<Void, Error>) -> Void) -> Void
+    typealias Install = (URL, Bool, @escaping () -> Void, @escaping (Result<Void, Error>) -> Void) -> Void
     var onDownloadingChange: ((Bool) -> Void)?
     var onStatusChange: ((String?) -> Void)?
     private(set) var isDownloading = false
@@ -89,7 +89,7 @@ final class ToolsDownloadController {
                 switch result {
                 case .success(let destination):
                     self.onStatusChange?(ToolsDownloadText.current.installing)
-                    self.install(destination, { [weak window] in
+                    self.install(destination, !source.isFileURL, { [weak window] in
                         // Restore the same window once authentication ends, without
                         // changing its level or preventing normal app switching.
                         NSApp.activate(ignoringOtherApps: true)

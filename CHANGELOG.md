@@ -2,6 +2,14 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 4.3.2 - 2026-11-01
+
+- Secure optional Tools installation by copying the package into a protected
+  directory after administrator authentication. Verify the signature and package
+  format on that copy, then install the same copy, preventing replacement of the
+  user-writable download between validation and installation.
+- Update website development dependencies to resolve five undici advisories.
+
 ## 4.3.1 - 2026-11-01
 
 - Fix a hang after extended use caused by sleep-state checks re-entering the

@@ -1858,6 +1858,10 @@ extension Capsomnia {
             return cancelled
                 ? "Timer cancelled for this session. Saved settings below apply next time."
                 : "One-shot CLI timer. Your saved settings below are unchanged."
+        case .french:
+            return cancelled
+                ? "Minuterie annulée pour cette session. Les réglages enregistrés ci-dessous s’appliqueront à la prochaine activation."
+                : "Minuterie définie en ligne de commande pour cette session uniquement. Les réglages ci-dessous restent enregistrés."
         case .korean:
             return cancelled
                 ? "이번 타이머는 취소되었습니다. 아래 저장된 설정은 다음에 적용됩니다."
@@ -1899,7 +1903,7 @@ extension Capsomnia {
     private func setControlSetting(_ key: String, value: String) throws {
         if key == "language" {
             guard let language = AppLanguage(rawValue: value) else {
-                throw ExplicitAwakeCommand.Failure("Language must be en, ja, ko or zh-Hans.")
+                throw ExplicitAwakeCommand.Failure("Language must be en, fr, ja, ko or zh-Hans.")
             }
             setLanguage(language)
             return

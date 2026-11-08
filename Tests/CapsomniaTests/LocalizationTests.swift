@@ -8,10 +8,12 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(AppLanguage.defaultLanguage(for: "zh-Hans-CN"), .simplifiedChinese)
         XCTAssertEqual(AppLanguage.defaultLanguage(for: "ko-KR"), .korean)
         XCTAssertEqual(AppLanguage.defaultLanguage(for: "ko_KR"), .korean)
+        XCTAssertEqual(AppLanguage.defaultLanguage(for: "fr-FR"), .french)
+        XCTAssertEqual(AppLanguage.defaultLanguage(for: "fr_CA"), .french)
     }
 
     func testPreferredLanguageFallsBackToEnglish() {
-        XCTAssertEqual(AppLanguage.defaultLanguage(for: "fr-FR"), .english)
+        XCTAssertEqual(AppLanguage.defaultLanguage(for: "de-DE"), .english)
         XCTAssertEqual(AppLanguage.defaultLanguage(for: "kok-IN"), .english)
         XCTAssertEqual(AppLanguage.defaultLanguage(for: "jav-ID"), .english)
         XCTAssertEqual(AppLanguage.defaultLanguage(for: nil), .english)
@@ -89,5 +91,18 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(strings.settingsTitle, "설정")
         XCTAssertEqual(strings.explainerOnTitle, "Caps Lock 켜기")
         XCTAssertEqual(strings.explainerOffTitle, "Caps Lock 끄기")
+    }
+
+    func testFrenchStrings() {
+        let strings = AppStrings.localized(for: .french)
+
+        XCTAssertEqual(AppLanguage.french.displayName, "Français")
+        XCTAssertEqual(strings.language, "Langue")
+        XCTAssertEqual(strings.settingsTitle, "Réglages")
+        XCTAssertEqual(strings.getStarted, "Commencer")
+        XCTAssertEqual(
+            String(format: strings.updateAvailableVersionFormat, "4.3.2"),
+            "4.3.2 est disponible"
+        )
     }
 }

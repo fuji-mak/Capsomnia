@@ -48,6 +48,7 @@ enum AppLanguage: String, CaseIterable {
     case japanese = "ja"
     case simplifiedChinese = "zh-Hans"
     case korean = "ko"
+    case french = "fr"
 
     static var defaultLanguage: AppLanguage {
         defaultLanguage(for: Locale.preferredLanguages.first)
@@ -68,6 +69,9 @@ enum AppLanguage: String, CaseIterable {
         if languageCode == "ko" {
             return .korean
         }
+        if languageCode == "fr" {
+            return .french
+        }
         return .english
     }
 
@@ -81,6 +85,8 @@ enum AppLanguage: String, CaseIterable {
             "简体中文"
         case .korean:
             "한국어"
+        case .french:
+            "Français"
         }
     }
 }
@@ -231,6 +237,77 @@ struct AppStrings {
                 updateCurrentVersionFormat: "Current version: %@",
                 automaticUpdateChecks: "Check for updates automatically",
                 automaticUpdateChecksDesc: "Checks for releases once a day."
+            )
+        case .french:
+            AppStrings(
+                dedicatedCapsLockMode: "Empêcher la saisie en majuscules",
+                dedicatedCapsLockModeDesc: "Empêche la saisie en majuscules lorsque Capsomnia est activé. Nécessite l’autorisation d’accessibilité.",
+                toggleCapsLock: "Basculer le verrouillage des majuscules",
+                showMenuBarIcon: "Afficher l’icône dans la barre des menus",
+                showMenuBarIconDesc: "Affiche le voyant d’état dans la barre des menus.",
+                language: "Langue",
+                advancedSettings: "Réglages avancés",
+                systemBehavior: "Comportement du système",
+                openAtLogin: "Ouvrir à la connexion",
+                openAtLoginDesc: "Lance Capsomnia automatiquement à l’ouverture de votre session.",
+                keepDisplayAwake: "Autoriser Computer Use et outils similaires",
+                keepDisplayAwakeDesc: "Empêche le verrouillage de l’écran pendant que Capsomnia est activé pour les tâches qui utilisent l’écran. La consommation d’énergie et la température du Mac peuvent augmenter.",
+                keepHotspotAlive: "Maintenir le partage de connexion",
+                keepHotspotAliveDesc: "Évite que le partage de connexion se coupe automatiquement en cas d’inactivité.",
+                ignoreExternalCapsLockOffWhileLidClosed: "Ignorer la désactivation à distance de Verr. maj.",
+                ignoreExternalCapsLockOffWhileLidClosedDesc: "Lorsque le capot est fermé, le Mac reste éveillé même si une connexion à distance ou une autre source désactive le verrouillage des majuscules.",
+                hideCapsLockIndicator: "Masquer l’indicateur de verrouillage des majuscules",
+                hideCapsLockIndicatorDesc: "Masque l’indicateur de verrouillage des majuscules dans les champs de texte.",
+                hideCapsLockIndicatorRestartNote: "Redémarrez votre Mac pour appliquer ce changement.",
+                autoOffTimer: "Minuterie d’arrêt automatique",
+                autoOffTimerDesc: "À la fin du délai, Capsomnia cesse d’empêcher la mise en veille.",
+                autoOffOff: "Désactivée",
+                autoOffCustom: "Autre…",
+                autoOffTurnsOffIn: "Arrêt dans",
+                autoOffHours: "Heures",
+                autoOffMinutesUnit: "Minutes",
+                autoOffRestart: "Relancer la minuterie",
+                keyboardShortcut: "Raccourci marche/arrêt",
+                keyboardShortcutDesc: "Si vous avez réattribué la touche de verrouillage des majuscules, utilisez un raccourci pour activer ou désactiver Capsomnia.",
+                shortcutRecorderPlaceholder: "Non défini",
+                shortcutRecorderRecording: "Appuyez sur les touches…",
+                shortcutRecorderAction: "Enregistrer",
+                shortcutRegistrationFailed: "Ce raccourci est indisponible",
+                openCapsomnia: "Ouvrir Capsomnia",
+                quit: "Quitter",
+                settingsTitle: "Réglages",
+                welcomeTitle: "Bienvenue dans Capsomnia",
+                explainerOnTitle: "Verrouillage des majuscules activé",
+                explainerOnDesc: "Le Mac reste éveillé et vos tâches continuent, capot ouvert ou fermé.",
+                explainerOffTitle: "Verrouillage des majuscules désactivé",
+                explainerOffDesc: "Le Mac reprend son comportement de veille habituel.",
+                initialPreferencesHeading: "Configuration initiale",
+                preferencesHeading: "Préférences",
+                done: "Terminé",
+                getStarted: "Commencer",
+                tooltipOn: "Verrouillage des majuscules activé : vos tâches continuent",
+                tooltipOff: "Verrouillage des majuscules désactivé : veille normale",
+                tooltipError: "Capsomnia n’a pas pu modifier le réglage de veille. Nouvelle tentative en cours.",
+                tooltipDedicatedPermission: "L’option « Empêcher la saisie en majuscules » est indisponible. Nouvelle tentative en cours. Vérifiez l’autorisation d’accessibilité.",
+                checkForUpdates: "Rechercher des mises à jour…",
+                updateAvailableMenuFormat: "Mise à jour disponible : %@",
+                updateAvailableTitle: "Mise à jour disponible",
+                updateAvailableBodyFormat: "Capsomnia %@ est disponible. Vous utilisez la version %@. Voulez-vous télécharger et ouvrir le programme d’installation ? Le fichier est supprimé automatiquement après la mise à jour.",
+                updateAction: "Mettre à jour",
+                updateAvailableVersionFormat: "%@ est disponible",
+                updateDownloadAndInstall: "Télécharger et installer",
+                updateLater: "Plus tard",
+                updateUpToDateTitle: "Capsomnia est à jour",
+                updateUpToDateBodyFormat: "Capsomnia %@ est la version la plus récente.",
+                updateCheckFailedTitle: "Échec de la recherche de mises à jour",
+                updateCheckFailedBody: "Impossible de joindre GitHub pour rechercher des mises à jour. Réessayez plus tard.",
+                updateDownloadFailedTitle: "Échec de la mise à jour",
+                updateDownloadFailedBody: "Impossible de télécharger ou d’ouvrir le programme d’installation. Réessayez plus tard ou téléchargez-le depuis la page des versions sur GitHub.",
+                releaseNotes: "Infos",
+                updatesHeading: "Mises à jour",
+                updateCurrentVersionFormat: "Version actuelle : %@",
+                automaticUpdateChecks: "Rechercher automatiquement les mises à jour",
+                automaticUpdateChecksDesc: "Recherche les nouvelles versions une fois par jour."
             )
         case .korean:
             AppStrings(

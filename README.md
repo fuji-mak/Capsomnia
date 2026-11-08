@@ -121,7 +121,7 @@ On first launch, Capsomnia explains how the Caps Lock switch works and lets you 
 
 - whether to show the menu bar dot
 - whether to prevent all-caps typing while Capsomnia is on
-- English, Japanese, Simplified Chinese, or Korean
+- English, Japanese, Simplified Chinese, Korean, or French
 
 "Open at login" is enabled by default and does not appear in initial setup. Open Capsomnia again later to use the two day-to-day controls directly: the opt-in "Keep display awake" setting and the optional auto-off timer. "Keep display awake" is off by default, so closing the lid normally puts the display to sleep. The timer is also off by default. Each time Capsomnia is enabled, the selected duration starts from the beginning; the restart button resets the current countdown. Advanced Settings contains the less frequently changed menu bar, all-caps prevention, language, login, lid-closed Caps Lock guard, and global shortcut options, plus an optional "Hide the Caps Lock indicator" toggle. This uses an undocumented system-wide macOS feature flag, may affect other text-cursor indicators, and takes effect after restarting the Mac. Capsomnia shows a reminder until the restart happens. It saves the previous target value before changing it and restores that value when the toggle is turned off or Capsomnia is uninstalled. "Show menu bar icon" remains independent when "Prevent all-caps typing" is enabled. If the icon is hidden, a red dot appears temporarily when an error occurs.
 

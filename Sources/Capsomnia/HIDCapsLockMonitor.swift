@@ -30,6 +30,17 @@ struct HIDCapsLockPressTracker {
     }
 }
 
+/// Opens the HID manager before attaching it to the run loop. Attaching a
+/// manager whose open then fails can leak Mach ports, and the app retries this
+/// path every few seconds while HID access is unavailable.
+enum HIDCapsLockManagerStartup {
+    static func begin(open: () -> Bool, schedule: () -> Void) -> Bool {
+        guard open() else { return false }
+        schedule()
+        return true
+    }
+}
+
 /// Optional, non-exclusive observation of Caps Lock key input. It never writes
 /// keyboard state or consumes an event, and does not request permission.
 final class HIDCapsLockMonitor {
@@ -84,8 +95,20 @@ final class HIDCapsLockMonitor {
             monitor.tracker.removeDevice(id)
         }, context)
         self.manager = manager
-        IOHIDManagerScheduleWithRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
-        guard IOHIDManagerOpen(manager, IOOptionBits(kIOHIDOptionsTypeNone)) == kIOReturnSuccess else {
+        // Keep open before schedule inside the helper so the ordering tests
+        // continue to cover this path.
+        guard HIDCapsLockManagerStartup.begin(
+            open: {
+                IOHIDManagerOpen(manager, IOOptionBits(kIOHIDOptionsTypeNone)) == kIOReturnSuccess
+            },
+            schedule: {
+                IOHIDManagerScheduleWithRunLoop(
+                    manager,
+                    CFRunLoopGetMain(),
+                    CFRunLoopMode.commonModes.rawValue
+                )
+            }
+        ) else {
             stop()
             state = .unavailable
             return state

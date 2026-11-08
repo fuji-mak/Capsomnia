@@ -158,7 +158,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         defer { Preferences.language = previousLanguage }
 
         _ = NSApplication.shared
-        for initialLanguage in [AppLanguage.english, .japanese] {
+        for initialLanguage in [AppLanguage.english, .japanese, .french] {
             Preferences.language = initialLanguage
             let controller = makeController()
             defer { controller.close() }
@@ -166,13 +166,13 @@ final class SettingsWindowControllerTests: XCTestCase {
             let contentView = try XCTUnwrap(controller.window?.contentView)
             let languagePopUp: LanguagePopUpButton = try XCTUnwrap(descendants(of: contentView).first)
 
-            XCTAssertEqual(languagePopUp.itemTitles, ["English", "日本語", "简体中文", "한국어"])
+            XCTAssertEqual(languagePopUp.itemTitles, ["English", "日本語", "简体中文", "한국어", "Français"])
             XCTAssertEqual(languagePopUp.selectedValue, initialLanguage.rawValue)
 
-            languagePopUp.setSelected(AppLanguage.korean.rawValue)
+            languagePopUp.setSelected(AppLanguage.french.rawValue)
 
-            XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.korean.rawValue)
-            XCTAssertEqual(languagePopUp.titleOfSelectedItem, AppLanguage.korean.displayName)
+            XCTAssertEqual(languagePopUp.selectedValue, AppLanguage.french.rawValue)
+            XCTAssertEqual(languagePopUp.titleOfSelectedItem, AppLanguage.french.displayName)
         }
     }
 

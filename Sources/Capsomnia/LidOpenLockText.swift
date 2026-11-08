@@ -15,6 +15,8 @@ struct LidOpenLockText {
             return Self(title: "덮개를 열면 자동 잠금", description: "덮개를 닫고 실행 중일 때 열면 Mac을 잠급니다. 화면 자동화에 영향을 줄 수 있습니다.")
         case .english:
             return Self(title: "Lock when lid opens", description: "Lock the Mac when opening the lid during closed-lid work. Locking may affect desktop automation.")
+        case .french:
+            return Self(title: "Verrouiller à l’ouverture du capot", description: "Verrouille le Mac à l’ouverture du capot s’il est resté éveillé une fois fermé. Le verrouillage peut perturber l’automatisation de l’interface.")
         }
     }
 }

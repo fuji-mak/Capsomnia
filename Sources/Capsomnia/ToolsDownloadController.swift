@@ -187,6 +187,12 @@ struct ToolsDownloadText {
                         install: "Install", cancel: "Cancel", downloading: "Downloading…", installing: "Installing…",
                         completed: "Installation completed.", unavailable: "The compatible package is being prepared.",
                         failure: "Could not complete installation. Please try again.")
+        case .french:
+            return Self(entryTitle: "Télécharger le CLI et le Skill de Capsomnia", title: "Installer le CLI et le Skill ?",
+                        body: "Téléchargez ces deux outils pour piloter Capsomnia.",
+                        install: "Installer", cancel: "Annuler", downloading: "Téléchargement en cours…", installing: "Installation en cours…",
+                        completed: "Installation terminée.", unavailable: "Le programme d’installation compatible est en cours de préparation.",
+                        failure: "Impossible de terminer l’installation. Réessayez.")
         case .korean:
             return Self(entryTitle: "Capsomnia CLI & Skill 다운로드", title: "CLI와 Skill을 설치할까요?", body: "Capsomnia를 제어하기 위한 CLI와 Skill을 함께 다운로드합니다.",
                         install: "설치", cancel: "취소", downloading: "다운로드 중…", installing: "설치 중…",

@@ -2,6 +2,19 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 4.3.3 - 2026-11-09
+
+- Fix a Mach port and memory leak when HID keyboard monitoring cannot start.
+  Open the HID manager before scheduling it on the run loop, so failed retries
+  do not retain monitoring resources and accumulate memory during extended use.
+  Thanks to [beso1225](https://github.com/beso1225) for the report, investigation,
+  and fix in [PR 156](https://github.com/fuji-mak/Capsomnia/pull/156).
+- Add French throughout the app, including settings, timers, update dialogs,
+  and optional CLI and Skill installation. Select French by default when it is
+  the preferred macOS language, and support it through the CLI language setting.
+  Thanks to [LindonAliu](https://github.com/LindonAliu) for the translation in
+  [PR 154](https://github.com/fuji-mak/Capsomnia/pull/154).
+
 ## 4.3.2 - 2026-11-01
 
 - Secure optional Tools installation by copying the package into a protected

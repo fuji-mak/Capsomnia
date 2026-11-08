@@ -36,4 +36,32 @@ final class HIDCapsLockMonitorTests: XCTestCase {
         tracker.removeDevice(2)
         XCTAssertFalse(tracker.isPressed)
     }
+
+    func testFailedManagerOpenIsNotScheduled() {
+        var steps: [String] = []
+        let started = HIDCapsLockManagerStartup.begin(
+            open: {
+                steps.append("open")
+                return false
+            },
+            schedule: { steps.append("schedule") }
+        )
+
+        XCTAssertFalse(started)
+        XCTAssertEqual(steps, ["open"])
+    }
+
+    func testSuccessfulManagerOpenIsScheduled() {
+        var steps: [String] = []
+        let started = HIDCapsLockManagerStartup.begin(
+            open: {
+                steps.append("open")
+                return true
+            },
+            schedule: { steps.append("schedule") }
+        )
+
+        XCTAssertTrue(started)
+        XCTAssertEqual(steps, ["open", "schedule"])
+    }
 }

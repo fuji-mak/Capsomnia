@@ -47,7 +47,11 @@ jobs:
           set -e
           test "$helper_status" -eq 64
       - name: Build and verify unsigned package payload
-        run: SKIP_SIGNING=true ./scripts/build-pkg.sh "$RUNNER_TEMP/capsomnia-pkg"
+        # A restrictive umask proves the payload modes do not depend on the
+        # release machine's shell settings.
+        run: |
+          umask 077
+          SKIP_SIGNING=true ./scripts/build-pkg.sh "$RUNNER_TEMP/capsomnia-pkg"
       - name: Check shell scripts
         run: |
           zsh -n scripts/build-app.sh

@@ -1,6 +1,6 @@
 # Capsomnia・cpsm・MacReady 配布準備
 
-現在の配布版は **Capsomnia 4.3.3 / cpsm 0.1.1 / MacReady 0.1.1** です。Capsomnia **4.3.4は未公開の検証候補**です。
+配布対象は **Capsomnia 4.3.4 / cpsm 0.1.2 / MacReady 0.2.0** です。
 **本人の確認が済むまで公開しません。** 候補pkgを作る工程と、Appleへの公証提出・
 GitHubへの公開工程は別です。ビルドしてもメインで使用中のアプリは置き換えません。
 
@@ -42,9 +42,9 @@ CLI／Skillを削除してもアプリは残り、アプリを削除してもCLI
 - Capsomnia配布pkg: Apple silicon、macOS 14以降（従来どおり）。IntelではmacOS
   13.5以降でアプリをソースからビルドできます。
 - cpsm／MacReady pkg: Apple silicon＋Intelのuniversal、macOS 13.5以降。
-- cpsm 0.1.0: 公開版ではCapsomnia 4.0.0以降が必要。wire protocolは1。
+- cpsm 0.1.2: 公開版ではCapsomnia 4.0.0以降が必要。wire protocolは1。
   以前のローカルCLI対応版3.5.0も同じプロトコルですが、公開済み3.5.0は非対応です。
-- MacReady 0.1.0: アプリ・sudo・常駐なし。CPU/GPU実温度は未対応でnullを返します。
+- MacReady 0.2.0: アプリ・sudo・常駐なし。対応環境ではCPU温度を読み取ります。GPU温度は未対応でnullを返します。
 
 ## ビルド
 
@@ -68,6 +68,13 @@ Toolsだけ更新する場合はcpsm側の `scripts/build-tools-pkg.sh` を使�
 
 テストは各リポジトリで `swift test`。ビルドスクリプトはpkgを展開し、同梱バイナリの
 署名とSkillの一致を確認します。電源状態を変える実機テストは通常の自動テストから除外しています。
+
+今回の権限修正版では、アプリは検証済みのVendor snapshotから `scripts/build-pkg.sh` で生成します。
+Toolsは署名・公証・digestを確認した公開MacReady 0.2.0の3 componentを再利用し、
+`SKIP_COMPONENT_BUILD=true` と各dist/元版数を指定してcpsm側で組み立てます。
+組立前に6 component全件の識別子・版数を照合します。公開直前にもMacReady最新版と
+同梱版を比べ、利用者の既存版を古く戻す組合せを配布しません。
+`prepare-distribution.sh` は3repoのVendor snapshotが同期済みの場合の一括ビルド用です。
 
 ## 本人が試す確認版
 
@@ -108,9 +115,9 @@ NOTARY_PROFILE=capsomnia-notary ./scripts/notarize-distribution.sh
 この手順はAppleへpkgをアップロードします。GitHubへの公開は行いません。
 公証でpkgの内容が変わるため、チェックサムも再生成します。
 
-4. `fuji-mak/cpsm` と `fuji-mak/MacReady` の各 `v0.1.1` を公開。
+4. `fuji-mak/cpsm` の `v0.1.2` を公開。MacReadyは公開済み `v0.2.0` の正規componentを同梱し、既存版を再公開しません。
    固定名pkg・版数入りpkg・各SHA256SUMS.txtを添付。cpsm側には同梱版の
-   `Capsomnia-Tools.pkg`、`Capsomnia-Tools-0.1.1.pkg`、`Tools-SHA256SUMS.txt`も添付します。
+   `Capsomnia-Tools.pkg`、`Capsomnia-Tools-0.1.2.pkg`、`Tools-SHA256SUMS.txt`も添付します。
    Skillはリポジトリ内でも取得可能です。
 5. cpsm側の同梱Toolsが取得できる状態で、Capsomnia `v4.3.4` に本体pkgを添付して公開。
    `Info.plist` の取得先は以下のcpsm最新リリースURLです。Toolsの更新にアプリの再公開は不要です。

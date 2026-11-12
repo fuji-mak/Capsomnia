@@ -1,5 +1,9 @@
 #!/bin/zsh
 set -euo pipefail
+# pkgbuild records the payload's on-disk modes, so a restrictive caller umask
+# (such as 077) would ship Capsomnia.app as root-owned 0700 and Finder would
+# report the installed app as damaged.
+umask 022
 
 APP_NAME="Capsomnia"
 LABEL="com.github.fuji-mak.capsomnia"
@@ -196,6 +200,19 @@ VERIFY_PKG="$WORK_DIR/verify-pkg"
 unexpected_owner="$(/usr/bin/lsbom "$VERIFY_PKG/Bom" | /usr/bin/awk -F '\t' '$3 != "0/0" { print; exit }')"
 if [[ -n "$unexpected_owner" ]]; then
   echo "Package payload contains a non-root owner: $unexpected_owner" >&2
+  exit 1
+fi
+# The payload is root-owned, so the console user needs world read on every
+# entry and world search on every directory to open the app.
+unreadable_entry="$(/usr/bin/lsbom "$VERIFY_PKG/Bom" | /usr/bin/awk -F '\t' '
+  {
+    other = substr($2, length($2), 1) + 0
+    is_dir = length($2) == 5 && substr($2, 1, 1) == "4"
+    if (other < 4 || (is_dir && other % 2 == 0)) { print; exit }
+  }
+')"
+if [[ -n "$unreadable_entry" ]]; then
+  echo "Package payload contains an entry other users cannot read: $unreadable_entry" >&2
   exit 1
 fi
 

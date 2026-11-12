@@ -2,6 +2,10 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 4.3.4 - 2026-11-13
+
+- Fix package permissions that could prevent Capsomnia from opening after installation. Build payloads with a fixed umask and reject unreadable package entries, including directories without search permission. Thanks to gigun-dev for the diagnosis and fix in PR 160.
+
 ## 4.3.3 - 2026-11-09
 
 - Fix a Mach port and memory leak when HID keyboard monitoring cannot start.

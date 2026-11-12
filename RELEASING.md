@@ -59,6 +59,28 @@ The script uses the Keychain profile named `capsomnia-notary` by default. Overri
 NOTARY_PROFILE=your-profile ./scripts/notarize-pkg.sh
 ```
 
+## Install and launch acceptance
+
+Signing, notarization, and matching checksums do not establish that a normal
+user can open the installed app. Before publishing the exact candidate package:
+
+- Inspect the final signed and stapled package BOM: every app file must be
+  world-readable, every app directory world-readable and searchable, and the
+  app, helper, and LaunchAgent must have the intended root ownership and modes.
+- Install through the full production installer, including postinstall. Confirm
+  that a non-root user can launch the app normally, not just reach its duplicate
+  instance guard. Check the installed version and `cpsm doctor`.
+- Verify both a fresh install and repair of an inaccessible root-owned 0700 app
+  bundle. Confirm helper, sudoers, and LaunchAgent installation and startup.
+- Exercise menu ON/OFF, timer set/cancel/expiry with the lid open, settings,
+  and update checking. Restore the user's previous state after testing.
+- Fail the release if installation, normal launch, or these checks fail. Record
+  the tested commit, package SHA-256, results, and any untested hardware cases.
+
+After publication, download the public package again and compare it with the
+accepted candidate, including its package permissions. Never treat signature
+or notarization acceptance alone as a successful launch check.
+
 ## GitHub Release
 
 After committing and tagging:

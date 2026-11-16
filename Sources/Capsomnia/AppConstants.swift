@@ -3,6 +3,7 @@ import Foundation
 
 let appName = "Capsomnia"
 let appLabel = Bundle.main.bundleIdentifier ?? "com.github.fuji-mak.capsomnia"
+let supportURL = URL(string: "https://buymeacoffee.com/taketo")!
 /// Developer ID team that signs Capsomnia's release packages
 /// (scripts/build-pkg.sh). Downloaded update installers must be signed by
 /// this team before they are opened.
@@ -142,6 +143,7 @@ struct AppStrings {
     let tooltipError: String
     let tooltipDedicatedPermission: String
     let checkForUpdates: String
+    let supportCapsomnia: String
     let updateAvailableMenuFormat: String
     let updateAvailableTitle: String
     let updateAvailableBodyFormat: String
@@ -219,6 +221,7 @@ struct AppStrings {
                 tooltipError: "Capsomnia could not update the sleep setting — retrying",
                 tooltipDedicatedPermission: "“Prevent capitalization” is unavailable — retrying. Check Accessibility permission.",
                 checkForUpdates: "Check for Updates…",
+                supportCapsomnia: "Support Capsomnia",
                 updateAvailableMenuFormat: "Update available — %@",
                 updateAvailableTitle: "Update available",
                 updateAvailableBodyFormat: "Capsomnia %@ is available — you have %@. Download the installer and open it? The download is removed automatically after the update.",
@@ -290,6 +293,7 @@ struct AppStrings {
                 tooltipError: "Capsomnia n’a pas pu modifier le réglage de veille. Nouvelle tentative en cours.",
                 tooltipDedicatedPermission: "L’option « Empêcher la saisie en majuscules » est indisponible. Nouvelle tentative en cours. Vérifiez l’autorisation d’accessibilité.",
                 checkForUpdates: "Rechercher des mises à jour…",
+                supportCapsomnia: "Soutenir Capsomnia",
                 updateAvailableMenuFormat: "Mise à jour disponible : %@",
                 updateAvailableTitle: "Mise à jour disponible",
                 updateAvailableBodyFormat: "Capsomnia %@ est disponible. Vous utilisez la version %@. Voulez-vous télécharger et ouvrir le programme d’installation ? Le fichier est supprimé automatiquement après la mise à jour.",
@@ -361,6 +365,7 @@ struct AppStrings {
                 tooltipError: "잠자기 설정을 바꾸지 못했습니다. 다시 시도 중입니다.",
                 tooltipDedicatedPermission: "대문자 변환 방지 기능을 사용할 수 없어 다시 시도 중입니다. 손쉬운 사용 권한을 확인하세요.",
                 checkForUpdates: "업데이트 확인…",
+                supportCapsomnia: "Capsomnia 후원하기",
                 updateAvailableMenuFormat: "업데이트 있음 — %@",
                 updateAvailableTitle: "업데이트가 있습니다",
                 updateAvailableBodyFormat: "Capsomnia %@ 버전을 사용할 수 있습니다. 현재 버전은 %@입니다. 설치 프로그램을 다운로드해서 열까요? 다운로드한 파일은 업데이트 후 자동으로 제거됩니다.",
@@ -432,6 +437,7 @@ struct AppStrings {
                 tooltipError: "スリープ設定を更新できませんでした — 再試行中",
                 tooltipDedicatedPermission: "「大文字化を防ぐ」が動作していません — 再試行中。アクセシビリティ権限を確認してください。",
                 checkForUpdates: "アップデートを確認…",
+                supportCapsomnia: "Capsomniaを応援する",
                 updateAvailableMenuFormat: "アップデートあり — %@",
                 updateAvailableTitle: "アップデートがあります",
                 updateAvailableBodyFormat: "Capsomnia %@ が利用できます（現在は %@）。インストーラをダウンロードして開きますか？ダウンロードしたファイルはアップデート後に自動で削除されます。",
@@ -503,6 +509,7 @@ struct AppStrings {
                 tooltipError: "Capsomnia 无法更新睡眠设置——正在重试",
                 tooltipDedicatedPermission: "“防止大写转换”暂不可用，正在重试。请检查辅助功能权限。",
                 checkForUpdates: "检查更新…",
+                supportCapsomnia: "支持 Capsomnia",
                 updateAvailableMenuFormat: "有可用更新 — %@",
                 updateAvailableTitle: "有可用更新",
                 updateAvailableBodyFormat: "Capsomnia %@ 已发布，当前版本为 %@。要下载并打开安装器吗？更新完成后会自动移除下载的文件。",

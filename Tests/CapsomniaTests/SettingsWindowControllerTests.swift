@@ -526,15 +526,18 @@ final class SettingsWindowControllerTests: XCTestCase {
         }
         _ = NSApplication.shared
         var opened = false
+        var supportOpened = false
         let controller = makeController(
             autoOffDisplayProvider: { .counting(remaining: 7200) },
-            onToolsDownload: { opened = true }
+            onToolsDownload: { opened = true },
+            onSupport: { supportOpened = true }
         )
         defer { controller.close() }
         controller.show(page: .settings)
         let content = try XCTUnwrap(controller.window?.contentView)
         content.layoutSubtreeIfNeeded()
         XCTAssertNil(view(in: content, accessibilityLabel: ToolsDownloadText.current.entryTitle))
+        XCTAssertNil(view(in: content, accessibilityLabel: AppStrings.current().supportCapsomnia))
         let restart = try XCTUnwrap(view(in: content, accessibilityLabel: AppStrings.current().autoOffRestart))
         XCTAssertFalse(restart.isHidden)
         controller.show(page: .advancedSettings)
@@ -549,6 +552,9 @@ final class SettingsWindowControllerTests: XCTestCase {
         XCTAssertTrue(link.isEnabled)
         let frame = link.convert(link.bounds, to: content)
         XCTAssertTrue(content.bounds.contains(frame))
+        let support = try XCTUnwrap(view(in: content, accessibilityLabel: AppStrings.current().supportCapsomnia) as? NSButton)
+        support.performClick(nil)
+        XCTAssertTrue(supportOpened)
         // The update card grows when an update is found while Settings is open.
         // Both actions must stay visible and distinct, in every supported locale.
         for language in AppLanguage.allCases {
@@ -560,6 +566,11 @@ final class SettingsWindowControllerTests: XCTestCase {
                 content.layoutSubtreeIfNeeded()
                 let toolsFrame = link.convert(link.bounds, to: content)
                 XCTAssertTrue(content.bounds.contains(toolsFrame))
+                XCTAssertEqual(support.accessibilityLabel(), AppStrings.current().supportCapsomnia)
+                let supportFrame = support.convert(support.bounds, to: content)
+                XCTAssertTrue(content.bounds.contains(supportFrame))
+                XCTAssertGreaterThanOrEqual(supportFrame.minY, toolsFrame.maxY)
+                XCTAssertGreaterThanOrEqual(support.bounds.width + 1, support.intrinsicContentSize.width)
                 guard availableVersion != nil else { continue }
                 let update = try XCTUnwrap(
                     visibleDescendants(of: content).first { (button: LEDButton) in
@@ -578,6 +589,7 @@ final class SettingsWindowControllerTests: XCTestCase {
                 XCTAssertFalse(versionFrame.intersects(updateFrame))
                 XCTAssertGreaterThanOrEqual(version.bounds.width + 1, version.intrinsicContentSize.width)
                 XCTAssertFalse(toolsFrame.intersects(updateFrame))
+                XCTAssertFalse(supportFrame.intersects(updateFrame))
                 let title = try XCTUnwrap(
                     visibleDescendants(of: link).first { (label: NSTextField) in
                         label.stringValue == ToolsDownloadText.current.entryTitle
@@ -614,7 +626,8 @@ final class SettingsWindowControllerTests: XCTestCase {
             CapsLockIndicatorDisplayState(hidden: false, restartPending: false)
         },
         onAutomaticUpdateChecksChange: @escaping (Bool) -> Void = { _ in },
-        onToolsDownload: @escaping () -> Void = {}
+        onToolsDownload: @escaping () -> Void = {},
+        onSupport: @escaping () -> Void = {}
     ) -> SettingsWindowController {
         SettingsWindowController(
             onDedicatedCapsLockModeChange: { _ in },
@@ -634,7 +647,8 @@ final class SettingsWindowControllerTests: XCTestCase {
             onAutomaticUpdateChecksChange: onAutomaticUpdateChecksChange,
             onFinishInitialSetup: {},
             currentVersion: "4.0.0",
-            onToolsDownload: onToolsDownload
+            onToolsDownload: onToolsDownload,
+            onSupport: onSupport
         )
     }
 

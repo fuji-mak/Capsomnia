@@ -29,6 +29,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let advancedTitleLabel = brandLabel(size: 20, weight: .bold, color: Brand.text)
     private let backButton = NSButton()
     private let toolsDownloadButton = DisclosureButton(symbolName: "arrow.down.to.line", height: 44)
+    private let supportButton = NSButton()
 
     private var explainerCard = NSView()
     private let explainerOnTitle = brandLabel(size: 13, weight: .semibold, color: Brand.text)
@@ -155,6 +156,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let onUpdate: (String) -> Void
     private let onReleaseNotes: (String) -> Void
     private let onToolsDownload: () -> Void
+    private let onSupport: () -> Void
     private let autoOffDescriptionProvider: () -> String?
 
     private let shortcutHeading = brandLabel(
@@ -226,6 +228,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onUpdate: @escaping (String) -> Void = { _ in },
         onReleaseNotes: @escaping (String) -> Void = { _ in },
         onToolsDownload: @escaping () -> Void = {},
+        onSupport: @escaping () -> Void = { NSWorkspace.shared.open(supportURL) },
         autoOffDescriptionProvider: @escaping () -> String? = { nil },
         onLidOpenLockChange: @escaping (Bool) -> Void = { _ in }
     ) {
@@ -250,6 +253,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onReleaseNotes = onReleaseNotes
         self.onLidOpenLockChange = onLidOpenLockChange
         self.onToolsDownload = onToolsDownload
+        self.onSupport = onSupport
         self.autoOffDescriptionProvider = autoOffDescriptionProvider
 
         let window = NSWindow(
@@ -360,6 +364,15 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         shortcutRecorder.setAccessibilityHelp(strings.keyboardShortcutDesc)
 
         updateToolsDownloading(toolsDownloading)
+        supportButton.attributedTitle = NSAttributedString(
+            string: strings.supportCapsomnia,
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 12),
+                .foregroundColor: Brand.textDim,
+                .underlineStyle: NSUnderlineStyle.single.rawValue
+            ]
+        )
+        supportButton.setAccessibilityLabel(strings.supportCapsomnia)
         updateHeading.stringValue = strings.updatesHeading.uppercased()
         updateVersionLabel.stringValue = availableUpdateVersion.map { String(format: strings.updateAvailableVersionFormat, $0) } ?? ""
         updateCurrentVersionLabel.stringValue = String(format: strings.updateCurrentVersionFormat, currentVersion)
@@ -541,6 +554,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         toolsDownloadButton.onClick = { [weak self] in self?.onToolsDownload() }
         updateToolsDownloading(toolsDownloading)
+        supportButton.isBordered = false
+        supportButton.alignment = .center
+        supportButton.translatesAutoresizingMaskIntoConstraints = false
+        supportButton.target = self
+        supportButton.action = #selector(openSupport)
+        supportButton.toolTip = supportURL.absoluteString
 
         contentView.addSubview(rootStack)
         window?.contentView = contentView
@@ -564,6 +583,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             systemCard.widthAnchor.constraint(equalTo: advancedLeftColumn.widthAnchor),
             shortcutCard.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
             toolsDownloadButton.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
+            supportButton.widthAnchor.constraint(equalTo: advancedRightColumn.widthAnchor),
             advancedRightColumn.bottomAnchor.constraint(equalTo: advancedColumns.bottomAnchor),
             toolsDownloadButton.bottomAnchor.constraint(equalTo: advancedRightColumn.bottomAnchor)
         ]
@@ -628,9 +648,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             advancedRightColumn.addArrangedSubview(updateHeading)
             advancedRightColumn.addArrangedSubview(updateCard)
             advancedRightColumn.addArrangedSubview(advancedRightSpacer)
+            advancedRightColumn.addArrangedSubview(supportButton)
             advancedRightColumn.addArrangedSubview(toolsDownloadButton)
             advancedRightColumn.setCustomSpacing(16, after: updateCard)
             advancedRightColumn.setCustomSpacing(0, after: advancedRightSpacer)
+            advancedRightColumn.setCustomSpacing(10, after: supportButton)
             advancedRightColumn.setCustomSpacing(22, after: shortcutCard)
             advancedRightColumn.setCustomSpacing(8, after: updateHeading)
             updateCardWidthConstraint?.isActive = true
@@ -912,6 +934,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     @objc private func openReleaseNotes() {
         guard let version = availableUpdateVersion else { return }
         onReleaseNotes(version)
+    }
+
+    @objc private func openSupport() {
+        onSupport()
     }
 
     private func layoutUpdateRows() {

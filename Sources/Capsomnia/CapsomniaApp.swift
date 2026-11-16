@@ -555,6 +555,14 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(updatesItem)
         checkForUpdatesMenuItem = updatesItem
 
+        let supportItem = NSMenuItem(
+            title: strings.supportCapsomnia,
+            action: #selector(supportCapsomnia),
+            keyEquivalent: ""
+        )
+        supportItem.target = self
+        menu.addItem(supportItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let quitItem = NSMenuItem(title: strings.quit, action: #selector(quit), keyEquivalent: "q")
@@ -576,6 +584,10 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } else {
             updateController?.checkNow()
         }
+    }
+
+    @objc private func supportCapsomnia() {
+        NSWorkspace.shared.open(supportURL)
     }
 
     @objc private func toggleCapsLockFromMenu() {

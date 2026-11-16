@@ -7,7 +7,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastAppliedState: Bool?
     private var isApplyingCapsLockState = false
     private var lastConfirmedSleepState: Bool?
-    private var failedTogglePhysicalState: Bool?
+    private var awakeControlState = AwakeControlState()
     private var settingsHeaderStatus = SettingsHeaderStatus.error
     private var failedSleepState: Bool?
     private var nextSleepStateRetryAt = Date.distantPast
@@ -31,11 +31,6 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }()
     private var sessionTimer = SessionAutoOffTimer()
     private var controlServer: ControlServer?
-    private var isControlMutationInFlight = false
-    private var isAutoOffToggleInFlight = false
-    private var isExplicitCapsLockToggleInFlight = false
-    private var secureInputCapsLockOverrideActive = false
-    private var secureInputOverrideSuppressedForExplicitOff = false
     private var nextSecureInputCapsLockRetryAt = Date.distantPast
     private var didRequestDisplaySleepForClosedLid = false
     private var hasLoggedMissingClamshellState = false
@@ -253,7 +248,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard now >= suppressInputSourceRecoveryUntil,
               !hidCapsLockMonitor.isPressed,
               !isAutoOffInProgress,
-              !secureInputCapsLockOverrideActive,
+              !awakeControlState.secureInputCapsLockOverrideActive,
               lastAppliedState == true else { return }
 
         cancelPendingCapsLockOff()
@@ -331,8 +326,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // this physical action and follow the actual modifier-lock state.
         cancelInputSourceRecovery()
         if !isAutoOffInProgress,
-           !isControlMutationInFlight,
-           !isExplicitCapsLockToggleInFlight {
+           !awakeControlState.isInFlight(.cli),
+           !awakeControlState.isInFlight(.manual) {
             suppressInputSourceRecoveryUntil = .distantPast
         }
         if pressed {
@@ -397,7 +392,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // suppression can expire before HID OFF and helper confirmation finish.
         guard lastAppliedState == true,
               !isAutoOffInProgress,
-              !secureInputCapsLockOverrideActive,
+              !awakeControlState.secureInputCapsLockOverrideActive,
               Date() >= suppressInputSourceRecoveryUntil else { return }
 
         guard let capsLockOn = capsLockStateReader.currentState() else {
@@ -436,14 +431,14 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private var isAutoOffInProgress: Bool {
-        isAutoOffToggleInFlight || autoOffSleepCoordinator.isPending
+        awakeControlState.isInFlight(.autoOff) || autoOffSleepCoordinator.isPending
     }
 
     /// The live Caps Lock state used for the status indicator, falling back
     /// to the last applied sleep state only when the hardware state is
     /// temporarily unavailable.
     private var currentCapsLockState: Bool {
-        if secureInputCapsLockOverrideActive {
+        if awakeControlState.secureInputCapsLockOverrideActive {
             return true
         }
         return capsLockStateReader.currentState() ?? lastAppliedState ?? false
@@ -600,16 +595,12 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func requestCapsLockToggle(source: String) {
-        guard !isExplicitCapsLockToggleInFlight else { return }
         let target = !currentCapsLockState
-        isExplicitCapsLockToggleInFlight = true
-        failedTogglePhysicalState = nil
-        prepareSecureInputOverrideForExplicitTarget(target)
-        suppressInputSourceRecoveryForUserAction(reason: source)
+        guard beginAwakeOperation(.manual, target: target, source: source) else { return }
         log("\(source)_toggle_capslock requested target=\(target ? "on" : "off")")
         capsLockToggleCoordinator.requestSet(target) { [weak self] result in
             guard let self else { return }
-            self.isExplicitCapsLockToggleInFlight = false
+            self.finishAwakeOperation(.manual, toggleResult: result)
             self.handleCapsLockToggleResult(result, source: source)
             self.applyCurrentCapsLockState(reason: source)
         }
@@ -621,17 +612,13 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     ) {
         switch result {
         case let .changed(target):
-            failedTogglePhysicalState = nil
             cancelInputSourceRecovery()
             log("\(source)_toggle_capslock target=\(target ? "on" : "off") succeeded=true")
         case .unavailable:
-            failedTogglePhysicalState = currentCapsLockState
             log("\(source)_toggle_capslock failed=hid_system_unavailable")
         case let .writeFailed(target):
-            failedTogglePhysicalState = currentCapsLockState
             log("\(source)_toggle_capslock target=\(target ? "on" : "off") failed=write_state")
         case let .verificationFailed(target, actual):
-            failedTogglePhysicalState = currentCapsLockState
             let actualValue = actual.map { $0 ? "on" : "off" } ?? "unknown"
             log(
                 "\(source)_toggle_capslock target=\(target ? "on" : "off")"
@@ -895,16 +882,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func fireAutoOff(reason: String) {
-        guard !isAutoOffToggleInFlight else { return }
-        isAutoOffToggleInFlight = true
-        prepareSecureInputOverrideForExplicitTarget(false)
-        // Prevent input-source-change recovery from re-asserting Caps Lock and
-        // undoing the auto-off while the off is being applied.
-        suppressInputSourceRecoveryForUserAction(reason: "auto_off")
+        guard beginAwakeOperation(.autoOff, target: false, source: "auto_off") else { return }
         log("auto_off elapsed reason=\(reason)")
         capsLockToggleCoordinator.requestSet(false) { [weak self] result in
             guard let self else { return }
-            self.isAutoOffToggleInFlight = false
+            self.finishAwakeOperation(.autoOff, toggleResult: result)
             self.autoOffSleepCoordinator.recordCapsLockResult(result)
             self.handleCapsLockToggleResult(result, source: "auto_off")
             self.applyCurrentCapsLockState(reason: "auto_off")
@@ -984,7 +966,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } ?? strings.checkForUpdates
     }
 
-    private func configureGlobalHotKey() {
+    func configureGlobalHotKey() {
         globalHotKeyManager.onTrigger = { [weak self] in
             self?.requestCapsLockToggle(source: "shortcut")
         }
@@ -992,8 +974,9 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let shortcut = Preferences.keyboardShortcut
         let status = globalHotKeyManager.replaceShortcut(with: shortcut)
         guard status == noErr else {
-            Preferences.keyboardShortcut = nil
-            log("shortcut_register startup_failed status=\(status)")
+            // Registration can fail temporarily (for example, while another
+            // instance owns the key). Keep the user's saved shortcut.
+            log("shortcut_register startup_failed status=\(status) saved_shortcut_preserved=true")
             return
         }
 
@@ -1017,7 +1000,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return true
     }
 
-    private func setKeyboardShortcutRecording(_ isRecording: Bool) {
+    func setKeyboardShortcutRecording(_ isRecording: Bool) {
         if isRecording {
             globalHotKeyManager.suspend()
             return
@@ -1028,9 +1011,8 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         )
         guard status != noErr else { return }
 
-        Preferences.keyboardShortcut = nil
         settingsWindowController?.reloadText()
-        log("shortcut_register resume_failed status=\(status)")
+        log("shortcut_register resume_failed status=\(status) saved_shortcut_preserved=true")
     }
 
     private func pollLidOpenLock() {
@@ -1063,7 +1045,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         ensureHIDCapsLockMonitor()
         // While an auto-off toggle is being applied on the background queue,
         // pause state application; the toggle's completion re-syncs afterward.
-        if isAutoOffToggleInFlight || isControlMutationInFlight || isExplicitCapsLockToggleInFlight {
+        if awakeControlState.isChanging {
             return
         }
 
@@ -1097,9 +1079,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         hasLoggedMissingCapsLockState = false
-        if secureInputOverrideSuppressedForExplicitOff, physicalCapsLockOn {
-            secureInputOverrideSuppressedForExplicitOff = false
-        }
+        awakeControlState.observePhysicalCapsLock(physicalCapsLockOn)
         let capsLockOn = syncSecureInputCapsLockOverride(
             physicalCapsLockOn: physicalCapsLockOn,
             reason: reason
@@ -1227,15 +1207,31 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return isReady
     }
 
-    private func prepareSecureInputOverrideForExplicitTarget(_ target: Bool) {
-        if target {
-            secureInputOverrideSuppressedForExplicitOff = false
-            return
+    private func beginAwakeOperation(
+        _ operation: AwakeControlState.Operation, target: Bool, source: String
+    ) -> Bool {
+        guard awakeControlState.begin(operation, target: target) else { return false }
+        if !target {
+            Preferences.secureInputCapsLockOverrideActive = false
+            nextSecureInputCapsLockRetryAt = .distantPast
         }
+        suppressInputSourceRecoveryForUserAction(reason: source)
+        return true
+    }
 
-        secureInputCapsLockOverrideActive = false
-        Preferences.secureInputCapsLockOverrideActive = false
-        secureInputOverrideSuppressedForExplicitOff = true
+    private func finishAwakeOperation(_ operation: AwakeControlState.Operation, failed: Bool) {
+        awakeControlState.finish(operation, failureState: failed ? currentCapsLockState : nil)
+    }
+
+    private func finishAwakeOperation(_ operation: AwakeControlState.Operation, toggleResult: CapsLockToggleResult) {
+        let failed: Bool
+        if case .changed = toggleResult { failed = false } else { failed = true }
+        finishAwakeOperation(operation, failed: failed)
+    }
+
+    private func setSecureInputCapsLockOverrideActive(_ active: Bool) {
+        awakeControlState.setSecureInputOverrideActive(active)
+        Preferences.secureInputCapsLockOverrideActive = active
         nextSecureInputCapsLockRetryAt = .distantPast
     }
 
@@ -1248,11 +1244,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
     ) -> Bool {
         let snapshot = SecureInputStateReader.snapshot()
         let logicalCapsomniaActive = lastAppliedState == true
-            && !secureInputOverrideSuppressedForExplicitOff
+            && !awakeControlState.secureInputOverrideSuppressedForExplicitOff
         let action = SecureInputCapsLockPolicy.action(
             dedicatedModeEnabled: Preferences.dedicatedCapsLockMode,
             capsomniaActive: logicalCapsomniaActive,
-            overrideActive: secureInputCapsLockOverrideActive,
+            overrideActive: awakeControlState.secureInputCapsLockOverrideActive,
             snapshot: snapshot
         )
         switch action {
@@ -1271,9 +1267,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let result = SystemCapsLockController.set(false)
             let succeeded = result == .changed(to: false)
             if succeeded {
-                secureInputCapsLockOverrideActive = true
-                Preferences.secureInputCapsLockOverrideActive = true
-                nextSecureInputCapsLockRetryAt = .distantPast
+                setSecureInputCapsLockOverrideActive(true)
             } else {
                 nextSecureInputCapsLockRetryAt = now.addingTimeInterval(helperRetryInterval)
             }
@@ -1291,9 +1285,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let result = SystemCapsLockController.set(true)
             let succeeded = result == .changed(to: true)
             if succeeded {
-                secureInputCapsLockOverrideActive = false
-                Preferences.secureInputCapsLockOverrideActive = false
-                nextSecureInputCapsLockRetryAt = .distantPast
+                setSecureInputCapsLockOverrideActive(false)
             } else {
                 nextSecureInputCapsLockRetryAt = now.addingTimeInterval(helperRetryInterval)
             }
@@ -1305,9 +1297,7 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return true
 
         case .deactivateWithoutRestore:
-            secureInputCapsLockOverrideActive = false
-            Preferences.secureInputCapsLockOverrideActive = false
-            nextSecureInputCapsLockRetryAt = .distantPast
+            setSecureInputCapsLockOverrideActive(false)
             log("\(reason) secure_input_capslock override=cleared_without_restore")
             return physicalCapsLockOn
         }
@@ -1619,13 +1609,11 @@ final class Capsomnia: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func refreshSettingsHeaderStatus() {
         let physical = capsLockStateReader.currentState()
-        if let failed = failedTogglePhysicalState, let physical, physical != failed {
-            failedTogglePhysicalState = nil
-        }
+        awakeControlState.reconcileToggleFailure(physicalCapsLock: physical)
         settingsHeaderStatus = SettingsHeaderStatus.resolve(
             confirmed: lastConfirmedSleepState,
-            hasError: physical == nil || dedicatedModeError || failedSleepState != nil || failedTogglePhysicalState != nil,
-            changing: isExplicitCapsLockToggleInFlight || isControlMutationInFlight || isAutoOffToggleInFlight,
+            hasError: physical == nil || dedicatedModeError || failedSleepState != nil || awakeControlState.failedTogglePhysicalState != nil,
+            changing: awakeControlState.isChanging,
             previous: settingsHeaderStatus
         )
         settingsWindowController?.updateHeaderStatus(settingsHeaderStatus)
@@ -1744,7 +1732,7 @@ extension Capsomnia {
             if args.count == 3, let value = settings[args[2]] { succeed(.object([args[2]: value])); return }
             fail("Unknown setting. Run cpsm settings get."); return
         }
-        guard !isControlMutationInFlight && !isAutoOffToggleInFlight && !autoOffSleepCoordinator.isPending else {
+        guard !awakeControlState.isInFlight(.cli) && !awakeControlState.isInFlight(.autoOff) && !autoOffSleepCoordinator.isPending else {
             fail("A power operation is already in progress. Check status before trying again."); return
         }
         if args == ["on"] || args == ["off"] || args == ["toggle"] {
@@ -1798,10 +1786,10 @@ extension Capsomnia {
         if target {
             _ = ensureDedicatedCapsLockFilter(promptForPermission: false, reason: "cli")
         }
-        prepareSecureInputOverrideForExplicitTarget(target)
-        isControlMutationInFlight = true
-        failedTogglePhysicalState = nil
-        suppressInputSourceRecoveryForUserAction(reason: "cli")
+        guard beginAwakeOperation(.cli, target: target, source: "cli") else {
+            reply(ControlResponse(ok: false, error: "A power operation is already in progress. Check status before trying again."))
+            return
+        }
         ExplicitAwakeCommand.run(
             target: target,
             setCapsLock: { value, completion in
@@ -1824,10 +1812,7 @@ extension Capsomnia {
             readCapsLock: { self.capsLockStateReader.currentState() },
             sleep: { SystemSleepRequester.request() },
             completion: { result in
-                self.isControlMutationInFlight = false
-                if case .failure = result {
-                    self.failedTogglePhysicalState = self.currentCapsLockState
-                }
+                self.finishAwakeOperation(.cli, failed: (try? result.get()) == nil)
                 self.refreshSettingsHeaderStatus()
                 self.updateStatusMenuControls()
                 self.settingsWindowController?.reloadText()
@@ -1847,11 +1832,11 @@ extension Capsomnia {
             "app_running": .bool(true),
             "app_version": .string(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "development"),
             "app_path": .string(Bundle.main.bundlePath),
-            "caps_lock": secureInputCapsLockOverrideActive
+            "caps_lock": awakeControlState.secureInputCapsLockOverrideActive
                 ? .bool(true)
                 : physicalCapsLock.map(JSONValue.bool) ?? .null,
             "caps_lock_physical": physicalCapsLock.map(JSONValue.bool) ?? .null,
-            "secure_input_caps_lock_override": .bool(secureInputCapsLockOverrideActive),
+            "secure_input_caps_lock_override": .bool(awakeControlState.secureInputCapsLockOverrideActive),
             "sleep_disabled": SleepStateReader.isDisabled().map(JSONValue.bool) ?? .null,
             "sleep_requested": .bool(sleepRequested),
             "timer": controlTimerStatus()

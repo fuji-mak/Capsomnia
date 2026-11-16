@@ -105,6 +105,59 @@ final class GlobalHotKeyTests: XCTestCase {
     }
 
     @MainActor
+    func testStartupRegistrationConflictPreservesSavedShortcutAndAllowsRetry() {
+        _ = NSApplication.shared
+        let previousShortcut = Preferences.keyboardShortcut
+        defer { Preferences.keyboardShortcut = previousShortcut }
+        let shortcut = KeyboardShortcut(
+            keyCode: UInt32(kVK_F19),
+            modifiers: [.control, .option, .shift, .command],
+            key: "F19"
+        )
+        Preferences.keyboardShortcut = shortcut
+        let blocker = GlobalHotKeyManager()
+        XCTAssertEqual(blocker.replaceShortcut(with: shortcut), noErr)
+
+        let application = Capsomnia()
+        application.configureGlobalHotKey()
+
+        XCTAssertEqual(Preferences.keyboardShortcut, shortcut)
+        blocker.suspend()
+        application.configureGlobalHotKey()
+        XCTAssertEqual(Preferences.keyboardShortcut, shortcut)
+        // The retry actually acquired the key, rather than only keeping its name.
+        XCTAssertNotEqual(blocker.replaceShortcut(with: shortcut), noErr)
+        application.setKeyboardShortcutRecording(true)
+    }
+
+    @MainActor
+    func testResumeRegistrationConflictPreservesSavedShortcutAndAllowsRetry() {
+        _ = NSApplication.shared
+        let previousShortcut = Preferences.keyboardShortcut
+        defer { Preferences.keyboardShortcut = previousShortcut }
+        let shortcut = KeyboardShortcut(
+            keyCode: UInt32(kVK_F20),
+            modifiers: [.control, .option, .shift, .command],
+            key: "F20"
+        )
+        Preferences.keyboardShortcut = shortcut
+        let application = Capsomnia()
+        application.configureGlobalHotKey()
+        application.setKeyboardShortcutRecording(true)
+        let blocker = GlobalHotKeyManager()
+        XCTAssertEqual(blocker.replaceShortcut(with: shortcut), noErr)
+
+        application.setKeyboardShortcutRecording(false)
+
+        XCTAssertEqual(Preferences.keyboardShortcut, shortcut)
+        blocker.suspend()
+        application.setKeyboardShortcutRecording(false)
+        XCTAssertEqual(Preferences.keyboardShortcut, shortcut)
+        XCTAssertNotEqual(blocker.replaceShortcut(with: shortcut), noErr)
+        application.setKeyboardShortcutRecording(true)
+    }
+
+    @MainActor
     func testCarbonHotKeyEventInvokesRegisteredHandler() throws {
         _ = NSApplication.shared
         let manager = GlobalHotKeyManager()

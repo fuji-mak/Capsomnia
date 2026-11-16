@@ -2,6 +2,10 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 4.3.5 - 2026-11-17
+
+- Add an optional “Support Capsomnia” link below Check for Updates in the menu and above CLI & Skill download in Advanced Settings. Open the existing Buy Me a Coffee page in the default browser only when selected. Localize the link in all five app languages.
+
 ## 4.3.4 - 2026-11-13
 
 - Fix package permissions that could prevent Capsomnia from opening after installation. Build payloads with a fixed umask and reject unreadable package entries, including directories without search permission. Thanks to gigun-dev for the diagnosis and fix in PR 160.

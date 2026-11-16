@@ -8,8 +8,8 @@
   "upload_source_maps": false,
   "routes": [
     {
-      "pattern": "capsomnia.com/*",
-      "zone_name": "capsomnia.com"
+      "pattern": "capsomnia.com",
+      "custom_domain": true
     }
   ],
   "preview_urls": false,

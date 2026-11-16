@@ -2,6 +2,11 @@
 
 All notable changes to Capsomnia will be documented in this file.
 
+## 4.3.6 - 2026-11-17
+
+- Preserve the saved keyboard shortcut when macOS temporarily rejects registration at startup or after shortcut recording. Allow the existing registration paths to retry without losing the user's setting.
+- Consolidate command bookkeeping shared by menu, shortcut, CLI, and auto-off operations while preserving their timer and sleep behavior.
+
 ## 4.3.5 - 2026-11-17
 
 - Add an optional “Support Capsomnia” link below Check for Updates in the menu and above CLI & Skill download in Advanced Settings. Open the existing Buy Me a Coffee page in the default browser only when selected. Localize the link in all five app languages.

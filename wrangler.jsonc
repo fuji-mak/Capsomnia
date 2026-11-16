@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "capsomnia-language-router",
+  "account_id": "3bd347dbe44e2fa2d7f8d7af063f11f8",
   "main": "worker/index.mjs",
   "compatibility_date": "2026-07-17",
   "workers_dev": false,
